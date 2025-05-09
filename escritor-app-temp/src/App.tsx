@@ -432,17 +432,16 @@ function App() {
           {activeTab === 'editor' && (
             <div className="content-panel">
               <div className="formatting-toolbar">
-                {/* These buttons will be hidden but kept for later implementation */}
-                <button className="format-btn" title="Negrito (em implementação)" style={{opacity: 0.5}}>B</button>
-                <button className="format-btn" title="Itálico (em implementação)" style={{opacity: 0.5}}>I</button>
-                <button className="format-btn" title="Sublinhado (em implementação)" style={{opacity: 0.5}}>U</button>
+                <button className="format-btn" title="Negrito" onClick={() => applyFormatting('bold')}>B</button>
+                <button className="format-btn" title="Itálico" onClick={() => applyFormatting('italic')}>I</button>
+                <button className="format-btn" title="Sublinhado" onClick={() => applyFormatting('underline')}>U</button>
                 <span className="toolbar-divider"></span>
-                <button className="format-btn" title="Título 1 (em implementação)" style={{opacity: 0.5}}>H1</button>
-                <button className="format-btn" title="Título 2 (em implementação)" style={{opacity: 0.5}}>H2</button>
-                <button className="format-btn" title="Título 3 (em implementação)" style={{opacity: 0.5}}>H3</button>
+                <button className="format-btn" title="Título 1" onClick={() => applyFormatting('heading1')}>H1</button>
+                <button className="format-btn" title="Título 2" onClick={() => applyFormatting('heading2')}>H2</button>
+                <button className="format-btn" title="Título 3" onClick={() => applyFormatting('heading3')}>H3</button>
                 <span className="toolbar-divider"></span>
-                <button className="format-btn" title="Citação (em implementação)" style={{opacity: 0.5}}>"</button>
-                <button className="format-btn" title="Lista (em implementação)" style={{opacity: 0.5}}>•</button>
+                <button className="format-btn" title="Citação" onClick={() => applyFormatting('quote')}>"</button>
+                <button className="format-btn" title="Lista" onClick={() => applyFormatting('list')}>•</button>
                 <span className="toolbar-divider"></span>
                 
                 {/* Added spell check button */}
@@ -466,15 +465,17 @@ function App() {
                 </button>
               </div>
               
-              <textarea
-                ref={editorRef}
-                className="editor-area"
-                value={text}
-                onChange={(e) => handleTextChange(e.target.value)}
-                onSelect={handleTextSelection}
-                placeholder="Comece a escrever aqui..."
-                spellCheck={false}
-              />
+              <div className="editor-wrapper">
+                <textarea
+                  ref={editorRef}
+                  className="editor-area"
+                  value={text}
+                  onChange={(e) => handleTextChange(e.target.value)}
+                  onSelect={handleTextSelection}
+                  placeholder="Comece a escrever aqui..."
+                  spellCheck={false}
+                />
+              </div>
               
               {/* Spell check suggestions */}
               {showSuggestions && (
