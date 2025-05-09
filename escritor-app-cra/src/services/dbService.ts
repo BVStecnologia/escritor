@@ -194,13 +194,20 @@ export const dbService = {
         .select('*')
         .eq('livro_id', livroId)
         .order('created_at', { ascending: true });
-      
+
       if (error) throw error;
       return data as Capitulo[];
     } catch (error) {
       console.error(`Erro ao obter capítulos do livro ${livroId}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Alias para getCapitulos para consistência de nomenclatura
+   */
+  async getCapitulosPorLivroId(livroId: number) {
+    return this.getCapitulos(livroId);
   },
   
   /**

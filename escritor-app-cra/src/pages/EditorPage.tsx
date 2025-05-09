@@ -1,259 +1,342 @@
-import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import EditorAvancado from '../components/EditorAvancado';
+import { dbService, Capitulo } from '../services/dbService';
+import { Button, Title, Text } from '../components/styled';
 
-// Corrigir a tipagem useParams de acordo com a versão do React Router
+const EditorPageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: ${({ theme }) => theme.colors.background.main};
+`;
+
+const EditorHeader = styled.header`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${({ theme }) => theme.space.md} ${({ theme }) => theme.space.xl};
+  background-color: ${({ theme }) => theme.colors.white};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.gray[200]};
+  box-shadow: ${({ theme }) => theme.shadows.sm};
+  position: relative;
+  z-index: 10;
+`;
+
+const HeaderTitle = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const LogoText = styled.span`
+  font-weight: ${({ theme }) => theme.fontWeights.bold};
+  font-size: ${({ theme }) => theme.fontSizes.xl};
+  color: ${({ theme }) => theme.colors.primary};
+  letter-spacing: -0.5px;
+`;
+
+const BookTitle = styled.span`
+  font-size: ${({ theme }) => theme.fontSizes.lg};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin-left: ${({ theme }) => theme.space.md};
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:before {
+    content: '•';
+    margin-right: ${({ theme }) => theme.space.md};
+    color: ${({ theme }) => theme.colors.gray[400]};
+  }
+`;
+
+const HeaderControls = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space.sm};
+  align-items: center;
+`;
+
+const StatusBadge = styled.div<{ online?: boolean }>`
+  display: flex;
+  align-items: center;
+  background: ${({ online, theme }) =>
+    online ? theme.colors.success + '20' : theme.colors.gray[200]};
+  color: ${({ online, theme }) =>
+    online ? theme.colors.success : theme.colors.text.secondary};
+  padding: ${({ theme }) => theme.space.xs} ${({ theme }) => theme.space.sm};
+  border-radius: ${({ theme }) => theme.radii.full};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  margin-right: ${({ theme }) => theme.space.md};
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: ${({ online, theme }) =>
+      online ? theme.colors.success : theme.colors.gray[400]};
+    margin-right: ${({ theme }) => theme.space.xs};
+  }
+`;
+
+const EditorLayout = styled.div`
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+`;
+
+const SidebarWrapper = styled.div`
+  width: 250px;
+  background-color: ${({ theme }) => theme.colors.white};
+  border-right: 1px solid ${({ theme }) => theme.colors.gray[200]};
+  padding: ${({ theme }) => theme.space.md};
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.space.md};
+  padding-bottom: ${({ theme }) => theme.space.md};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.gray[200]};
+`;
+
+const SidebarTitle = styled.h3`
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  font-weight: ${({ theme }) => theme.fontWeights.semibold};
+  margin: 0 0 ${({ theme }) => theme.space.xs} 0;
+`;
+
+const ChapterListWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+`;
+
+const ChapterList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const ChapterItem = styled.li<{ active?: boolean }>`
+  padding: ${({ theme }) => theme.space.sm};
+  margin-bottom: ${({ theme }) => theme.space.xs};
+  border-radius: ${({ theme }) => theme.radii.md};
+  background-color: ${({ active, theme }) =>
+    active ? theme.colors.primary + '15' : 'transparent'};
+  cursor: pointer;
+  transition: ${({ theme }) => theme.transitions.normal};
+
+  &:hover {
+    background-color: ${({ active, theme }) =>
+      active ? theme.colors.primary + '20' : theme.colors.gray[100]};
+  }
+`;
+
+const ChapterTitle = styled.div<{ active?: boolean }>`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  font-weight: ${({ active, theme }) =>
+    active ? theme.fontWeights.semibold : theme.fontWeights.normal};
+  color: ${({ active, theme }) =>
+    active ? theme.colors.primary : theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const NewChapterButton = styled(Button)`
+  margin-top: ${({ theme }) => theme.space.md};
+`;
+
+const EditorContent = styled.div`
+  flex: 1;
+  overflow: hidden;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space.lg};
+`;
+
+const Spinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+  border-top-color: ${({ theme }) => theme.colors.primary};
+  animation: spin 1s ease-in-out infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
 const EditorPage: React.FC = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { bookId, chapterId } = useParams<Record<string, string | undefined>>();
-  const [content, setContent] = useState<string>('Comece a escrever aqui...');
-  const [showAIPanel, setShowAIPanel] = useState<boolean>(false);
-  const [aiSuggestion, setAiSuggestion] = useState<string>('');
+  const navigate = useNavigate();
+  const [livro, setLivro] = useState<any>(null);
+  const [capitulos, setCapitulos] = useState<Capitulo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
 
-  // Simulação da geração de conteúdo com IA
-  const generateContent = (prompt: string): void => {
-    // Em uma implementação real, isso seria uma chamada à API Claude
-    setTimeout(() => {
-      setAiSuggestion(`Aqui está uma sugestão para o seu texto: 
-      
-${content.slice(0, 100)}... e continuou seu caminho pela floresta densa, percebendo que algo importante estava prestes a acontecer. As árvores pareciam sussurrar segredos antigos, e o vento carregava um aroma de mistério que só ele conseguia identificar.`);
-    }, 1000);
+  useEffect(() => {
+    const carregarLivro = async () => {
+      if (!bookId) return;
+
+      try {
+        // Carregar livro
+        const livroId = parseInt(bookId);
+        const livroData = await dbService.getLivroPorId(livroId);
+        setLivro(livroData);
+
+        // Carregar capítulos
+        const capitulosData = await dbService.getCapitulosPorLivroId(livroId);
+        if (capitulosData) {
+          setCapitulos(capitulosData);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar livro:', error);
+        setErro('Não foi possível carregar as informações do livro.');
+        setIsOnline(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarLivro();
+
+    // Verificar status de conexão
+    const checkOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+    };
+
+    window.addEventListener('online', checkOnlineStatus);
+    window.addEventListener('offline', checkOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', checkOnlineStatus);
+      window.removeEventListener('offline', checkOnlineStatus);
+    };
+  }, [bookId]);
+
+  const handleVoltarDashboard = () => {
+    navigate('/dashboard');
   };
 
+  const handleNovoCapitulo = () => {
+    if (bookId) {
+      navigate(`/editor/${bookId}`);
+    }
+  };
+
+  const handleSelectCapitulo = (capituloId: string) => {
+    if (bookId) {
+      navigate(`/editor/${bookId}/${capituloId}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <LoadingContainer>
+        <Spinner />
+        <Text>Carregando editor...</Text>
+      </LoadingContainer>
+    );
+  }
+
+  if (erro || !livro) {
+    return (
+      <LoadingContainer>
+        <Title>Erro</Title>
+        <Text>{erro || 'Livro não encontrado'}</Text>
+        <Button variant="primary" onClick={handleVoltarDashboard}>
+          Voltar para o Dashboard
+        </Button>
+      </LoadingContainer>
+    );
+  }
+
   return (
-    <div className="editor-page" style={{ 
-      display: 'flex',
-      height: '100vh',
-      overflow: 'hidden'
-    }}>
-      {/* Barra lateral */}
-      <div style={{ 
-        width: '250px',
-        backgroundColor: '#f5f5f5',
-        borderRight: '1px solid #e0e0e0',
-        padding: '20px',
-        overflowY: 'auto'
-      }}>
-        <h3 style={{ marginTop: 0 }}>Capítulos</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          <li style={{ 
-            padding: '10px', 
-            borderRadius: '4px', 
-            backgroundColor: '#4CAF50', 
-            color: 'white',
-            marginBottom: '8px'
-          }}>
-            Capítulo 1: Introdução
-          </li>
-          <li style={{ 
-            padding: '10px', 
-            borderRadius: '4px', 
-            backgroundColor: 'white', 
-            marginBottom: '8px'
-          }}>
-            Capítulo 2: O Encontro
-          </li>
-          <li style={{ 
-            padding: '10px', 
-            borderRadius: '4px', 
-            backgroundColor: 'white', 
-            marginBottom: '8px'
-          }}>
-            Capítulo 3: A Jornada
-          </li>
-          <li style={{ 
-            padding: '10px', 
-            borderRadius: '4px', 
-            backgroundColor: 'white', 
-            marginBottom: '8px'
-          }}>
-            + Novo Capítulo
-          </li>
-        </ul>
-        
-        <div style={{ marginTop: '40px' }}>
-          <h3>Estatísticas</h3>
-          <p>Palavras: 367</p>
-          <p>Caracteres: 2,154</p>
-          <p>Tempo de leitura: 2 min</p>
-        </div>
-        
-        <Link to="/dashboard" style={{ 
-          display: 'block',
-          marginTop: '40px',
-          padding: '10px',
-          textAlign: 'center',
-          backgroundColor: '#f0f0f0',
-          borderRadius: '4px',
-          textDecoration: 'none',
-          color: '#333'
-        }}>
-          Voltar para Dashboard
-        </Link>
-      </div>
-      
-      {/* Área do editor */}
-      <div style={{ 
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%'
-      }}>
-        {/* Barra de ferramentas */}
-        <div style={{ 
-          padding: '10px 20px',
-          borderBottom: '1px solid #e0e0e0',
-          display: 'flex',
-          gap: '10px'
-        }}>
-          <button style={{ padding: '5px 10px' }}>B</button>
-          <button style={{ padding: '5px 10px' }}>I</button>
-          <button style={{ padding: '5px 10px' }}>U</button>
-          <span style={{ margin: '0 10px', borderLeft: '1px solid #e0e0e0' }}></span>
-          <button style={{ padding: '5px 10px' }}>H1</button>
-          <button style={{ padding: '5px 10px' }}>H2</button>
-          <span style={{ margin: '0 10px', borderLeft: '1px solid #e0e0e0' }}></span>
-          <button 
-            style={{ 
-              padding: '5px 15px', 
-              backgroundColor: '#4CAF50', 
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              marginLeft: 'auto'
-            }}
-            onClick={() => setShowAIPanel(!showAIPanel)}
+    <EditorPageContainer>
+      <EditorHeader>
+        <HeaderTitle>
+          <LogoText>Escritor App</LogoText>
+          <BookTitle title={livro["Nome do livro"]}>{livro["Nome do livro"]}</BookTitle>
+        </HeaderTitle>
+
+        <HeaderControls>
+          <StatusBadge online={isOnline}>
+            {isOnline ? 'Online' : 'Offline'}
+          </StatusBadge>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleVoltarDashboard}
           >
-            IA Assistente
-          </button>
-        </div>
-        
-        {/* Área de texto */}
-        <div style={{ 
-          flex: 1,
-          padding: '20px',
-          overflowY: 'auto'
-        }}>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              outline: 'none',
-              fontSize: '16px',
-              lineHeight: '1.6',
-              resize: 'none',
-              padding: '0'
-            }}
+            Voltar ao Dashboard
+          </Button>
+        </HeaderControls>
+      </EditorHeader>
+
+      <EditorLayout>
+        <SidebarWrapper>
+          <SidebarHeader>
+            <SidebarTitle>Capítulos</SidebarTitle>
+            <Text size="sm" style={{ color: '#495057' }}>
+              {capitulos.length} {capitulos.length === 1 ? 'capítulo' : 'capítulos'}
+            </Text>
+          </SidebarHeader>
+
+          <ChapterListWrapper>
+            <ChapterList>
+              {capitulos.map((capitulo) => (
+                <ChapterItem
+                  key={capitulo.id}
+                  active={capitulo.id === chapterId}
+                  onClick={() => handleSelectCapitulo(capitulo.id)}
+                >
+                  <ChapterTitle active={capitulo.id === chapterId}>
+                    {capitulo.titulo || 'Sem título'}
+                  </ChapterTitle>
+                </ChapterItem>
+              ))}
+
+              {capitulos.length === 0 && (
+                <Text size="sm" style={{ color: '#6c757d' }}>
+                  Nenhum capítulo criado
+                </Text>
+              )}
+            </ChapterList>
+          </ChapterListWrapper>
+
+          <NewChapterButton
+            variant="primary"
+            size="sm"
+            onClick={handleNovoCapitulo}
+          >
+            Novo Capítulo
+          </NewChapterButton>
+        </SidebarWrapper>
+
+        <EditorContent>
+          <EditorAvancado
+            livroId={parseInt(bookId!)}
+            capituloId={chapterId}
           />
-        </div>
-      </div>
-      
-      {/* Painel de assistente IA */}
-      {showAIPanel && (
-        <div style={{ 
-          width: '300px',
-          backgroundColor: '#f9f9f9',
-          borderLeft: '1px solid #e0e0e0',
-          padding: '20px',
-          overflowY: 'auto'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0 }}>Assistente Claude</h3>
-            <button 
-              onClick={() => setShowAIPanel(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer'
-              }}
-            >
-              ×
-            </button>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ fontWeight: 'bold' }}>O que você gostaria de fazer?</p>
-            <button 
-              onClick={() => generateContent('continue')}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginBottom: '10px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Continuar Texto
-            </button>
-            <button 
-              onClick={() => generateContent('improve')}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginBottom: '10px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Melhorar Texto
-            </button>
-            <button 
-              onClick={() => generateContent('ideas')}
-              style={{
-                width: '100%',
-                padding: '10px',
-                backgroundColor: '#9C27B0',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Gerar Ideias
-            </button>
-          </div>
-          
-          {aiSuggestion && (
-            <div style={{ 
-              padding: '15px',
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              marginBottom: '20px'
-            }}>
-              <p style={{ margin: '0 0 15px 0', fontWeight: 'bold' }}>Sugestão:</p>
-              <p style={{ margin: 0, lineHeight: '1.6' }}>{aiSuggestion}</p>
-            </div>
-          )}
-          
-          {aiSuggestion && (
-            <button 
-              onClick={() => setContent(aiSuggestion.replace('Aqui está uma sugestão para o seu texto: \n      \n', ''))}
-              style={{
-                width: '100%',
-                padding: '10px',
-                backgroundColor: '#FF9800',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Aplicar Sugestão
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+        </EditorContent>
+      </EditorLayout>
+    </EditorPageContainer>
   );
 };
 

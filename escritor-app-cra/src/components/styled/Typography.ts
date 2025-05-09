@@ -47,11 +47,10 @@ export const Paragraph = styled.p`
 export const Text = styled.span<{
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   weight?: 300 | 400 | 500 | 600 | 700;
-  color?: string;
 }>`
   font-size: ${({ theme, size = 'md' }) => theme.fontSizes[size]};
   font-weight: ${({ weight = 400 }) => weight};
-  color: ${({ theme, color }) => color ? color : theme.colors.dark};
+  color: ${({ theme }) => theme.colors.dark};
 `;
 
 export const Link = styled.a`
