@@ -1,0 +1,124 @@
+Documentação: Edge Function Claude + Embeddings
+Esta edge function integra o Claude AI com seu sistema de embeddings Supabase, fornecendo várias funcionalidades para assistência na escrita e criação de conteúdo.
+Modos Disponíveis
+1. Autocompletar (autocomplete)
+Fornece sugestões de continuação de texto enquanto o usuário escreve, usando embeddings para contextualização.
+Parâmetros:
+json{
+  "mode": "autocomplete",
+  "input": "O texto atual do usuário...",
+  "context": {
+    "cursor_position": 150,
+    "max_suggestions": 3,
+    "user_id": 123,
+    "livro_id": 456
+  }
+}
+Resposta:
+json{
+  "input_text": "O texto atual do usuário...",
+  "cursor_position": 150,
+  "suggestions": [
+    "continuação sugerida 1",
+    "continuação sugerida 2",
+    "continuação sugerida 3"
+  ]
+}
+2. Geração de Página (generate_page)
+Gera uma página completa baseada em uma descrição, mantendo consistência com o conteúdo existente.
+Parâmetros:
+json{
+  "mode": "generate_page",
+  "input": "Descrição do que deve estar na página...",
+  "context": {
+    "style": "informative",
+    "livro_id": 456,
+    "capitulo_id": 789,
+    "page_length": "medium"
+  }
+}
+Resposta:
+json{
+  "prompt": "Descrição do que deve estar na página...",
+  "style": "informative",
+  "page_length": "medium",
+  "content": "Conteúdo gerado da página..."
+}
+3. Assistente de Escrita (writing_assistant)
+Aprimora, edita e fornece feedback sobre trechos de texto.
+Parâmetros:
+json{
+  "mode": "writing_assistant",
+  "input": "Texto a ser aprimorado...",
+  "context": {
+    "action": "improve",
+    "focus_areas": ["clarity", "engagement"],
+    "livro_id": 456,
+    "capitulo_id": 789
+  }
+}
+Resposta:
+json{
+  "original_text": "Texto a ser aprimorado...",
+  "action": "improve",
+  "focus_areas": ["clarity", "engagement"],
+  "revised_text": "Texto aprimorado com comentários..."
+}
+4. Ideias Criativas (creative_ideas)
+Gera ideias criativas para desenvolvimento de histórias, personagens, cenários, etc.
+Parâmetros:
+json{
+  "mode": "creative_ideas",
+  "input": "Descrição do contexto atual...",
+  "context": {
+    "idea_type": "plot_points",
+    "num_ideas": 3,
+    "livro_id": 456,
+    "capitulo_id": 789
+  }
+}
+Resposta:
+json{
+  "prompt": "Descrição do contexto atual...",
+  "idea_type": "plot_points",
+  "num_ideas": 3,
+  "ideas": "Ideias criativas formatadas..."
+}
+5. Busca (search)
+Busca informações relevantes nos embeddings e fornece análise contextualizada.
+Parâmetros:
+json{
+  "mode": "search",
+  "input": "O que estou procurando...",
+  "context": {
+    "detail_level": "medium",
+    "max_results": 5
+  }
+}
+Resposta:
+json{
+  "query": "O que estou procurando...",
+  "detail_level": "medium",
+  "raw_results": [
+    {
+      "id": 123,
+      "tipo": "capitulo",
+      "conteudo": "Conteúdo encontrado...",
+      "similaridade": 0.87
+    }
+  ],
+  "analysis": "Análise dos resultados..."
+}
+6. Personalizado (custom)
+Modo flexível que permite criar interações personalizadas com o Claude, com opção de incluir contexto de embeddings.
+Parâmetros:
+json{
+  "mode": "custom",
+  "input": "Prompt personalizado...",
+  "context": {
+    "system_prompt": "Comportamento personalizado do assistente...",
+    "include_embeddings": true,
+    "max_embeddings": 3,
+    "embedding_filter": "livro"
+  }
+}
