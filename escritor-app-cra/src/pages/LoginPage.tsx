@@ -3,15 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   Container,
-  Card,
   Form,
   FormGroup,
   Label,
   Input,
   Button,
   Paragraph,
-  Text,
-  FlexContainer,
   Title
 } from '../components/styled';
 
@@ -191,11 +188,34 @@ const LoginTitle = styled(Title)`
 
 const StyledForm = styled(Form)`
   margin-bottom: ${({ theme }) => theme.space.xl};
+  
+  /* Resolver problema da faixa cinza */
+  & ${FormGroup} + ${FormGroup} {
+    margin-top: ${({ theme }) => theme.space.md};
+  }
+`;
+
+const StyledFormGroup = styled(FormGroup)`
+  margin-bottom: ${({ theme }) => theme.space.md};
+`;
+
+const StyledInput = styled(Input)`
+  background-color: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.gray[300]};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.space.md};
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  transition: ${({ theme }) => theme.transitions.fast};
+  
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+  }
 `;
 
 const ForgotPassword = styled(Link)`
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  margin-top: -${({ theme }) => theme.space.sm};
+  margin-top: ${({ theme }) => theme.space.xs};
   margin-bottom: ${({ theme }) => theme.space.lg};
   display: block;
   text-align: right;
@@ -259,6 +279,15 @@ const SignUpLink = styled(Link)`
   }
 `;
 
+const ErrorMessage = styled.div`
+  background-color: rgba(255, 10, 84, 0.1);
+  color: ${({ theme }) => theme.colors.danger};
+  padding: ${({ theme }) => theme.space.md};
+  border-radius: ${({ theme }) => theme.radii.md};
+  margin-bottom: ${({ theme }) => theme.space.lg};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+`;
+
 // Componente principal da página
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -302,25 +331,12 @@ const LoginPage: React.FC = () => {
         <LoginFormSide>
           <LoginTitle>Acesse sua conta</LoginTitle>
           
-          {error && (
-            <div 
-              style={{ 
-                backgroundColor: 'rgba(255, 10, 84, 0.1)', 
-                color: '#ff0a54',
-                padding: '12px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                fontSize: '14px'
-              }}
-            >
-              {error}
-            </div>
-          )}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
           
           <StyledForm onSubmit={handleSubmit}>
-            <FormGroup>
+            <StyledFormGroup>
               <Label htmlFor="email">Email</Label>
-              <Input
+              <StyledInput
                 type="email"
                 id="email"
                 value={email}
@@ -328,11 +344,11 @@ const LoginPage: React.FC = () => {
                 required
                 placeholder="Seu endereço de email"
               />
-            </FormGroup>
+            </StyledFormGroup>
             
-            <FormGroup>
+            <StyledFormGroup>
               <Label htmlFor="password">Senha</Label>
-              <Input
+              <StyledInput
                 type="password"
                 id="password"
                 value={password}
@@ -340,7 +356,7 @@ const LoginPage: React.FC = () => {
                 required
                 placeholder="Sua senha"
               />
-            </FormGroup>
+            </StyledFormGroup>
             
             <ForgotPassword to="/forgot-password">Esqueceu a senha?</ForgotPassword>
             
