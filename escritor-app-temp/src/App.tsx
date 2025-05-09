@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './hooks/useTheme';
 import { useChapters } from './hooks/useChapters';
 import { generateWithAI } from './components/ClaudeAIService';
@@ -27,6 +27,12 @@ function App() {
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [selectedText, setSelectedText] = useState('');
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const [spellCheckEnabled, setSpellCheckEnabled] = useState(true);
+  const [potentialErrors, setPotentialErrors] = useState<Array<{word: string, position: number, suggestions: string[]}>>([]);
+  const [showSuggestions, setShowSuggestions] = useState<{word: string, position: number, suggestions: string[]} | null>(null);
+  
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Update text when active chapter changes
   useEffect(() => {
@@ -44,7 +50,26 @@ function App() {
     
     const words = text.trim().split(/\s+/).filter(word => word.length > 0);
     setWordCount(words.length);
-  }, [text]);
+    
+    // Run spell check when text changes if enabled
+    if (spellCheckEnabled) {
+      runSpellCheck();
+    }
+  }, [text, spellCheckEnabled]);
+
+  // Close suggestions menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(null);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Update chapter content when text changes
   const handleTextChange = (newText: string) => {
@@ -114,6 +139,125 @@ function App() {
           selectionStart + formattedText.length
         );
       }, 0);
+    }
+  };
+
+  // Spell checking functionality
+  const runSpellCheck = async () => {
+    if (!text) return;
+    
+    // In a real implementation, this would connect to a spell check API
+    // This is a simple simulation for demonstration purposes
+    
+    // Simple dictionary for common Portuguese errors (for demonstration)
+    const commonErrors = {
+      'nao': 'não',
+      'entao': 'então',
+      'voce': 'você',
+      'esta': 'está',
+      'esta ': 'está ',
+      'tambem': 'também',
+      'ja': 'já',
+      'capitulo': 'capítulo',
+      'dificil': 'difícil',
+      'facil': 'fácil',
+      'possivel': 'possível',
+      'aqui': 'aqui',
+      'comeco': 'começo',
+      'comecar': 'começar',
+      'acucar': 'açúcar',
+      'alcool': 'álcool',
+      'aprendisado': 'aprendizado',
+      'atraz': 'atrás',
+      'atraves': 'através',
+      'cançado': 'cansado',
+      'concerteza': 'com certeza',
+      'homen': 'homem',
+      'obrigatorio': 'obrigatório'
+    };
+    
+    const words = text.split(/\b/);
+    const errors: Array<{word: string, position: number, suggestions: string[]}> = [];
+    
+    let position = 0;
+    words.forEach(word => {
+      const trimmedWord = word.trim().toLowerCase();
+      if (trimmedWord && Object.keys(commonErrors).includes(trimmedWord)) {
+        const corrected = commonErrors[trimmedWord as keyof typeof commonErrors];
+        errors.push({
+          word: trimmedWord,
+          position,
+          suggestions: [corrected, corrected.toUpperCase()]
+        });
+      }
+      position += word.length;
+    });
+    
+    setPotentialErrors(errors);
+  };
+
+  // Handle showing spelling suggestions
+  const handleSpellingErrorClick = (error: {word: string, position: number, suggestions: string[]}) => {
+    setShowSuggestions(error);
+    
+    // Position the suggestions dropdown near the error
+    setTimeout(() => {
+      if (editorRef.current && suggestionsRef.current) {
+        const textarea = editorRef.current;
+        const textareaRect = textarea.getBoundingClientRect();
+        
+        // Get the position of the error in the text
+        const textBeforeError = text.substring(0, error.position);
+        const lines = textBeforeError.split('\n');
+        const line = lines.length;
+        const column = lines[lines.length - 1].length;
+        
+        // Approximate position calculation (this will be approximate)
+        const lineHeight = 24; // Estimate based on font size and line height
+        const charWidth = 8;  // Estimate of character width in pixels
+        
+        suggestionsRef.current.style.top = `${textareaRect.top + line * lineHeight - textarea.scrollTop}px`;
+        suggestionsRef.current.style.left = `${textareaRect.left + column * charWidth}px`;
+      }
+    }, 0);
+  };
+
+  // Apply spelling suggestion
+  const applySuggestion = (suggestion: string) => {
+    if (!showSuggestions) return;
+    
+    const { word, position } = showSuggestions;
+    const newText = 
+      text.substring(0, position) + 
+      suggestion + 
+      text.substring(position + word.length);
+    
+    handleTextChange(newText);
+    setShowSuggestions(null);
+  };
+
+  // Run spell check with AI
+  const runAISpellCheck = async () => {
+    setIsGenerating(true);
+    
+    try {
+      const request: AIRequest = {
+        mode: 'writing_assistant',
+        input: text,
+        context: {
+          action: 'grammar',
+          chapter_id: activeChapterId,
+        }
+      };
+      
+      const response = await generateWithAI(request);
+      setAiResult(response.result);
+      setShowAIPanel(true);
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      setAiResult('Erro ao verificar ortografia. Tente novamente.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -288,20 +432,31 @@ function App() {
           {activeTab === 'editor' && (
             <div className="content-panel">
               <div className="formatting-toolbar">
-                <button className="format-btn" title="Negrito" onClick={() => applyFormatting('bold')}>B</button>
-                <button className="format-btn" title="Itálico" onClick={() => applyFormatting('italic')}>I</button>
-                <button className="format-btn" title="Sublinhado" onClick={() => applyFormatting('underline')}>U</button>
+                {/* These buttons will be hidden but kept for later implementation */}
+                <button className="format-btn" title="Negrito (em implementação)" style={{opacity: 0.5}}>B</button>
+                <button className="format-btn" title="Itálico (em implementação)" style={{opacity: 0.5}}>I</button>
+                <button className="format-btn" title="Sublinhado (em implementação)" style={{opacity: 0.5}}>U</button>
                 <span className="toolbar-divider"></span>
-                <button className="format-btn" title="Título 1" onClick={() => applyFormatting('heading1')}>H1</button>
-                <button className="format-btn" title="Título 2" onClick={() => applyFormatting('heading2')}>H2</button>
-                <button className="format-btn" title="Título 3" onClick={() => applyFormatting('heading3')}>H3</button>
+                <button className="format-btn" title="Título 1 (em implementação)" style={{opacity: 0.5}}>H1</button>
+                <button className="format-btn" title="Título 2 (em implementação)" style={{opacity: 0.5}}>H2</button>
+                <button className="format-btn" title="Título 3 (em implementação)" style={{opacity: 0.5}}>H3</button>
                 <span className="toolbar-divider"></span>
-                <button className="format-btn" title="Citação" onClick={() => applyFormatting('quote')}>""</button>
-                <button className="format-btn" title="Lista" onClick={() => applyFormatting('list')}>•</button>
+                <button className="format-btn" title="Citação (em implementação)" style={{opacity: 0.5}}>"</button>
+                <button className="format-btn" title="Lista (em implementação)" style={{opacity: 0.5}}>•</button>
                 <span className="toolbar-divider"></span>
+                
+                {/* Added spell check button */}
+                <button 
+                  className="ai-toolbar-btn" 
+                  title="Verificar ortografia" 
+                  onClick={runAISpellCheck}
+                  disabled={isGenerating}
+                >
+                  🔍 Verificar Ortografia
+                </button>
+                
                 <button className="ai-toolbar-btn" title="Melhorar texto" onClick={() => handleQuickAI('improve')}>✨ Melhorar</button>
                 <button className="ai-toolbar-btn" title="Expandir texto" onClick={() => handleQuickAI('expand')}>📝 Expandir</button>
-                <button className="ai-toolbar-btn" title="Corrigir gramática" onClick={() => handleQuickAI('grammar')}>🔍 Corrigir</button>
                 <button 
                   className="ai-toolbar-btn" 
                   title="Configurações avançadas de IA" 
@@ -312,14 +467,48 @@ function App() {
               </div>
               
               <textarea
+                ref={editorRef}
                 className="editor-area"
                 value={text}
                 onChange={(e) => handleTextChange(e.target.value)}
                 onSelect={handleTextSelection}
                 placeholder="Comece a escrever aqui..."
+                spellCheck={false}
               />
               
+              {/* Spell check suggestions */}
+              {showSuggestions && (
+                <div 
+                  ref={suggestionsRef}
+                  className="spelling-suggestions"
+                  style={{
+                    position: 'absolute',
+                    zIndex: 1000
+                  }}
+                >
+                  {showSuggestions.suggestions.map((suggestion, index) => (
+                    <div 
+                      key={index} 
+                      className="suggestion-item"
+                      onClick={() => applySuggestion(suggestion)}
+                    >
+                      {suggestion}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="editor-footer">
+                <div className="spellcheck-toolbar">
+                  <label className="spellcheck-toggle">
+                    <input 
+                      type="checkbox" 
+                      checked={spellCheckEnabled}
+                      onChange={() => setSpellCheckEnabled(!spellCheckEnabled)}
+                    />
+                    <span>Verificação ortográfica automática</span>
+                  </label>
+                </div>
                 <div className="word-count">
                   Palavras: {wordCount}
                 </div>
