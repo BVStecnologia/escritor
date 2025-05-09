@@ -1,54 +1,47 @@
-# React + TypeScript + Vite
+# Escritor App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicativo de escrita com assistente de IA integrado para ajudar na criação de textos e histórias.
 
-Currently, two official plugins are available:
+## Como Iniciar a Aplicação
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Para abrir a aplicação no navegador:
 
-## Expanding the ESLint configuration
+1. Navegue até a pasta do projeto:
+   ```
+   cd "/Users/valdair/Documents/Projetos/Escritor   gabi/escritor-app-temp"
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+2. Instale as dependências (apenas na primeira vez):
+   ```
+   npm install
+   ```
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+3. Inicie o servidor de desenvolvimento:
+   ```
+   npm run dev -- --host
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+4. Acesse a aplicação no navegador:
+   - Local: http://localhost:5173/
+   - Rede: http://seu-ip-local:5173/ (para acessar de outros dispositivos na mesma rede)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+5. Se tiver problemas com a porta 5173, você pode especificar uma porta alternativa:
+   ```
+   npm run dev -- --port 3000 --host
+   ```
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Recursos Principais
+
+- Editor de texto com formatação
+- Assistente de IA integrado para melhorar seus textos
+- Organização por capítulos
+- Estatísticas de escrita
+- Modos claro e escuro
+
+## Tecnologias
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Claude AI API
