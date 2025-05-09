@@ -1,13 +1,32 @@
 export const theme = {
   colors: {
-    primary: '#4CAF50',
-    secondary: '#2196F3',
-    accent: '#9C27B0',
-    warning: '#FF9800',
-    danger: '#f44336',
-    dark: '#333333',
-    light: '#f5f5f5',
+    primary: '#4361ee',
+    primaryLight: '#4895ef',
+    primaryDark: '#3f37c9',
+    secondary: '#4cc9f0',
+    secondaryLight: '#72efdd',
+    secondaryDark: '#4ea8de',
+    accent: '#f72585',
+    accentLight: '#ff758f',
+    accentDark: '#b5179e',
+    warning: '#ff9e00',
+    danger: '#ff0a54',
+    dark: '#212529',
+    light: '#f8f9fa',
     white: '#ffffff',
+    black: '#000000',
+    background: {
+      main: '#f0f6ff',
+      light: '#ffffff',
+      dark: '#e0e7ff',
+      gradient: 'linear-gradient(135deg, #f0f6ff 0%, #e0e7ff 100%)'
+    },
+    text: {
+      primary: '#212529',
+      secondary: '#495057',
+      tertiary: '#6c757d',
+      light: '#f8f9fa'
+    },
     gray: {
       100: '#f8f9fa',
       200: '#e9ecef',
@@ -21,9 +40,9 @@ export const theme = {
     }
   },
   fonts: {
-    body: "'Roboto', 'Segoe UI', sans-serif",
-    heading: "'Poppins', 'Segoe UI', sans-serif",
-    mono: "Consolas, 'Courier New', monospace"
+    body: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif",
+    heading: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
   },
   fontSizes: {
     xs: '0.75rem',
@@ -35,6 +54,23 @@ export const theme = {
     '3xl': '1.875rem',
     '4xl': '2.25rem',
     '5xl': '3rem',
+    '6xl': '3.75rem',
+  },
+  fontWeights: {
+    light: 300,
+    normal: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+    extrabold: 800,
+  },
+  lineHeights: {
+    none: 1,
+    tight: 1.25,
+    snug: 1.375,
+    normal: 1.5,
+    relaxed: 1.625,
+    loose: 2,
   },
   space: {
     xs: '0.25rem',
@@ -44,12 +80,16 @@ export const theme = {
     xl: '2rem',
     '2xl': '3rem',
     '3xl': '4rem',
+    '4xl': '6rem',
   },
   shadows: {
-    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    xs: '0 1px 2px rgba(16, 24, 40, 0.05)',
+    sm: '0 1px 3px rgba(16, 24, 40, 0.1), 0 1px 2px rgba(16, 24, 40, 0.06)',
+    md: '0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06)',
+    lg: '0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03)',
+    xl: '0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03)',
+    '2xl': '0 24px 48px -12px rgba(16, 24, 40, 0.18)',
+    inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
   },
   radii: {
     none: '0',
@@ -57,9 +97,12 @@ export const theme = {
     md: '0.375rem',
     lg: '0.5rem',
     xl: '0.75rem',
+    '2xl': '1rem',
+    '3xl': '1.5rem',
     full: '9999px',
   },
   breakpoints: {
+    xs: '480px',
     sm: '640px',
     md: '768px',
     lg: '1024px',
@@ -67,10 +110,24 @@ export const theme = {
     '2xl': '1536px',
   },
   transitions: {
-    fast: '0.1s ease-in-out',
-    normal: '0.2s ease-in-out',
-    slow: '0.3s ease-in-out',
-  }
+    fast: '0.15s ease-in-out',
+    normal: '0.3s ease-in-out',
+    slow: '0.5s ease-in-out',
+  },
+  zIndices: {
+    hide: -1,
+    auto: 'auto',
+    base: 0,
+    docked: 10,
+    dropdown: 1000,
+    sticky: 1100,
+    banner: 1200,
+    overlay: 1300,
+    modal: 1400,
+    popover: 1500,
+    toast: 1600,
+    tooltip: 1700,
+  },
 };
 
 export type Theme = typeof theme;

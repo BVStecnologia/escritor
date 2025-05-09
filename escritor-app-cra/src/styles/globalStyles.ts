@@ -1,7 +1,7 @@
 import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyles = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
   
   * {
     box-sizing: border-box;
@@ -10,20 +10,30 @@ const GlobalStyles = createGlobalStyle`
   }
   
   html, body {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
     font-family: ${({ theme }) => theme.fonts.body};
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: ${({ theme }) => theme.colors.light};
-    color: ${({ theme }) => theme.colors.dark};
-    line-height: 1.6;
+    background-color: ${({ theme }) => theme.colors.background.main};
+    color: ${({ theme }) => theme.colors.text.primary};
+    line-height: ${({ theme }) => theme.lineHeights.normal};
+  }
+  
+  #root {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: ${({ theme }) => theme.fonts.heading};
     margin-bottom: ${({ theme }) => theme.space.md};
-    font-weight: 600;
-    line-height: 1.3;
+    font-weight: ${({ theme }) => theme.fontWeights.semibold};
+    line-height: ${({ theme }) => theme.lineHeights.tight};
+    color: ${({ theme }) => theme.colors.text.primary};
   }
   
   h1 {
@@ -44,26 +54,38 @@ const GlobalStyles = createGlobalStyle`
   
   p {
     margin-bottom: ${({ theme }) => theme.space.md};
+    line-height: ${({ theme }) => theme.lineHeights.relaxed};
   }
   
   a {
-    color: ${({ theme }) => theme.colors.secondary};
+    color: ${({ theme }) => theme.colors.primary};
     text-decoration: none;
     transition: ${({ theme }) => theme.transitions.normal};
     
     &:hover {
-      text-decoration: underline;
+      color: ${({ theme }) => theme.colors.primaryDark};
     }
   }
   
   button {
     cursor: pointer;
     font-family: ${({ theme }) => theme.fonts.body};
+    font-weight: ${({ theme }) => theme.fontWeights.medium};
   }
   
   ul, ol {
     margin-left: ${({ theme }) => theme.space.xl};
     margin-bottom: ${({ theme }) => theme.space.md};
+  }
+
+  input, textarea, select {
+    font-family: ${({ theme }) => theme.fonts.body};
+    font-size: ${({ theme }) => theme.fontSizes.md};
+  }
+  
+  ::selection {
+    background-color: ${({ theme }) => theme.colors.primaryLight};
+    color: ${({ theme }) => theme.colors.white};
   }
 `;
 

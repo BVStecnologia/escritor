@@ -15,16 +15,14 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <GlobalStyles />
       <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/editor/:bookId/:chapterId" element={<EditorPage />} />
-            <Route path="/editor/:bookId" element={<EditorPage />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/editor/:bookId/:chapterId" element={<EditorPage />} />
+          <Route path="/editor/:bookId" element={<EditorPage />} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );
