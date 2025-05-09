@@ -334,7 +334,7 @@ const LandingPage: React.FC = () => {
                 Organize seus livros em capítulos e escreva sem distrações em nosso editor projetado para escritores.
               </FeatureDescription>
             </FeatureCard>
-            
+
             <FeatureCard>
               <FeatureIcon>🤖</FeatureIcon>
               <FeatureTitle>IA Claude Assistant</FeatureTitle>
@@ -342,7 +342,7 @@ const LandingPage: React.FC = () => {
                 Receba sugestões personalizadas para melhorar seu texto e superar bloqueios criativos com nossa IA integrada.
               </FeatureDescription>
             </FeatureCard>
-            
+
             <FeatureCard>
               <FeatureIcon>💡</FeatureIcon>
               <FeatureTitle>Brainstorming Criativo</FeatureTitle>
@@ -350,7 +350,7 @@ const LandingPage: React.FC = () => {
                 Gere ideias para personagens, cenários e reviravoltas para enriquecer sua história quando precisar de inspiração.
               </FeatureDescription>
             </FeatureCard>
-            
+
             <FeatureCard>
               <FeatureIcon>✓</FeatureIcon>
               <FeatureTitle>Revisão Inteligente</FeatureTitle>
@@ -358,11 +358,239 @@ const LandingPage: React.FC = () => {
                 Verificação ortográfica e gramatical automatizada para garantir um texto impecável e profissional.
               </FeatureDescription>
             </FeatureCard>
+
+            <FeatureCard>
+              <FeatureIcon>☁️</FeatureIcon>
+              <FeatureTitle>Salvo na Nuvem</FeatureTitle>
+              <FeatureDescription>
+                Seus trabalhos são salvos automaticamente na nuvem com sincronização em tempo real, usando o poder do Supabase.
+              </FeatureDescription>
+            </FeatureCard>
+
+            <FeatureCard>
+              <FeatureIcon>🔒</FeatureIcon>
+              <FeatureTitle>Segurança Avançada</FeatureTitle>
+              <FeatureDescription>
+                Autenticação robusta e permissões granulares garantem que seus dados estejam protegidos a todo momento.
+              </FeatureDescription>
+            </FeatureCard>
           </FeaturesGrid>
         </Container>
       </FeaturesSection>
+
+      <Section style={{ backgroundColor: '#F8FAFC', padding: '5rem 0' }}>
+        <Container>
+          <FeaturesSectionTitle style={{ marginBottom: '3rem' }}>
+            Confiado por escritores de todo o Brasil
+          </FeaturesSectionTitle>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '2rem'
+          }}>
+            <TestimonialCard>
+              <TestimonialText>
+                "O Escritor App revolucionou minha forma de escrever. A interface limpa e as ferramentas de IA me ajudaram a finalizar meu primeiro romance em tempo recorde."
+              </TestimonialText>
+              <TestimonialAuthor>
+                <div style={{ fontWeight: 'bold' }}>Marina Silva</div>
+                <div style={{ opacity: 0.7 }}>Autora de "Caminhos Invisíveis"</div>
+              </TestimonialAuthor>
+            </TestimonialCard>
+
+            <TestimonialCard>
+              <TestimonialText>
+                "A sincronização na nuvem me permite trabalhar em qualquer dispositivo e nunca mais perdi um capítulo. A segurança do Supabase me dá tranquilidade total."
+              </TestimonialText>
+              <TestimonialAuthor>
+                <div style={{ fontWeight: 'bold' }}>Rafael Mendes</div>
+                <div style={{ opacity: 0.7 }}>Escritor freelancer</div>
+              </TestimonialAuthor>
+            </TestimonialCard>
+
+            <TestimonialCard>
+              <TestimonialText>
+                "O assistente de IA é como ter um editor particular 24/7. As sugestões são sempre relevantes e me ajudam a melhorar constantemente minha escrita."
+              </TestimonialText>
+              <TestimonialAuthor>
+                <div style={{ fontWeight: 'bold' }}>Carla Santos</div>
+                <div style={{ opacity: 0.7 }}>Blogueira e roteirista</div>
+              </TestimonialAuthor>
+            </TestimonialCard>
+          </div>
+        </Container>
+      </Section>
+
+      <FooterSection>
+        <Container>
+          <FooterGrid>
+            <FooterColumn>
+              <FooterLogo>Escritor App</FooterLogo>
+              <FooterText>
+                Transformando ideias em histórias incríveis com tecnologia de ponta.
+              </FooterText>
+              <SocialLinks>
+                <SocialLink href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</SocialLink>
+                <SocialLink href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</SocialLink>
+                <SocialLink href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</SocialLink>
+              </SocialLinks>
+            </FooterColumn>
+
+            <FooterColumn>
+              <FooterHeading>Produto</FooterHeading>
+              <FooterLink to="/features">Recursos</FooterLink>
+              <FooterLink to="/pricing">Preços</FooterLink>
+              <FooterLink to="/showcase">Galeria</FooterLink>
+              <FooterLink to="/roadmap">Roadmap</FooterLink>
+            </FooterColumn>
+
+            <FooterColumn>
+              <FooterHeading>Empresa</FooterHeading>
+              <FooterLink to="/about">Sobre</FooterLink>
+              <FooterLink to="/blog">Blog</FooterLink>
+              <FooterLink to="/careers">Carreiras</FooterLink>
+              <FooterLink to="/contact">Contato</FooterLink>
+            </FooterColumn>
+
+            <FooterColumn>
+              <FooterHeading>Legal</FooterHeading>
+              <FooterLink to="/terms">Termos</FooterLink>
+              <FooterLink to="/privacy">Privacidade</FooterLink>
+              <FooterLink to="/cookies">Cookies</FooterLink>
+              <FooterLink to="/licenses">Licenças</FooterLink>
+            </FooterColumn>
+          </FooterGrid>
+
+          <FooterDivider />
+
+          <FooterCopyright>
+            &copy; {new Date().getFullYear()} Escritor App. Todos os direitos reservados.
+            <FooterTechStack>Feito com ❤️ usando React, TypeScript e Supabase</FooterTechStack>
+          </FooterCopyright>
+        </Container>
+      </FooterSection>
     </PageWrapper>
   );
 };
+
+// Estilos para Testemunhos
+const TestimonialCard = styled.div`
+  background-color: white;
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.space.xl};
+  box-shadow: ${({ theme }) => theme.shadows.md};
+  display: flex;
+  flex-direction: column;
+`;
+
+const TestimonialText = styled.blockquote`
+  font-size: ${({ theme }) => theme.fontSizes.lg};
+  line-height: ${({ theme }) => theme.lineHeights.relaxed};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-style: italic;
+  margin-bottom: ${({ theme }) => theme.space.lg};
+  flex-grow: 1;
+
+  &:before {
+    content: """;
+    font-size: ${({ theme }) => theme.fontSizes['4xl']};
+    color: ${({ theme }) => theme.colors.primary};
+    opacity: 0.3;
+  }
+`;
+
+const TestimonialAuthor = styled.div`
+  display: flex;
+  flex-direction: column;
+  font-size: ${({ theme }) => theme.fontSizes.md};
+`;
+
+// Estilos para Footer
+const FooterSection = styled(Section)`
+  background-color: ${({ theme }) => theme.colors.gray[800]};
+  color: white;
+  padding: ${({ theme }) => theme.space['4xl']} 0 ${({ theme }) => theme.space['2xl']};
+`;
+
+const FooterGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: ${({ theme }) => theme.space.xl};
+`;
+
+const FooterColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const FooterLogo = styled.div`
+  font-size: ${({ theme }) => theme.fontSizes['2xl']};
+  font-weight: ${({ theme }) => theme.fontWeights.bold};
+  margin-bottom: ${({ theme }) => theme.space.md};
+  color: white;
+`;
+
+const FooterText = styled.p`
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  color: ${({ theme }) => theme.colors.gray[300]};
+  margin-bottom: ${({ theme }) => theme.space.lg};
+`;
+
+const FooterHeading = styled.h3`
+  font-size: ${({ theme }) => theme.fontSizes.lg};
+  font-weight: ${({ theme }) => theme.fontWeights.semibold};
+  margin-bottom: ${({ theme }) => theme.space.lg};
+  color: white;
+`;
+
+const FooterLink = styled(Link)`
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  color: ${({ theme }) => theme.colors.gray[300]};
+  text-decoration: none;
+  margin-bottom: ${({ theme }) => theme.space.sm};
+  transition: ${({ theme }) => theme.transitions.fast};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const SocialLinks = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space.md};
+`;
+
+const SocialLink = styled.a`
+  color: ${({ theme }) => theme.colors.gray[300]};
+  text-decoration: none;
+  transition: ${({ theme }) => theme.transitions.fast};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const FooterDivider = styled.hr`
+  border: none;
+  height: 1px;
+  background-color: ${({ theme }) => theme.colors.gray[700]};
+  margin: ${({ theme }) => theme.space.xl} 0;
+`;
+
+const FooterCopyright = styled.div`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.gray[400]};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.space.md};
+`;
+
+const FooterTechStack = styled.div`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.gray[500]};
+`;
 
 export default LandingPage;

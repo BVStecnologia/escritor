@@ -11,6 +11,7 @@ export const theme = {
     accentDark: '#b5179e',
     warning: '#ff9e00',
     danger: '#ff0a54',
+    success: '#48bb78',
     dark: '#212529',
     light: '#f8f9fa',
     white: '#ffffff',

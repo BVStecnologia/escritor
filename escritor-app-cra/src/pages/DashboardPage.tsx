@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import LivroComponent from '../components/LivroComponent';
 
 interface Book {
   id: number;
@@ -38,72 +39,7 @@ const DashboardPage: React.FC = () => {
       </nav>
       
       <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Meus Livros</h2>
-          <button 
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}
-          >
-            Novo Livro
-          </button>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {exampleBooks.map(book => (
-            <div key={book.id} style={{ 
-              border: '1px solid #e0e0e0', 
-              borderRadius: '8px',
-              padding: '20px',
-              backgroundColor: 'white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <h3 style={{ marginTop: 0 }}>{book.title}</h3>
-              <div style={{ color: '#757575', fontSize: '14px', marginBottom: '15px' }}>
-                <p>{book.chapters} capítulos</p>
-                <p>Última edição: {book.lastEdited}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Link
-                  to={`/editor/${book.id}`}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#2196F3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    flex: 1,
-                    textDecoration: 'none',
-                    textAlign: 'center'
-                  }}
-                >
-                  Editar
-                </Link>
-                <button 
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: 'transparent',
-                    color: '#f44336',
-                    border: '1px solid #f44336',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <LivroComponent showForm={true} />
       </section>
       
       <section>

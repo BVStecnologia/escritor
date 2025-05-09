@@ -1,6 +1,7 @@
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Container,
   Card,
@@ -87,8 +88,9 @@ const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [passwordStrength, setPasswordStrength] = useState<number>(0);
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const { signUp, loading } = useAuth();
 
   // Verificador simples de força de senha
   useEffect(() => {
@@ -128,19 +130,34 @@ const SignupPage: React.FC = () => {
       return;
     }
     
-    setLoading(true);
+    setIsLoading(true);
     
     try {
-      // Simulação de cadastro
-      console.log(`Cadastro para: ${name} (${email})`);
-      // Aqui iremos implementar o cadastro real com Supabase
-      setTimeout(() => {
-        setLoading(false);
-        navigate('/dashboard');
-      }, 1000);
-    } catch (err) {
-      setError('Falha ao criar a conta. Tente novamente mais tarde.');
-      setLoading(false);
+      // Cadastro com Supabase via AuthContext
+      const user = await signUp(email, password, name);
+
+      if (user) {
+        // Se a verificação de email estiver ativada no Supabase,
+        // informamos o usuário para verificar seu email
+        if (!user.confirmed_at) {
+          navigate('/login', {
+            state: {
+              message: 'Por favor, verifique seu email para confirmar sua conta.'
+            }
+          });
+        } else {
+          // Caso a verificação de email esteja desativada,
+          // redirecionamos direto para o dashboard
+          navigate('/dashboard');
+        }
+      } else {
+        throw new Error('Falha ao criar a conta');
+      }
+
+      setIsLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Falha ao criar a conta. Tente novamente mais tarde.');
+      setIsLoading(false);
     }
   };
 
@@ -214,9 +231,9 @@ const SignupPage: React.FC = () => {
             type="submit" 
             variant="secondary" 
             fullWidth 
-            disabled={loading}
+            disabled={isLoading || loading}
           >
-            {loading ? 'Criando conta...' : 'Criar conta'}
+            {isLoading || loading ? 'Criando conta...' : 'Criar conta'}
           </Button>
         </Form>
         

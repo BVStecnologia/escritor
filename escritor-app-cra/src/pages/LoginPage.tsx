@@ -1,6 +1,8 @@
-import React, { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, FormEvent, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../services/supabaseClient';
 import {
   Container,
   Form,
@@ -288,30 +290,59 @@ const ErrorMessage = styled.div`
   font-size: ${({ theme }) => theme.fontSizes.sm};
 `;
 
+const SuccessMessage = styled.div`
+  background-color: rgba(72, 187, 120, 0.1);
+  color: ${({ theme }) => theme.colors.success};
+  padding: ${({ theme }) => theme.space.md};
+  border-radius: ${({ theme }) => theme.radii.md};
+  margin-bottom: ${({ theme }) => theme.space.lg};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+`;
+
 // Componente principal da página
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, loading } = useAuth();
+
+  // Verificar se há alguma mensagem no estado da navegação
+  useEffect(() => {
+    const state = location.state as { message?: string } | null;
+    if (state?.message) {
+      setSuccessMessage(state.message);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    
+    setSuccessMessage('');
+    setIsLoading(true);
+
     try {
-      // Simulação de login
-      console.log(`Login com: ${email}`);
-      // Aqui iremos implementar a autenticação real com Supabase
-      setTimeout(() => {
-        setLoading(false);
-        navigate('/dashboard');
-      }, 1000);
-    } catch (err) {
-      setError('Falha ao fazer login. Verifique suas credenciais.');
-      setLoading(false);
+      // Autenticação com Supabase via AuthContext
+      await signIn(email, password);
+
+      // Verificar se o login realmente funcionou
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Login falhou. Nenhuma sessão foi criada.');
+      }
+
+      console.log('Login bem-sucedido:', session);
+
+      // Login bem-sucedido
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Erro de login:', err);
+      setError(err.message || 'Falha ao fazer login. Verifique suas credenciais.');
+      setIsLoading(false);
     }
   };
 
@@ -330,8 +361,9 @@ const LoginPage: React.FC = () => {
         
         <LoginFormSide>
           <LoginTitle>Acesse sua conta</LoginTitle>
-          
+
           {error && <ErrorMessage>{error}</ErrorMessage>}
+          {successMessage && <SuccessMessage>{successMessage}</SuccessMessage>}
           
           <StyledForm onSubmit={handleSubmit}>
             <StyledFormGroup>
@@ -360,13 +392,13 @@ const LoginPage: React.FC = () => {
             
             <ForgotPassword to="/forgot-password">Esqueceu a senha?</ForgotPassword>
             
-            <Button 
-              type="submit" 
-              variant="primary" 
-              fullWidth 
-              disabled={loading}
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              disabled={isLoading || loading}
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {isLoading || loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </StyledForm>
           

@@ -1,0 +1,7 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Substitua estas variáveis pelas suas credenciais do Supabase
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'sua_url_do_supabase';
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sua_chave_anon_do_supabase';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

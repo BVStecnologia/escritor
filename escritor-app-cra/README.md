@@ -1,70 +1,93 @@
-# Getting Started with Create React App
+# Escritor App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Uma plataforma moderna para escritores, com sincronização na nuvem, assistente de IA e ferramentas avançadas de escrita.
 
-## Available Scripts
+## Tecnologias Utilizadas
 
-In the project directory, you can run:
+- React (Create React App)
+- TypeScript
+- Styled Components
+- React Router
+- Supabase (Autenticação e Banco de Dados)
 
-### `npm start`
+## Pré-requisitos
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js (versão 14 ou superior)
+- NPM ou Yarn
+- Conta no Supabase (para configurar o backend)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Configuração
 
-### `npm test`
+1. Clone este repositório:
+   ```bash
+   git clone https://github.com/seu-usuario/escritor-app.git
+   cd escritor-app
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Instale as dependências:
+   ```bash
+   npm install
+   # ou
+   yarn install
+   ```
 
-### `npm run build`
+3. Configure as variáveis de ambiente:
+   Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+   ```
+   REACT_APP_SUPABASE_URL=sua_url_do_supabase
+   REACT_APP_SUPABASE_ANON_KEY=sua_chave_anon_do_supabase
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4. Configure o banco de dados Supabase:
+   Siga as instruções no arquivo `SUPABASE_SETUP.md` para configurar as tabelas e políticas de segurança.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Desenvolvimento
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Para iniciar o servidor de desenvolvimento:
 
-### `npm run eject`
+```bash
+npm start
+# ou
+yarn start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+O aplicativo estará disponível em http://localhost:3000.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Build para Produção
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Para criar uma build de produção:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm run build
+# ou
+yarn build
+```
 
-## Learn More
+Os arquivos de produção estarão disponíveis no diretório `build`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Estrutura do Projeto
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- `src/` - Código fonte da aplicação
+  - `components/` - Componentes reutilizáveis
+  - `contexts/` - Contextos React (Auth, etc.)
+  - `pages/` - Páginas da aplicação
+  - `services/` - Serviços para comunicação com API
+  - `styles/` - Configurações de estilo global e tema
+- `public/` - Arquivos estáticos
+- `supabase/` - Scripts SQL para configuração do Supabase
 
-### Code Splitting
+## Funcionalidades Principais
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- **Autenticação**: Sistema de login/cadastro com Supabase
+- **Editor**: Interface intuitiva para escrita de livros e capítulos
+- **Organização**: Organize seus livros, capítulos e notas
+- **Sincronização**: Todos os dados são salvos na nuvem automaticamente
+- **Segurança**: Políticas de segurança Row Level Security (RLS)
 
-### Analyzing the Bundle Size
+## Contribuição
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Contribuições são bem-vindas! Abra uma issue para discutir novos recursos ou envie um pull request com suas alterações.
 
-### Making a Progressive Web App
+## Licença
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
