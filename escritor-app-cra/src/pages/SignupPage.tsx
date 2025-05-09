@@ -1,138 +1,233 @@
-import React, { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, FormEvent, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import {
+  Container,
+  Card,
+  Form,
+  FormGroup,
+  Label,
+  Input,
+  Button,
+  Text,
+  Paragraph,
+  FlexContainer,
+  Title,
+  ErrorMessage,
+  HelperText
+} from '../components/styled';
+
+const SignupContainer = styled(Container)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: ${({ theme }) => theme.space.xl};
+`;
+
+const SignupCard = styled(Card)`
+  max-width: 500px;
+  width: 100%;
+  padding: ${({ theme }) => theme.space.xl};
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
+    padding: ${({ theme }) => theme.space.lg};
+  }
+`;
+
+const SignupTitle = styled(Title)`
+  text-align: center;
+  font-size: ${({ theme }) => theme.fontSizes['2xl']};
+  margin-bottom: ${({ theme }) => theme.space.xl};
+`;
+
+const FormLink = styled(Link)`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  transition: ${({ theme }) => theme.transitions.normal};
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const HomeLink = styled(FormLink)`
+  color: ${({ theme }) => theme.colors.gray[600]};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  margin-top: ${({ theme }) => theme.space.md};
+`;
+
+const PasswordStrength = styled.div<{ strength: number }>`
+  height: 5px;
+  background-color: ${({ theme, strength }) => {
+    if (strength === 0) return theme.colors.gray[300];
+    if (strength === 1) return theme.colors.danger;
+    if (strength === 2) return theme.colors.warning;
+    return theme.colors.primary;
+  }};
+  width: 100%;
+  margin-top: ${({ theme }) => theme.space.xs};
+  border-radius: ${({ theme }) => theme.radii.full};
+  transition: ${({ theme }) => theme.transitions.normal};
+`;
+
+const TermsText = styled(Paragraph)`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.gray[600]};
+  margin-top: ${({ theme }) => theme.space.md};
+  margin-bottom: ${({ theme }) => theme.space.lg};
+  text-align: center;
+`;
 
 const SignupPage: React.FC = () => {
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [passwordStrength, setPasswordStrength] = useState<number>(0);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      alert('As senhas não coincidem!');
+  // Verificador simples de força de senha
+  useEffect(() => {
+    if (!password) {
+      setPasswordStrength(0);
       return;
     }
-    alert(`Cadastro para: ${name} (${email})`);
-    // Implementar a lógica de cadastro real aqui
+    
+    let strength = 0;
+    
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    
+    setPasswordStrength(Math.min(3, strength));
+  }, [password]);
+
+  const getPasswordStrengthText = () => {
+    if (passwordStrength === 0) return '';
+    if (passwordStrength === 1) return 'Fraca';
+    if (passwordStrength === 2) return 'Média';
+    return 'Forte';
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem!');
+      return;
+    }
+    
+    if (passwordStrength < 2) {
+      setError('Por favor, utilize uma senha mais forte.');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Simulação de cadastro
+      console.log(`Cadastro para: ${name} (${email})`);
+      // Aqui iremos implementar o cadastro real com Supabase
+      setTimeout(() => {
+        setLoading(false);
+        navigate('/dashboard');
+      }, 1000);
+    } catch (err) {
+      setError('Falha ao criar a conta. Tente novamente mais tarde.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="signup-page" style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '20px',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{ 
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        maxWidth: '400px',
-        width: '100%'
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Criar Conta</h2>
+    <SignupContainer>
+      <SignupCard>
+        <SignupTitle>Crie sua conta</SignupTitle>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <label htmlFor="name" style={{ display: 'block', marginBottom: '8px' }}>Nome:</label>
-            <input
+        {error && <ErrorMessage style={{ textAlign: 'center', marginBottom: '1rem' }}>{error}</ErrorMessage>}
+        
+        <Form onSubmit={handleSubmit}>
+          <FormGroup>
+            <Label htmlFor="name">Nome</Label>
+            <Input
               type="text"
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Seu nome completo"
             />
-          </div>
+          </FormGroup>
           
-          <div style={{ marginBottom: '16px' }}>
-            <label htmlFor="email" style={{ display: 'block', marginBottom: '8px' }}>Email:</label>
-            <input
+          <FormGroup>
+            <Label htmlFor="email">Email</Label>
+            <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Seu endereço de email"
             />
-          </div>
+          </FormGroup>
           
-          <div style={{ marginBottom: '16px' }}>
-            <label htmlFor="password" style={{ display: 'block', marginBottom: '8px' }}>Senha:</label>
-            <input
+          <FormGroup>
+            <Label htmlFor="password">Senha</Label>
+            <Input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Crie uma senha forte"
             />
-          </div>
+            <PasswordStrength strength={passwordStrength} />
+            {password && (
+              <HelperText>
+                Força da senha: {getPasswordStrengthText()}
+              </HelperText>
+            )}
+          </FormGroup>
           
-          <div style={{ marginBottom: '24px' }}>
-            <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '8px' }}>Confirmar Senha:</label>
-            <input
+          <FormGroup>
+            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+            <Input
               type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Confirme sua senha"
             />
-          </div>
+          </FormGroup>
           
-          <button 
+          <TermsText>
+            Ao criar uma conta, você concorda com nossos <FormLink to="/terms">Termos de Uso</FormLink> e <FormLink to="/privacy">Política de Privacidade</FormLink>.
+          </TermsText>
+          
+          <Button 
             type="submit" 
-            style={{
-              padding: '12px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              marginBottom: '16px'
-            }}
+            variant="secondary" 
+            fullWidth 
+            disabled={loading}
           >
-            Cadastrar
-          </button>
-        </form>
+            {loading ? 'Criando conta...' : 'Criar conta'}
+          </Button>
+        </Form>
         
-        <div style={{ textAlign: 'center' }}>
-          <p>Já tem uma conta? <Link to="/login" style={{ color: '#4CAF50' }}>Faça login</Link></p>
-          <Link to="/" style={{ color: '#757575', textDecoration: 'none', fontSize: '14px' }}>Voltar para a página inicial</Link>
-        </div>
-      </div>
-    </div>
+        <FlexContainer direction="column" align="center" style={{ marginTop: '1.5rem' }}>
+          <Paragraph style={{ textAlign: 'center', margin: 0 }}>
+            Já tem uma conta? <FormLink to="/login" style={{ color: '#4CAF50' }}>Faça login</FormLink>
+          </Paragraph>
+          <HomeLink to="/">Voltar para a página inicial</HomeLink>
+        </FlexContainer>
+      </SignupCard>
+    </SignupContainer>
   );
 };
 

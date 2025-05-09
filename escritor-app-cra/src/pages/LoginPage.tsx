@@ -1,96 +1,148 @@
 import React, { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+import {
+  Container,
+  Card,
+  Form,
+  FormGroup,
+  Label,
+  Input,
+  Button,
+  Paragraph,
+  Text,
+  Link as StyledLink,
+  FlexContainer,
+  Title
+} from '../components/styled';
+
+const LoginContainer = styled(Container)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: ${({ theme }) => theme.space.xl};
+`;
+
+const LoginCard = styled(Card)`
+  max-width: 450px;
+  width: 100%;
+  padding: ${({ theme }) => theme.space.xl};
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
+    padding: ${({ theme }) => theme.space.lg};
+  }
+`;
+
+const LoginTitle = styled(Title)`
+  text-align: center;
+  font-size: ${({ theme }) => theme.fontSizes['2xl']};
+  margin-bottom: ${({ theme }) => theme.space.xl};
+`;
+
+const FormLink = styled(Link)`
+  color: ${({ theme }) => theme.colors.secondary};
+  text-decoration: none;
+  transition: ${({ theme }) => theme.transitions.normal};
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const ForgotPassword = styled(FormLink)`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  margin-top: -${({ theme }) => theme.space.xs};
+  margin-bottom: ${({ theme }) => theme.space.md};
+  display: block;
+  text-align: right;
+`;
+
+const LoginLink = styled(FormLink)`
+  color: ${({ theme }) => theme.colors.gray[600]};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  margin-top: ${({ theme }) => theme.space.md};
+`;
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert(`Login com: ${email}`);
-    // Implementar a lógica de login real aqui
+    setError('');
+    setLoading(true);
+    
+    try {
+      // Simulação de login
+      console.log(`Login com: ${email}`);
+      // Aqui iremos implementar a autenticação real com Supabase
+      setTimeout(() => {
+        setLoading(false);
+        navigate('/dashboard');
+      }, 1000);
+    } catch (err) {
+      setError('Falha ao fazer login. Verifique suas credenciais.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="login-page" style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '20px',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{ 
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        maxWidth: '400px',
-        width: '100%'
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Login</h2>
+    <LoginContainer>
+      <LoginCard>
+        <LoginTitle>Bem-vindo de volta</LoginTitle>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <label htmlFor="email" style={{ display: 'block', marginBottom: '8px' }}>Email:</label>
-            <input
+        {error && <Text color="danger" style={{ marginBottom: '1rem', textAlign: 'center' }}>{error}</Text>}
+        
+        <Form onSubmit={handleSubmit}>
+          <FormGroup>
+            <Label htmlFor="email">Email</Label>
+            <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Seu endereço de email"
             />
-          </div>
+          </FormGroup>
           
-          <div style={{ marginBottom: '24px' }}>
-            <label htmlFor="password" style={{ display: 'block', marginBottom: '8px' }}>Senha:</label>
-            <input
+          <FormGroup>
+            <Label htmlFor="password">Senha</Label>
+            <Input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              placeholder="Sua senha"
             />
-          </div>
+          </FormGroup>
           
-          <button 
+          <ForgotPassword to="/forgot-password">Esqueceu a senha?</ForgotPassword>
+          
+          <Button 
             type="submit" 
-            style={{
-              padding: '12px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              cursor: 'pointer',
-              marginBottom: '16px'
-            }}
+            variant="primary" 
+            fullWidth 
+            disabled={loading}
           >
-            Entrar
-          </button>
-        </form>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </Button>
+        </Form>
         
-        <div style={{ textAlign: 'center' }}>
-          <p>Não tem uma conta? <Link to="/signup" style={{ color: '#2196F3' }}>Cadastre-se</Link></p>
-          <Link to="/" style={{ color: '#757575', textDecoration: 'none', fontSize: '14px' }}>Voltar para a página inicial</Link>
-        </div>
-      </div>
-    </div>
+        <FlexContainer direction="column" align="center" style={{ marginTop: '1.5rem' }}>
+          <Paragraph style={{ textAlign: 'center', margin: 0 }}>
+            Não tem uma conta? <FormLink to="/signup">Cadastre-se</FormLink>
+          </Paragraph>
+          <LoginLink to="/">Voltar para a página inicial</LoginLink>
+        </FlexContainer>
+      </LoginCard>
+    </LoginContainer>
   );
 };
 
