@@ -3,38 +3,29 @@ import { useState, useEffect } from 'react';
 type Theme = 'light' | 'dark';
 
 export function useTheme() {
-  // Check if user has a theme preference in localStorage
-  const getInitialTheme = (): Theme => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const storedPreference = window.localStorage.getItem('theme');
-      if (storedPreference === 'light' || storedPreference === 'dark') {
-        return storedPreference;
-      }
-      
-      // Check for system preference
-      const userMedia = window.matchMedia('(prefers-color-scheme: dark)');
-      if (userMedia.matches) {
-        return 'dark';
-      }
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check if theme preference is in localStorage
+    const savedTheme = localStorage.getItem('theme');
+    
+    // Otherwise check for user's system preference
+    if (\!savedTheme) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     
-    // Default to light theme
-    return 'light';
-  };
-
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-
-  // Update localStorage when theme changes
+    return (savedTheme as Theme) || 'light';
+  });
+  
+  // Effect to apply theme to document
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('theme', theme);
-    }
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
   }, [theme]);
-
-  // Toggle between light and dark
+  
+  // Toggle theme function
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
-
+  
   return { theme, toggleTheme };
 }
+EOL < /dev/null

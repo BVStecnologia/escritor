@@ -70,7 +70,7 @@ export function useChapters(initialChapters: Chapter[] = []) {
       return false;
     }
     
-    setChapters(prev => prev.filter(chapter => chapter.id !== id));
+    setChapters(prev => prev.filter(chapter => chapter.id \!== id));
     
     // If the active chapter was deleted, set another one as active
     if (activeChapterId === id) {
@@ -78,7 +78,7 @@ export function useChapters(initialChapters: Chapter[] = []) {
       const index = chapters.findIndex(c => c.id === id);
       const newActiveId = index > 0 
         ? chapters[index - 1].id 
-        : chapters.find(c => c.id !== id)?.id || 1;
+        : chapters.find(c => c.id \!== id)?.id || 1;
       
       setActiveChapterId(newActiveId);
     }
@@ -116,3 +116,4 @@ export function useChapters(initialChapters: Chapter[] = []) {
     getTotalWordCount
   };
 }
+EOL < /dev/null
