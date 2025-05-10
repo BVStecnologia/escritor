@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { dbService } from '../services/dbService';
 import { Livro } from '../services/dbService';
@@ -103,6 +104,7 @@ interface LivroComponentProps {
 }
 
 const LivroComponent: React.FC<LivroComponentProps> = ({ showForm = true }) => {
+  const navigate = useNavigate();
   const [livros, setLivros] = useState<Livro[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -258,8 +260,23 @@ const LivroComponent: React.FC<LivroComponentProps> = ({ showForm = true }) => {
             <Button
               variant="secondary"
               size="sm"
-              as="a"
-              href={`/editor/${livro.id}`}
+              onClick={async () => {
+                try {
+                  // Buscar capítulos do livro
+                  const capitulos = await dbService.getCapitulosPorLivroId(livro.id);
+
+                  // Se existirem capítulos, redirecionar para o primeiro
+                  if (capitulos && capitulos.length > 0) {
+                    navigate(`/editor/${livro.id}/${capitulos[0].id}`);
+                  } else {
+                    // Se não existirem capítulos, redirecionar para a criação de um novo
+                    navigate(`/editor/${livro.id}`);
+                  }
+                } catch (err) {
+                  console.error('Erro ao buscar capítulos:', err);
+                  navigate(`/editor/${livro.id}`);
+                }
+              }}
             >
               Editar
             </Button>

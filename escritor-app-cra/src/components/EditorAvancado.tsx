@@ -299,6 +299,7 @@ const AIResponseHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid ${({ theme }) => theme.colors.primary + '20'};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const AIResponseTitle = styled.h4`
@@ -323,6 +324,7 @@ const AIResponseContent = styled.div`
   padding: ${({ theme }) => theme.space.md};
   max-height: 300px;
   overflow-y: auto;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const AIResponseFooter = styled.div`
@@ -487,10 +489,10 @@ const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved })
   const salvarCapitulo = useCallback(async () => {
     if (!livroId) return;
 
-    // Verificar se houve mudanças
+    // Verificar se houve mudanças - comparar strings normalizadas para evitar problemas com whitespace
     if (
-      conteudo === lastSavedContent.current &&
-      titulo === lastSavedTitle.current
+      conteudo.trim() === lastSavedContent.current.trim() &&
+      titulo.trim() === lastSavedTitle.current.trim()
     ) {
       return;
     }
@@ -501,16 +503,24 @@ const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved })
     try {
       if (capituloId) {
         // Atualizar capítulo existente
-        await dbService.atualizarCapitulo(capituloId, {
+        const resultado = await dbService.atualizarCapitulo(capituloId, {
           titulo,
           conteudo
         });
+
+        if (!resultado) {
+          throw new Error('Falha ao salvar capítulo');
+        }
       } else {
         // Criar novo capítulo
         const novoCapitulo = await dbService.criarCapitulo(livroId, {
           titulo,
           conteudo
         });
+
+        if (!novoCapitulo) {
+          throw new Error('Falha ao criar capítulo');
+        }
 
         // Redirecionar para o URL com o ID do novo capítulo
         if (novoCapitulo && novoCapitulo.id) {

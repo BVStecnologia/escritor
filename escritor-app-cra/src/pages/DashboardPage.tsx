@@ -23,15 +23,26 @@ const Header = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${({ theme }) => theme.space.lg} 0;
+  padding: ${({ theme }) => theme.space.lg};
   margin-bottom: ${({ theme }) => theme.space.xl};
   border-bottom: 1px solid ${({ theme }) => theme.colors.gray[200]};
+  background-color: ${({ theme }) => theme.colors.white};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  box-shadow: ${({ theme }) => theme.shadows.sm};
 `;
 
 const Logo = styled.div`
   font-size: ${({ theme }) => theme.fontSizes['2xl']};
   font-weight: ${({ theme }) => theme.fontWeights.bold};
   color: ${({ theme }) => theme.colors.primary};
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '✒️';
+    margin-right: ${({ theme }) => theme.space.sm};
+    font-size: 1.5rem;
+  }
 `;
 
 const NavLinks = styled.nav`
@@ -62,10 +73,28 @@ const SectionHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: ${({ theme }) => theme.space.lg};
+  padding: ${({ theme }) => theme.space.md} ${({ theme }) => theme.space.lg};
+  background-color: ${({ theme }) => theme.colors.background.light};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  border-left: 4px solid ${({ theme }) => theme.colors.primary};
 `;
 
 const SectionTitle = styled(Subtitle)`
   margin-bottom: 0;
+  font-weight: ${({ theme }) => theme.fontWeights.bold};
+  color: ${({ theme }) => theme.colors.text.primary};
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: ${({ theme }) => theme.colors.primary};
+    margin-right: ${({ theme }) => theme.space.sm};
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -86,9 +115,12 @@ const StatCard = styled(Card)`
   align-items: center;
   transition: all 0.3s ease-in-out;
   border: 1px solid ${({ theme }) => theme.colors.gray[200]};
+  box-shadow: ${({ theme }) => theme.shadows.md};
+  background: linear-gradient(to bottom, ${({ theme }) => theme.colors.white}, ${({ theme }) => theme.colors.background.light});
 
   &:hover {
     transform: translateY(-5px);
+    box-shadow: ${({ theme }) => theme.shadows.lg};
   }
 `;
 

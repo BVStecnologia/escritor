@@ -68,8 +68,16 @@ export const assistantService = {
           }
         }
       });
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro na função de autocomplete:', error);
+        throw new Error('Erro ao gerar sugestões. Tente novamente.');
+      }
+
+      if (!data) {
+        throw new Error('Não foi possível obter resposta do assistente.');
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao usar autocomplete:', error);
@@ -132,8 +140,16 @@ export const assistantService = {
           }
         }
       });
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro na função de assistência à escrita:', error);
+        throw new Error('Erro ao gerar sugestões. Tente novamente.');
+      }
+
+      if (!data) {
+        throw new Error('Não foi possível obter resposta do assistente.');
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao usar assistente de escrita:', error);
@@ -164,8 +180,16 @@ export const assistantService = {
           }
         }
       });
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro na função de ideias criativas:', error);
+        throw new Error('Erro ao gerar sugestões. Tente novamente.');
+      }
+
+      if (!data) {
+        throw new Error('Não foi possível obter resposta do assistente.');
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao gerar ideias criativas:', error);

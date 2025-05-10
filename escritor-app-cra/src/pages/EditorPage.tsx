@@ -205,6 +205,20 @@ const EditorPage: React.FC = () => {
         if (capitulosData) {
           setCapitulos(capitulosData);
         }
+
+        // Se tiver chapterId na URL, verificar se é válido
+        if (chapterId) {
+          const capituloValido = capitulosData?.some(cap => cap.id === chapterId);
+          if (!capituloValido) {
+            // Se não for válido e houver capítulos, redirecionar para o primeiro
+            if (capitulosData && capitulosData.length > 0) {
+              navigate(`/editor/${bookId}/${capitulosData[0].id}`, { replace: true });
+            }
+          }
+        } else if (capitulosData && capitulosData.length > 0) {
+          // Se não tiver chapterId mas existirem capítulos, redirecionar para o primeiro
+          navigate(`/editor/${bookId}/${capitulosData[0].id}`, { replace: true });
+        }
       } catch (error) {
         console.error('Erro ao carregar livro:', error);
         setErro('Não foi possível carregar as informações do livro.');

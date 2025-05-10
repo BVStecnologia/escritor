@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import EditorPage from './pages/EditorPage';
+import ProfilePage from './pages/ProfilePage';
 import DebugPage from './pages/DebugPage';
 import DiagnosticoPage from './pages/DiagnosticoPage';
 
@@ -37,6 +38,11 @@ const App: React.FC = () => {
             <Route path="/editor/:bookId" element={
               <ProtectedRoute>
                 <EditorPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             } />
             <Route path="/debug" element={
