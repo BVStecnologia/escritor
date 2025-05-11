@@ -1099,15 +1099,12 @@ const CTAButtonSpecial = styled.a`
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 30px rgba(0,0,0,0.2);
-    color: white;
-  }
-
-  &:visited, &:active, &:focus {
+  &:hover, &:visited, &:active, &:focus {
+    background: #4361ee;
     color: white;
     text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 30px rgba(0,0,0,0.2);
   }
 `;
 
