@@ -17,12 +17,12 @@ const FloatingStatus = styled.div`
   gap: 0.5rem;
   font-size: 1rem;
   z-index: 100;
-  pointer-events: none;
 `;
 
 export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: string, isOnline: boolean }) => {
   let statusIcon = null;
   let statusText = '';
+  let tooltipText = '';
   if (saveStatus === 'saving') {
     statusIcon = (
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -37,6 +37,7 @@ export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: strin
   } else if (saveStatus === 'saved') {
     statusIcon = <FaCheckCircle color="#10b981" />;
     statusText = 'Salvo';
+    tooltipText = 'O salvamento é automático após 5 segundos sem digitar.';
   } else if (isOnline) {
     statusIcon = <FaCloud color="#3b82f6" />;
     statusText = 'Online';
@@ -47,7 +48,11 @@ export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: strin
   return (
     <FloatingStatus className="floating-spinner">
       {statusIcon}
-      <span>{statusText}</span>
+      {saveStatus === 'saved' ? (
+        <span style={{ cursor: 'pointer' }} title={tooltipText}>{statusText}</span>
+      ) : (
+        <span>{statusText}</span>
+      )}
     </FloatingStatus>
   );
 }; 
