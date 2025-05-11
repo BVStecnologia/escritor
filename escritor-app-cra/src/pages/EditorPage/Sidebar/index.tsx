@@ -142,49 +142,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <PlusIcon />
               Novo Capítulo
             </NewChapterButton>
-            {showPopup && (
-              <PopupOverlay onClick={() => setShowPopup(false)}>
-                <PopupContainer onClick={e => e.stopPropagation()}>
-                  <PopupTitle>Novo Capítulo</PopupTitle>
-                  <PopupInput
-                    autoFocus
-                    placeholder="Título do novo capítulo"
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && newTitle.trim()) {
-                        onNewChapter(newTitle.trim());
-                        setShowPopup(false);
-                        setNewTitle('');
-                      }
-                    }}
-                  />
-                  <PopupActions>
-                    <PopupButton
-                      style={{ background: '#eee', color: '#333' }}
-                      onClick={() => {
-                        setShowPopup(false);
-                        setNewTitle('');
-                      }}
-                    >
-                      Cancelar
-                    </PopupButton>
-                    <PopupButton
-                      disabled={!newTitle.trim()}
-                      onClick={() => {
-                        if (newTitle.trim()) {
-                          onNewChapter(newTitle.trim());
-                          setShowPopup(false);
-                          setNewTitle('');
-                        }
-                      }}
-                    >
-                      Criar
-                    </PopupButton>
-                  </PopupActions>
-                </PopupContainer>
-              </PopupOverlay>
-            )}
           </>
         ) : (
           // Versão recolhida - apenas ícones ou versão simplificada
@@ -211,71 +168,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {index + 1}
               </div>
             ))}
-
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'var(--primary-light, #60a5fa)',
-                color: '#fff',
-                margin: '8px auto 0',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-              }}
-              onClick={() => setShowPopup(true)}
-            >
-              <PlusIcon />
-            </div>
-            {showPopup && (
-              <PopupOverlay onClick={() => setShowPopup(false)}>
-                <PopupContainer onClick={e => e.stopPropagation()}>
-                  <PopupTitle>Novo Capítulo</PopupTitle>
-                  <PopupInput
-                    autoFocus
-                    placeholder="Título do novo capítulo"
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && newTitle.trim()) {
-                        onNewChapter(newTitle.trim());
-                        setShowPopup(false);
-                        setNewTitle('');
-                      }
-                    }}
-                  />
-                  <PopupActions>
-                    <PopupButton
-                      style={{ background: '#eee', color: '#333' }}
-                      onClick={() => {
-                        setShowPopup(false);
-                        setNewTitle('');
-                      }}
-                    >
-                      Cancelar
-                    </PopupButton>
-                    <PopupButton
-                      disabled={!newTitle.trim()}
-                      onClick={() => {
-                        if (newTitle.trim()) {
-                          onNewChapter(newTitle.trim());
-                          setShowPopup(false);
-                          setNewTitle('');
-                        }
-                      }}
-                    >
-                      Criar
-                    </PopupButton>
-                  </PopupActions>
-                </PopupContainer>
-              </PopupOverlay>
-            )}
           </>
         )}
       </ChaptersContainer>
+
+      {/* Popup de novo capítulo sempre visível quando showPopup for true */}
+      {showPopup && (
+        <PopupOverlay onClick={() => setShowPopup(false)}>
+          <PopupContainer onClick={e => e.stopPropagation()}>
+            <PopupTitle>Novo Capítulo</PopupTitle>
+            <PopupInput
+              autoFocus
+              placeholder="Título do novo capítulo"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && newTitle.trim()) {
+                  onNewChapter(newTitle.trim());
+                  setShowPopup(false);
+                  setNewTitle('');
+                }
+              }}
+            />
+            <PopupActions>
+              <PopupButton
+                style={{ background: '#eee', color: '#333' }}
+                onClick={() => {
+                  setShowPopup(false);
+                  setNewTitle('');
+                }}
+              >
+                Cancelar
+              </PopupButton>
+              <PopupButton
+                disabled={!newTitle.trim()}
+                onClick={() => {
+                  if (newTitle.trim()) {
+                    onNewChapter(newTitle.trim());
+                    setShowPopup(false);
+                    setNewTitle('');
+                  }
+                }}
+              >
+                Criar
+              </PopupButton>
+            </PopupActions>
+          </PopupContainer>
+        </PopupOverlay>
+      )}
     </SidebarContainer>
   );
 };
