@@ -126,19 +126,25 @@ function InitialContentPlugin({ initialContent, chapterId }: { initialContent?: 
     if (lastChapterId.current === chapterId) return; // Só atualiza se mudou de capítulo
 
     editor.update(() => {
-      const root = $getRoot();
-      root.clear();
-
-      const paragraphs = initialContent.split('\n').filter(Boolean);
-      if (paragraphs.length === 0) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-      } else {
-        paragraphs.forEach(text => {
+      try {
+        // Tenta importar o conteúdo formatado (JSON)
+        const json = JSON.parse(initialContent);
+        editor.setEditorState(editor.parseEditorState(json));
+      } catch (e) {
+        // Se não for JSON válido, cai no fallback de texto puro
+        const root = $getRoot();
+        root.clear();
+        const paragraphs = initialContent.split('\n').filter(Boolean);
+        if (paragraphs.length === 0) {
           const paragraph = $createParagraphNode();
-          paragraph.append($createTextNode(text));
           root.append(paragraph);
-        });
+        } else {
+          paragraphs.forEach(text => {
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode(text));
+            root.append(paragraph);
+          });
+        }
       }
     });
 

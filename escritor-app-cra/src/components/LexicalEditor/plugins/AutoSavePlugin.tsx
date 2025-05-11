@@ -9,7 +9,7 @@ interface AutoSavePluginProps {
   delay?: number;
 }
 
-export function AutoSavePlugin({ bookId, chapterId, delay = 15000 }: AutoSavePluginProps) {
+export function AutoSavePlugin({ bookId, chapterId, delay = 5000 }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
@@ -39,8 +39,8 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 15000 }: AutoSavePlu
       }
 
       editorState.read(() => {
-        const root = $getRoot();
-        const content = root.getTextContent();
+        // Salvar o conteúdo serializado (JSON) do editor
+        const content = JSON.stringify(editorState.toJSON());
 
         saveTimerRef.current = setTimeout(() => {
           saveContent(content);
