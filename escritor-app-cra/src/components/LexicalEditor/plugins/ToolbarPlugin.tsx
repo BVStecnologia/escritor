@@ -9,7 +9,9 @@ import {
   FORMAT_ELEMENT_COMMAND,
   COMMAND_PRIORITY_NORMAL,
   $getRoot,
-  $isElementNode
+  $isElementNode,
+  UNDO_COMMAND,
+  REDO_COMMAND
 } from 'lexical';
 import {
   INSERT_ORDERED_LIST_COMMAND,
@@ -296,6 +298,18 @@ export const ToolbarPlugin = () => {
   return (
     <Toolbar>
       <ToolbarSection>
+        <ToolButton
+          onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+          title="Desfazer"
+        >
+          ↩️
+        </ToolButton>
+        <ToolButton
+          onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+          title="Refazer"
+        >
+          ↪️
+        </ToolButton>
         <ToolButton
           $active={isBold}
           onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
