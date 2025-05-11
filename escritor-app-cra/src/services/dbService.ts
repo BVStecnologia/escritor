@@ -106,7 +106,7 @@ export const dbService = {
   /**
    * Criar um novo livro
    */
-  async criarLivro(livroData: { titulo: string, autor?: string }) {
+  async criarLivro(livroData: { titulo: string, autor?: string, sinopse?: string, genero?: string }) {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData?.user?.email;
@@ -127,7 +127,9 @@ export const dbService = {
         .insert([{
           "Nome do livro": livroData.titulo,
           "Autor": livroData.autor || userData?.user?.user_metadata?.name || 'Autor desconhecido',
-          email_user: email
+          email_user: email,
+          sinopse: livroData.sinopse || '',
+          genero: livroData.genero || ''
         }])
         .select();
 

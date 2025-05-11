@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Livro } from '../types/livro';
 import defaultTheme from '../styles/theme';
+import CreateBookModal from '../components/CreateBookModal';
 
 // Definição dos temas claro e escuro
 const lightTheme = {
@@ -457,9 +458,10 @@ const bookColors = [
 interface Book3DLibraryProps {
   maxBooks?: number;
   onBookClick?: (livro: Livro) => void;
+  onAddBook?: () => void;
 }
 
-const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick }) => {
+const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick, onAddBook }) => {
   const [livros, setLivros] = useState<Livro[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -513,7 +515,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
         <h3>Sua biblioteca está vazia</h3>
         <p>Comece sua jornada criando seu primeiro livro</p>
         <button
-          onClick={() => navigate('/books/new')}
+          onClick={onAddBook}
           style={{
             background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
             color: 'white',
@@ -561,7 +563,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
             </BookWrapper>
           );
         })}
-        <AddBookButton onClick={() => navigate('/books/new')}>
+        <AddBookButton onClick={onAddBook}>
           +
         </AddBookButton>
       </BooksContainer>
@@ -993,6 +995,7 @@ const DashboardPage: React.FC = () => {
     progresso: 0
   });
   const [loading, setLoading] = useState<boolean>(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
@@ -1079,7 +1082,7 @@ const DashboardPage: React.FC = () => {
                   <PrimaryButton onClick={() => navigate('/editor')}>
                     Continuar Escrevendo
                   </PrimaryButton>
-                  <SecondaryButton onClick={() => navigate('/books/new')}>
+                  <SecondaryButton onClick={() => setIsCreateModalOpen(true)}>
                     Novo Livro
                   </SecondaryButton>
                 </ActionButtons>
@@ -1216,9 +1219,18 @@ const DashboardPage: React.FC = () => {
                 Ver todos os livros
               </SecondaryButton>
             </SectionHeader>
-            <Book3DLibrary maxBooks={8} />
+            <Book3DLibrary maxBooks={8} onAddBook={() => setIsCreateModalOpen(true)} />
           </BooksSection>
         </MainContent>
+        <CreateBookModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false);
+            // Recarregar as estatísticas e livros
+            window.location.reload(); // ou chamar carregarEstatisticas se for possível
+          }}
+        />
       </DashboardContainer>
     </ThemeProvider>
   );
