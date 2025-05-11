@@ -421,9 +421,10 @@ interface EditorProps {
   livroId: number;
   capituloId?: string;
   onSaved?: () => void;
+  onContentChange?: (content: string) => void;
 }
 
-const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved }) => {
+const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved, onContentChange }) => {
   const navigate = useNavigate();
   const [titulo, setTitulo] = useState('Novo Capítulo');
   const [conteudo, setConteudo] = useState('');
@@ -476,7 +477,10 @@ const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved })
   // Atualizar estatísticas quando o conteúdo mudar
   useEffect(() => {
     updateWordAndCharCount(conteudo);
-  }, [conteudo]);
+    if (onContentChange) {
+      onContentChange(conteudo);
+    }
+  }, [conteudo, onContentChange]);
 
   // Focar no textarea quando carregar
   useEffect(() => {

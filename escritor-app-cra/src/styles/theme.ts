@@ -12,6 +12,7 @@ export const theme = {
     warning: '#ff9e00',
     danger: '#ff0a54',
     success: '#48bb78',
+    error: '#ff0a54',
     dark: '#212529',
     light: '#f8f9fa',
     white: '#ffffff',
@@ -20,7 +21,10 @@ export const theme = {
       main: '#f0f6ff',
       light: '#ffffff',
       dark: '#e0e7ff',
-      gradient: 'linear-gradient(135deg, #f0f6ff 0%, #e0e7ff 100%)'
+      gradient: 'linear-gradient(135deg, #f0f6ff 0%, #e0e7ff 100%)',
+      paper: '#ffffff',
+      sidebar: '#ffffff',
+      header: '#ffffff'
     },
     text: {
       primary: '#212529',
@@ -128,6 +132,14 @@ export const theme = {
     popover: 1500,
     toast: 1600,
     tooltip: 1700,
+  },
+  gradients: {
+    primary: 'linear-gradient(135deg, #4361ee 0%, #3f37c9 100%)',
+    secondary: 'linear-gradient(135deg, #4cc9f0 0%, #4ea8de 100%)',
+    accent: 'linear-gradient(135deg, #f72585 0%, #b5179e 100%)',
+    background: 'linear-gradient(135deg, #f0f6ff 0%, #e0e7ff 100%)',
+    highlight: 'linear-gradient(90deg, #4361ee 0%, #4cc9f0 100%)',
+    subtle: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%)',
   },
 };
 
