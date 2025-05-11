@@ -11,6 +11,7 @@ import {
   EditorWrapper,
   EditorContainer
 } from './styles';
+import { FloatingSaveStatus } from '../../../components/LexicalEditor/FloatingSaveStatus';
 
 interface EditorContentProps {
   chapterTitle: string;
@@ -20,6 +21,9 @@ interface EditorContentProps {
   bookId?: string;
   chapterId?: string;
   initialContent?: string;
+  saveStatus: string;
+  isOnline: boolean;
+  setSaveStatus?: (status: 'saving' | 'saved' | 'idle') => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -29,7 +33,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   onEditorChange,
   bookId,
   chapterId,
-  initialContent = ''
+  initialContent = '',
+  saveStatus,
+  isOnline,
+  setSaveStatus
 }) => {
   // Usando chapterId como chave para forçar recriação completa
   // do componente quando mudar de capítulo
@@ -57,15 +64,17 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         </ToolbarRight>
       </Toolbar>
 
-      <EditorWrapper>
+      <EditorWrapper style={{ position: 'relative' }}>
         <EditorContainer>
           <LexicalEditor
             initialContent={initialContent}
             onChange={onEditorChange}
             bookId={bookId}
             chapterId={chapterId}
+            setSaveStatus={setSaveStatus}
           />
         </EditorContainer>
+        <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
       </EditorWrapper>
     </Content>
   );

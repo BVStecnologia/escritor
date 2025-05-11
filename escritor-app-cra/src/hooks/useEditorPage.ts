@@ -17,6 +17,7 @@ export interface UseEditorPageReturn {
   handleEditorChange: (content: string) => void;
   handleChapterSelect: (chapterId: string) => void;
   handleNewChapter: () => void;
+  setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
 }
 
 export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPageReturn {
@@ -189,6 +190,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     handleChapterTitleChange,
     handleEditorChange,
     handleChapterSelect,
-    handleNewChapter
+    handleNewChapter,
+    setSaveStatus
   };
 }

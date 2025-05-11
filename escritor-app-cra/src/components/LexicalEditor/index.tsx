@@ -99,6 +99,7 @@ interface LexicalEditorProps {
   onChange?: (content: string) => void;
   bookId?: string;
   chapterId?: string;
+  setSaveStatus?: (status: 'saving' | 'saved' | 'idle') => void;
 }
 
 const initialConfig: InitialConfigType = {
@@ -158,7 +159,8 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   initialContent,
   onChange,
   bookId,
-  chapterId
+  chapterId,
+  setSaveStatus
 }) => {
   // Throttled handleChange para reduzir a frequência de atualizações
   const handleChange = React.useCallback((editorState: EditorState) => {
@@ -200,7 +202,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <AutocompletePlugin />
         <AIToolsSelectionPlugin />
         {/* AutoSavePlugin reativado */}
-        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
+        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} onStatusChange={setSaveStatus} />}
       </EditorContainer>
     </LexicalComposer>
   );

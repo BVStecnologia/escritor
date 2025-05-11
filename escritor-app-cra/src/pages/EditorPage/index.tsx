@@ -120,7 +120,8 @@ const EditorPage: React.FC = () => {
     handleChapterTitleChange,
     handleEditorChange,
     handleChapterSelect,
-    handleNewChapter
+    handleNewChapter,
+    setSaveStatus
   } = useEditorPage(bookId, chapterId);
 
   if (loading) {
@@ -170,6 +171,9 @@ const EditorPage: React.FC = () => {
             bookId={bookId}
             chapterId={chapterId}
             initialContent={chapterContent}
+            saveStatus={saveStatus}
+            isOnline={isOnline}
+            setSaveStatus={setSaveStatus}
           />
         </MainLayout>
 

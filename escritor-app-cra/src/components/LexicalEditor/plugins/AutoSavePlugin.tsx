@@ -7,9 +7,10 @@ interface AutoSavePluginProps {
   bookId?: string;
   chapterId?: string;
   delay?: number;
+  onStatusChange?: (status: 'saving' | 'saved' | 'idle') => void;
 }
 
-export function AutoSavePlugin({ bookId, chapterId, delay = 5000 }: AutoSavePluginProps) {
+export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
@@ -22,14 +23,17 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000 }: AutoSavePlug
         return; // Não salva se o conteúdo não mudou
       }
 
+      if (onStatusChange) onStatusChange('saving');
       try {
         await dbService.atualizarCapitulo(chapterId, {
           conteudo: content
         });
         lastSavedContent.current = content;
         console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
+        if (onStatusChange) onStatusChange('saved');
       } catch (error) {
         console.error('Erro ao salvar automaticamente:', error);
+        if (onStatusChange) onStatusChange('idle');
       }
     };
 
@@ -54,7 +58,7 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000 }: AutoSavePlug
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor]);
+  }, [bookId, chapterId, delay, editor, onStatusChange]);
 
   return null;
 }
