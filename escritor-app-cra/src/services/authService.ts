@@ -44,6 +44,13 @@ export const authService = {
         throw new Error('Falha ao criar usuário. Por favor, tente novamente.');
       }
 
+      // Se o usuário não precisa de verificação (confirmed_at já existe),
+      // realizar login automático
+      if (data.user.confirmed_at) {
+        console.log('Usuário criado e já confirmado, realizando login automático');
+        // A sessão já deve estar criada pelo próprio processo de signup
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);

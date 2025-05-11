@@ -463,30 +463,33 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    
+
     if (password !== confirmPassword) {
       setError('As senhas não coincidem!');
       return;
     }
-    
+
     if (passwordStrength < 2) {
       setError('Por favor, utilize uma senha mais forte.');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const user = await signUp(email, password, name);
 
       if (user) {
         if (!user.confirmed_at) {
+          // Se precisar de verificação de email
           navigate('/login', {
             state: {
               message: 'Por favor, verifique seu email para confirmar sua conta.'
             }
           });
         } else {
+          // Login automático já foi realizado no AuthContext
+          console.log('Cadastro e login automático realizados com sucesso');
           navigate('/dashboard');
         }
       } else {

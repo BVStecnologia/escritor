@@ -85,7 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name?: string) => {
     try {
-      const { user } = await authService.signUp({ email, password, name });
+      const { user, session } = await authService.signUp({ email, password, name });
+
+      // Se o usuário for criado e já estiver confirmado, estabelecer sessão no contexto
+      if (user && user.confirmed_at) {
+        console.log('Definindo usuário automaticamente após cadastro:', user.id);
+        setUser(user);
+      }
+
       return user;
     } catch (error) {
       throw error;
