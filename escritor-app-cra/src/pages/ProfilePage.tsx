@@ -404,9 +404,40 @@ const SecondaryButton = styled(Button)`
   background: ${({ theme }) => theme.colors.light};
   color: ${({ theme }) => theme.colors.primary};
   border: 2px solid ${({ theme }) => theme.colors.primary};
-  
+
   &:hover:not(:disabled) {
     background: ${({ theme }) => theme.colors.subtle?.blue || theme.colors.primaryLight};
+  }
+`;
+
+const LogoutButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.875rem;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.danger || '#dc2626'};
+  border: 1px solid ${({ theme }) => theme.colors.danger || '#dc2626'};
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &::before {
+    content: '🚪';
+    margin-right: 0.5rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.1);
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `;
 
@@ -547,7 +578,7 @@ interface ProfileData {
 // Componente principal
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [profile, setProfile] = useState<ProfileData>({
@@ -717,6 +748,21 @@ const ProfilePage: React.FC = () => {
       [name]: value
     }));
   };
+
+  const handleLogout = async () => {
+    try {
+      console.log('Iniciando logout...');
+      await signOut();
+      console.log('Logout realizado com sucesso');
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      setMessage({
+        text: "Não foi possível sair. Tente novamente.",
+        isError: true
+      });
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -867,6 +913,15 @@ const ProfilePage: React.FC = () => {
                     {saving ? "Salvando..." : "Salvar Alterações"}
                   </PrimaryButton>
                 </ButtonGroup>
+
+                <div style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
+                  <LogoutButton
+                    onClick={handleLogout}
+                    disabled={saving}
+                  >
+                    Sair da Conta
+                  </LogoutButton>
+                </div>
                 
                 {message && (
                   <StatusMessage isError={message.isError}>
