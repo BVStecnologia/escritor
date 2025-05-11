@@ -606,6 +606,12 @@ const CTAButton = styled.a<{ $secondary?: boolean }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+    color: white;
+  }
+
+  &:visited, &:active, &:focus {
+    color: white;
+    text-decoration: none;
   }
 `;
 
@@ -1096,6 +1102,12 @@ const CTAButtonSpecial = styled.a`
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+    color: white;
+  }
+
+  &:visited, &:active, &:focus {
+    color: white;
+    text-decoration: none;
   }
 `;
 
@@ -1275,6 +1287,12 @@ const DashboardButton = styled(Link)`
     background: #6d28d9;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    color: white;
+  }
+
+  &:visited, &:active, &:focus {
+    color: white;
+    text-decoration: none;
   }
 `;
 
