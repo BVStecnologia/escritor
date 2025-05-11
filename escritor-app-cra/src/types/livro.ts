@@ -2,6 +2,7 @@
 export interface Livro {
   id: number;
   created_at: string;
+  updated_at?: string;
   "Nome do livro": string;
   "Autor"?: string;
   email_user?: string;

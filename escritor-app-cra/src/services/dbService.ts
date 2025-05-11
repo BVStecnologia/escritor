@@ -69,6 +69,7 @@ export const dbService = {
         .from('Livros')
         .select('*')
         .eq('email_user', email)
+        .order('updated_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       console.log('Dados retornados:', data);
@@ -479,6 +480,23 @@ export const dbService = {
       return data[0] as Usuario;
     } catch (error) {
       console.error('Erro ao atualizar palavras do usuário:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar updated_at de um livro
+   */
+  async atualizarUpdatedAtLivro(id: number) {
+    try {
+      const { error } = await supabase
+        .from('Livros')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error(`Erro ao atualizar updated_at do livro ${id}:`, error);
       throw error;
     }
   }

@@ -483,7 +483,12 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
     carregarLivros();
   }, [maxBooks]);
 
-  const handleBookClick = (livro: Livro) => {
+  const handleBookClick = async (livro: Livro) => {
+    try {
+      await dbService.atualizarUpdatedAtLivro(livro.id);
+    } catch (e) {
+      console.error('Erro ao atualizar updated_at:', e);
+    }
     if (onBookClick) {
       onBookClick(livro);
     } else {
@@ -1049,6 +1054,19 @@ const DashboardPage: React.FC = () => {
   const calculateCircumference = (radius: number) => 2 * Math.PI * radius;
 
   // Usar o theme context global
+  const handleContinuarEscrevendo = async () => {
+    try {
+      const livros = await dbService.getLivros();
+      if (livros && livros.length > 0) {
+        navigate(`/editor/${livros[0].id}`);
+      } else {
+        setIsCreateModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar o último livro editado:', error);
+    }
+  };
+
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <GlobalStyle />
@@ -1081,7 +1099,7 @@ const DashboardPage: React.FC = () => {
                   Continue criando e veja sua história ganhar vida.
                 </WelcomeText>
                 <ActionButtons>
-                  <PrimaryButton onClick={() => navigate('/editor')}>
+                  <PrimaryButton onClick={handleContinuarEscrevendo}>
                     Continuar Escrevendo
                   </PrimaryButton>
                   <SecondaryButton onClick={() => setIsCreateModalOpen(true)}>
