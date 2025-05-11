@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 
 // Tema profissional para escritores
 const theme = {
@@ -405,6 +407,23 @@ const WriterPortalLogin: React.FC = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
+  // Verificar se o usuário já está autenticado
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        if (isAuth) {
+          console.log('Usuário já está autenticado. Redirecionando para o dashboard...');
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+      }
+    };
+
+    checkAuthStatus();
+  }, [navigate]);
+
   // Efeito de escrita no canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -446,7 +465,7 @@ const WriterPortalLogin: React.FC = () => {
     let frameCount = 0;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       frameCount++;
       if (frameCount % 120 === 0 && particles.length < 5) {
         createParticle();
@@ -499,10 +518,15 @@ const WriterPortalLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      setError('Login com Google temporariamente indisponível.');
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      // Não precisamos definir erro aqui, pois o redirecionamento acontecerá
     } catch (err) {
-      setError('Erro ao conectar com Google.');
-    } finally {
+      setError('Erro ao conectar com Google. Tente novamente mais tarde.');
       setLoading(false);
     }
   };

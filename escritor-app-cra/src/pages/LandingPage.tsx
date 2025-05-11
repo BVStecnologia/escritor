@@ -1,9 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Verificar estado de autenticação ao carregar a página
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        setIsAuthenticated(isAuth);
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // Função para lidar com o clique no botão de login
+  const handleLoginClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      // Se já estiver autenticado, redirecionar para o dashboard
+      navigate('/dashboard');
+    } else {
+      // Se não estiver autenticado, ir para a página de login
+      navigate('/login');
+    }
+  };
+
   return (
     <PageWrapper>
+      {/* Navigation */}
+      <NavBar>
+        <Container>
+          <NavContent>
+            <Logo>Escritor App</Logo>
+            <NavButtons>
+              {isAuthenticated ? (
+                <DashboardButton to="/dashboard">Meu Painel</DashboardButton>
+              ) : (
+                <>
+                  <LoginButton to="/login" onClick={handleLoginClick}>Entrar</LoginButton>
+                  <SignupButton to="/signup">Criar Conta</SignupButton>
+                </>
+              )}
+            </NavButtons>
+          </NavContent>
+        </Container>
+      </NavBar>
+
       {/* Hero Section */}
       <HeroSection>
         <Container>
@@ -36,9 +87,15 @@ const LandingPage: React.FC = () => {
             </HeroStats>
 
             <HeroCTA>
-              <CTAButton href="#planos">
-                QUERO COMEÇAR A GANHAR AGORA
-              </CTAButton>
+              {isAuthenticated ? (
+                <CTAButton as={Link} to="/dashboard">
+                  ACESSAR MEU PAINEL
+                </CTAButton>
+              ) : (
+                <CTAButton href="#planos">
+                  QUERO COMEÇAR A GANHAR AGORA
+                </CTAButton>
+              )}
               <Guarantee>
                 <span>✓</span> Garantia de 30 dias ou seu dinheiro de volta
               </Guarantee>
@@ -219,9 +276,15 @@ const LandingPage: React.FC = () => {
               </PlanFeatures>
               
               <PlanCTA>
-                <CTAButton $secondary>
-                  COMEÇAR AGORA
-                </CTAButton>
+                {isAuthenticated ? (
+                  <CTAButton $secondary as={Link} to="/dashboard">
+                    ACESSAR PAINEL
+                  </CTAButton>
+                ) : (
+                  <CTAButton $secondary as={Link} to="/signup">
+                    COMEÇAR AGORA
+                  </CTAButton>
+                )}
               </PlanCTA>
             </PricingCard>
 
@@ -246,9 +309,15 @@ const LandingPage: React.FC = () => {
               </PlanFeatures>
               
               <PlanCTA>
-                <CTAButton>
-                  QUERO SER PROFISSIONAL
-                </CTAButton>
+                {isAuthenticated ? (
+                  <CTAButton as={Link} to="/dashboard">
+                    ACESSAR PAINEL
+                  </CTAButton>
+                ) : (
+                  <CTAButton as={Link} to="/signup">
+                    QUERO SER PROFISSIONAL
+                  </CTAButton>
+                )}
               </PlanCTA>
             </PricingCard>
 
@@ -272,9 +341,15 @@ const LandingPage: React.FC = () => {
               </PlanFeatures>
               
               <PlanCTA>
-                <CTAButton $secondary>
-                  PLANO ILIMITADO
-                </CTAButton>
+                {isAuthenticated ? (
+                  <CTAButton $secondary as={Link} to="/dashboard">
+                    ACESSAR PAINEL
+                  </CTAButton>
+                ) : (
+                  <CTAButton $secondary as={Link} to="/signup">
+                    PLANO ILIMITADO
+                  </CTAButton>
+                )}
               </PlanCTA>
             </PricingCard>
           </PricingGrid>
@@ -352,9 +427,15 @@ const LandingPage: React.FC = () => {
               Junte-se a centenas de escritores que já estão transformando suas ideias em livros publicados e gerando renda passiva na Amazon
             </FinalCTAText>
 
-            <CTAButtonSpecial href="#planos">
-              COMEÇAR AGORA COM DESCONTO ESPECIAL
-            </CTAButtonSpecial>
+            {isAuthenticated ? (
+              <CTAButtonSpecial as={Link} to="/dashboard">
+                ACESSAR MEUS PROJETOS
+              </CTAButtonSpecial>
+            ) : (
+              <CTAButtonSpecial href="#planos">
+                COMEÇAR AGORA COM DESCONTO ESPECIAL
+              </CTAButtonSpecial>
+            )}
 
             <FinalGuarantee>
               <FinalGuaranteeItem>
@@ -426,7 +507,7 @@ const Container = styled.div`
 
 // Hero Section
 const HeroSection = styled.section`
-  padding: 100px 0 80px;
+  padding: 150px 0 80px;
   background: linear-gradient(135deg, #f8fafc 0%, #e7f0ff 100%);
 `;
 
@@ -1116,10 +1197,84 @@ const PaymentBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  
+
   span {
     color: #28a745;
     font-weight: 500;
+  }
+`;
+
+// Navigation Bar Styles
+const NavBar = styled.nav`
+  background: white;
+  padding: 15px 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+`;
+
+const NavContent = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const Logo = styled.div`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4361ee;
+`;
+
+const NavButtons = styled.div`
+  display: flex;
+  gap: 20px;
+`;
+
+const LoginButton = styled(Link)`
+  padding: 8px 20px;
+  color: #4361ee;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(67, 97, 238, 0.1);
+  }
+`;
+
+const SignupButton = styled(Link)`
+  padding: 8px 20px;
+  background: #4361ee;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #3a56d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+  }
+`;
+
+const DashboardButton = styled(Link)`
+  padding: 8px 20px;
+  background: #7c3aed;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #6d28d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
   }
 `;
 

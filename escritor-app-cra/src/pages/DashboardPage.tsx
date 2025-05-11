@@ -4,6 +4,7 @@ import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { Container } from '../components/styled';
 import { dbService } from '../services/dbService';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Livro } from '../types/livro';
 import defaultTheme from '../styles/theme';
 
@@ -984,6 +985,7 @@ interface StatsData {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [stats, setStats] = useState<StatsData>({
     livros: 0,
     capitulos: 0,
@@ -991,24 +993,6 @@ const DashboardPage: React.FC = () => {
     progresso: 0
   });
   const [loading, setLoading] = useState<boolean>(true);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-
-  useEffect(() => {
-    // Verifica se há uma preferência de tema salva
-    const savedTheme = localStorage.getItem('darkMode');
-    if (savedTheme) {
-      setDarkMode(savedTheme === 'true');
-    } else {
-      // Verifica a preferência do sistema
-      const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDarkMode);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Salva a preferência do tema
-    localStorage.setItem('darkMode', darkMode.toString());
-  }, [darkMode]);
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
@@ -1059,12 +1043,9 @@ const DashboardPage: React.FC = () => {
 
   const calculateCircumference = (radius: number) => 2 * Math.PI * radius;
 
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-  };
-
+  // Usar o theme context global
   return (
-    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
+    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <GlobalStyle />
       <DashboardContainer>
         <Header>
@@ -1078,7 +1059,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </UserCard>
             <ThemeToggle onClick={toggleTheme}>
-              {darkMode ? '☀️' : '🌙'}
+              {isDarkMode ? '☀️' : '🌙'}
             </ThemeToggle>
           </div>
         </Header>
@@ -1111,7 +1092,7 @@ const DashboardPage: React.FC = () => {
                     cy="50"
                     r="45"
                     fill="none"
-                    stroke={darkMode ? "#334155" : "#e2e8f0"}
+                    stroke={isDarkMode ? "#334155" : "#e2e8f0"}
                     strokeWidth="6"
                   />
                   <circle
@@ -1128,8 +1109,8 @@ const DashboardPage: React.FC = () => {
                   />
                   <defs>
                     <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={darkMode ? "#1d4ed8" : "#3b82f6"} />
-                      <stop offset="100%" stopColor={darkMode ? "#7e22ce" : "#8b5cf6"} />
+                      <stop offset="0%" stopColor={isDarkMode ? "#1d4ed8" : "#3b82f6"} />
+                      <stop offset="100%" stopColor={isDarkMode ? "#7e22ce" : "#8b5cf6"} />
                     </linearGradient>
                   </defs>
                 </ProgressCircle>

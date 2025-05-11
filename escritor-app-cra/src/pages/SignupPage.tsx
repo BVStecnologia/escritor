@@ -2,6 +2,8 @@ import React, { useState, FormEvent, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled, { createGlobalStyle, keyframes } from 'styled-components'; // Importação correta
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../services/supabaseClient';
+import { authService } from '../services/authService';
 
 // Tema profissional para escritores (mesmo do login)
 const theme = {
@@ -349,6 +351,43 @@ const LinkContainer = styled.div`
   }
 `;
 
+// Botão do Google
+const GoogleButton = styled(Button)`
+  background: ${theme.colors.light};
+  color: ${theme.colors.ink};
+  border: 2px solid ${theme.colors.subtle.gray};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+
+  &:hover {
+    background: ${theme.colors.subtle.gray};
+    border-color: ${theme.colors.primary};
+  }
+`;
+
+// Divisor
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: ${theme.colors.subtle.gray};
+  }
+
+  span {
+    margin: 0 1rem;
+    color: ${theme.colors.ink}88;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+`;
+
 // Componente principal
 const SignupPage: React.FC = () => {
   const [name, setName] = useState<string>('');
@@ -362,20 +401,37 @@ const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp, loading } = useAuth();
 
+  // Verificar se o usuário já está autenticado
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        if (isAuth) {
+          console.log('Usuário já está autenticado. Redirecionando para o dashboard...');
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+      }
+    };
+
+    checkAuthStatus();
+  }, [navigate]);
+
   // Verificador de força de senha
   useEffect(() => {
     if (!password) {
       setPasswordStrength(0);
       return;
     }
-    
+
     let strength = 0;
-    
+
     if (password.length >= 8) strength += 1;
     if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength += 1;
     if (/[0-9]/.test(password)) strength += 1;
     if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    
+
     setPasswordStrength(Math.min(3, strength));
   }, [password]);
 
@@ -460,6 +516,25 @@ const SignupPage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Função para lidar com o login do Google
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      // Não precisamos definir erro aqui, pois o redirecionamento acontecerá
+    } catch (err) {
+      setError('Erro ao conectar com Google. Tente novamente mais tarde.');
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -521,8 +596,26 @@ const SignupPage: React.FC = () => {
             </FormHeader>
 
             {error && <ErrorMessage>{error}</ErrorMessage>}
-            
+
             <Form onSubmit={handleSubmit}>
+              <GoogleButton
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading || loading}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M23.766 12.2764c0-.9175-.0832-1.8017-.2339-2.6506H12.24v5.0214h6.4822c-.2784 1.5024-1.1257 2.7763-2.3973 3.6328v3.0174h3.8822c2.2704-2.091 3.5813-5.1686 3.5813-8.8166z" fill="#4285F4"/>
+                  <path d="M12.24 24c3.24 0 5.9558-.9744 7.9488-2.9127l-3.8822-3.0174c-1.08.7248-2.46 1.1529-4.0666 1.1529-3.1368 0-5.8008-2.12-6.7512-4.9704H1.5168v3.1164C3.501 21.4384 7.56 24 12.24 24z" fill="#34A853"/>
+                  <path d="M5.4888 14.2296c-.2604-.7248-.4104-1.5024-.4104-2.3064s.15-1.5816.4104-2.3064V6.5004H1.5168C.5544 8.4144 0 10.6072 0 12.9232s.5544 4.5088 1.5168 6.4228l3.972-3.1164z" fill="#FBBC05"/>
+                  <path d="M12.24 4.776c1.7712 0 3.36.612 4.608 1.8144l3.456-3.456C18.192 1.1568 15.48 0 12.24 0 7.56 0 3.501 2.5616 1.5168 6.5004l3.972 3.1164c.9504-2.8504 3.6144-4.9704 6.7512-4.9704z" fill="#EA4335"/>
+                </svg>
+                Cadastrar com Google
+              </GoogleButton>
+
+              <Divider>
+                <span>ou</span>
+              </Divider>
+
               <FormGroup>
                 <Label htmlFor="name">Nome Completo</Label>
                 <Input

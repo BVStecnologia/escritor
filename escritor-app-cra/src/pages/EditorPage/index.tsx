@@ -8,6 +8,7 @@ import { AIAssistant } from './AIAssistant';
 import { LoadingState } from './LoadingState';
 import { ErrorState } from './ErrorState';
 import { useEditorPage } from '../../hooks/useEditorPage';
+import { useTheme } from '../../contexts/ThemeContext';
 import { EditorPageContainer, MainLayout } from './styles';
 import defaultTheme from '../../styles/theme';
 
@@ -103,9 +104,9 @@ const editorThemes = {
 const EditorPage: React.FC = () => {
   const { bookId, chapterId } = useParams<{ bookId: string; chapterId?: string }>();
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [aiAssistantActive, setAiAssistantActive] = useState(false);
-  
+
   const {
     livro,
     capitulos,
@@ -120,10 +121,6 @@ const EditorPage: React.FC = () => {
     handleChapterSelect,
     handleNewChapter
   } = useEditorPage(bookId, chapterId);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
 
   if (loading) {
     return (
@@ -149,7 +146,10 @@ const EditorPage: React.FC = () => {
           saveStatus={saveStatus}
           isOnline={isOnline}
           isDarkMode={isDarkMode}
-          onToggleTheme={toggleTheme}
+          onToggleTheme={() => {
+            console.log('Toggle tema no EditorPage, estado atual:', isDarkMode ? 'escuro' : 'claro');
+            toggleTheme();
+          }}
           onBackToDashboard={() => navigate('/dashboard')}
         />
 
