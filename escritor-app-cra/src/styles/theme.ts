@@ -26,6 +26,17 @@ export const theme = {
       sidebar: '#ffffff',
       header: '#ffffff'
     },
+    paper: '#faf9f7',
+    ink: '#1f2937',
+    leather: '#92400e',
+    parchment: '#f3f0e8',
+    glass: 'rgba(255, 255, 255, 0.98)',
+    gold: '#d97706',
+    subtle: {
+      blue: '#dbeafe',
+      purple: '#ede9fe',
+      gray: '#f3f4f6',
+    },
     text: {
       primary: '#212529',
       secondary: '#495057',

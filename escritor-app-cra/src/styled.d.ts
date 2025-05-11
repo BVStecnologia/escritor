@@ -63,6 +63,18 @@ interface ColorPalette {
   };
   white: string;
   black: string;
+  // Cores personalizadas usadas em ProfilePage
+  paper?: string;
+  ink?: string;
+  leather?: string;
+  parchment?: string;
+  glass?: string;
+  gold?: string;
+  subtle?: {
+    blue: string;
+    purple: string;
+    gray: string;
+  };
 }
 
 interface ShadowSystem {
