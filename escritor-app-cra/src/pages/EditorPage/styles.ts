@@ -126,6 +126,29 @@ export const BookTitle = styled.span`
   }
 `;
 
+export const BookTitleInput = styled.input`
+  font-size: 1rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 500;
+  max-width: 300px;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border: 1px solid ${({ theme }) => theme.colors.border?.medium || 'rgba(0,0,0,0.12)'};
+  border-radius: 8px;
+  background: ${({ theme }) => theme.colors.background.paper};
+  position: relative;
+  margin-left: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: ${({ theme }) => theme.colors.shadow?.sm || '0 2px 8px rgba(0, 0, 0, 0.05)'};
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.text.tertiary};
+  }
+`;
+
 export const HeaderControls = styled.div`
   display: flex;
   align-items: center;

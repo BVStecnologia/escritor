@@ -10,6 +10,7 @@ export interface UseEditorPageReturn {
   erro: string | null;
   isOnline: boolean;
   saveStatus: 'idle' | 'saving' | 'saved';
+  titleSaveStatus: 'idle' | 'saving' | 'saved';
   wordCount: number;
   chapterTitle: string;
   chapterContent: string;
@@ -17,6 +18,7 @@ export interface UseEditorPageReturn {
   handleEditorChange: (content: string) => void;
   handleChapterSelect: (chapterId: string) => void;
   handleNewChapter: (title?: string) => void;
+  handleBookTitleChange: (value: string) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
 }
 
@@ -28,6 +30,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const [erro, setErro] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [titleSaveStatus, setTitleSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [wordCount, setWordCount] = useState(0);
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterContent, setChapterContent] = useState('');
@@ -200,6 +203,38 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     }
   }, [bookId, navigate]);
 
+  // Salvar título do livro com debounce
+  const saveBookTitleDebounced = useRef(
+    debounce(async (id, title) => {
+      try {
+        setTitleSaveStatus('saving');
+        await dbService.atualizarLivro(parseInt(id), { titulo: title });
+        setTitleSaveStatus('saved');
+
+        // Atualiza o objeto livro no estado local
+        setLivro((prevLivro: any) => ({
+          ...prevLivro,
+          titulo: title,
+          "Nome do livro": title // Garante que ambas as propriedades são atualizadas
+        }));
+
+        // Reset status após um tempo
+        setTimeout(() => {
+          setTitleSaveStatus('idle');
+        }, 2000);
+      } catch (error) {
+        console.error('Erro ao salvar título do livro:', error);
+        setTitleSaveStatus('idle');
+        setErro('Erro ao salvar o título do livro');
+      }
+    }, 800)
+  ).current;
+
+  const handleBookTitleChange = useCallback((value: string) => {
+    if (!bookId) return;
+    saveBookTitleDebounced(bookId, value);
+  }, [bookId, saveBookTitleDebounced]);
+
   return {
     livro,
     capitulos,
@@ -207,6 +242,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     erro,
     isOnline,
     saveStatus,
+    titleSaveStatus,
     wordCount,
     chapterTitle,
     chapterContent,
@@ -214,6 +250,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,
+    handleBookTitleChange,
     setSaveStatus
   };
 }

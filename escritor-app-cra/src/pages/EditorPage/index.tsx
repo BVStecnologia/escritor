@@ -114,6 +114,7 @@ const EditorPage: React.FC = () => {
     erro,
     isOnline,
     saveStatus,
+    titleSaveStatus,
     wordCount,
     chapterTitle,
     chapterContent,
@@ -121,6 +122,7 @@ const EditorPage: React.FC = () => {
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,
+    handleBookTitleChange,
     setSaveStatus
   } = useEditorPage(bookId, chapterId);
 
@@ -144,8 +146,9 @@ const EditorPage: React.FC = () => {
     <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
       <EditorPageContainer>
         <EditorHeader
-          bookTitle={livro.titulo || "Sem título"}
+          bookTitle={livro.titulo || livro["Nome do livro"] || "Sem título"}
           saveStatus={saveStatus}
+          titleSaveStatus={titleSaveStatus}
           isOnline={isOnline}
           isDarkMode={isDarkMode}
           onToggleTheme={() => {
@@ -153,6 +156,7 @@ const EditorPage: React.FC = () => {
             toggleTheme();
           }}
           onBackToDashboard={() => navigate('/dashboard')}
+          onBookTitleChange={handleBookTitleChange}
         />
 
         <MainLayout>
