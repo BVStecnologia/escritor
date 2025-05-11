@@ -13,6 +13,7 @@ export interface Capitulo {
   livro_id: number;
   email_user?: string;
   last_edit?: string;    // Timestamp da última edição
+  palavras?: number;
 }
 
 export interface Personagem {
@@ -245,12 +246,17 @@ export const dbService = {
 
       console.log('Criando capítulo:', capituloData);
 
+      // Calcular número de palavras
+      const texto = capituloData.conteudo || '';
+      const palavras = texto.split(/\s+/).filter(Boolean).length;
+
       // Criar objeto de dados para inserção
       const newChapter = {
         titulo: capituloData.titulo,
-        texto: capituloData.conteudo || '',
+        texto,
         livro_id: livroId,
-        last_edit: new Date().toTimeString().split(' ')[0]
+        last_edit: new Date().toTimeString().split(' ')[0],
+        palavras
       };
 
       const { data, error } = await supabase
@@ -291,6 +297,8 @@ export const dbService = {
     // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
     if (capituloData.conteudo !== undefined) {
       updateData.texto = capituloData.conteudo;
+      // Calcular número de palavras
+      updateData.palavras = capituloData.conteudo.split(/\s+/).filter(Boolean).length;
     }
 
     // Adiciona horário de última edição (HH:MM:SS)
