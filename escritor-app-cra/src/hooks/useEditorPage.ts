@@ -46,9 +46,18 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           setCapitulos(capitulosData);
         }
 
+        console.log('Capítulos carregados:', capitulosData ? capitulosData.length : 0);
+        console.log('chapterId da URL:', chapterId);
+
         if (chapterId) {
-          const capituloAtual = capitulosData?.find(cap => cap.id === chapterId);
+          // Importante: Converter ambos os IDs para string para garantir uma comparação consistente
+          const capituloAtual = capitulosData?.find(cap => String(cap.id) === String(chapterId));
+          console.log('Capítulo encontrado:', capituloAtual ? capituloAtual.titulo : 'Nenhum');
+
           if (capituloAtual) {
+            console.log('Carregando título:', capituloAtual.titulo);
+            console.log('Carregando conteúdo:', capituloAtual.conteudo ? `${capituloAtual.conteudo.substring(0, 50)}...` : 'vazio');
+
             setChapterTitle(capituloAtual.titulo || '');
             setChapterContent(capituloAtual.conteudo || '');
 
@@ -56,20 +65,24 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
               const words = capituloAtual.conteudo.split(/\s+/).filter(Boolean).length;
               setWordCount(words);
             }
+          } else {
+            console.warn('Capítulo não encontrado com ID:', chapterId);
           }
         } else if (capitulosData && capitulosData.length > 0) {
-          // Se não tiver um capítulo específico, seleciona o primeiro capítulo do livro
-          const primeiroCapitulo = capitulosData[0];
-          setChapterTitle(primeiroCapitulo.titulo || '');
-          setChapterContent(primeiroCapitulo.conteudo || '');
+          // Se não tiver um capítulo específico, seleciona o último capítulo do livro
+          const ultimoCapitulo = capitulosData[capitulosData.length - 1];
+          console.log('Selecionando último capítulo:', ultimoCapitulo.titulo);
 
-          if (primeiroCapitulo.conteudo) {
-            const words = primeiroCapitulo.conteudo.split(/\s+/).filter(Boolean).length;
+          setChapterTitle(ultimoCapitulo.titulo || '');
+          setChapterContent(ultimoCapitulo.conteudo || '');
+
+          if (ultimoCapitulo.conteudo) {
+            const words = ultimoCapitulo.conteudo.split(/\s+/).filter(Boolean).length;
             setWordCount(words);
           }
 
-          // Redireciona para o primeiro capítulo
-          navigate(`/editor/${bookId}/${primeiroCapitulo.id}`);
+          // Redireciona para o último capítulo
+          navigate(`/editor/${bookId}/${ultimoCapitulo.id}`);
         }
       } catch (error) {
         console.error('Erro ao carregar livro:', error);

@@ -118,16 +118,23 @@ const initialConfig: InitialConfigType = {
 // Plugin para inicializar o editor com conteúdo
 function InitialContentPlugin({ initialContent }: { initialContent?: string }) {
   const [editor] = useLexicalComposerContext();
-  const isInitialized = useRef(false);
+  const previousContent = useRef<string>('');
 
   useEffect(() => {
-    // Se já inicializou ou não tem conteúdo inicial, não faz nada
-    if (isInitialized.current || !initialContent) return;
+    // Log para depuração
+    console.log('InitialContentPlugin: conteúdo recebido', initialContent ? `${initialContent.substring(0, 20)}...` : 'vazio');
 
-    // Define uma flag para indicar que o plugin já inicializou o editor
-    isInitialized.current = true;
+    // Se não há conteúdo ou é o mesmo que já foi carregado, não faz nada
+    if (!initialContent || initialContent === previousContent.current) {
+      return;
+    }
 
-    // Atualiza o editor com o conteúdo inicial
+    // Atualiza a referência para o conteúdo atual
+    previousContent.current = initialContent;
+
+    console.log('InitialContentPlugin: atualizando editor com novo conteúdo');
+
+    // Atualiza o editor com o conteúdo
     editor.update(() => {
       // Limpa o editor antes de adicionar o conteúdo inicial
       const root = $getRoot();
@@ -149,7 +156,7 @@ function InitialContentPlugin({ initialContent }: { initialContent?: string }) {
         });
       }
     });
-  }, [editor, initialContent]);
+  }, [editor, initialContent]); // Esta dependência garante que o efeito seja executado quando o conteúdo mudar
 
   return null;
 };

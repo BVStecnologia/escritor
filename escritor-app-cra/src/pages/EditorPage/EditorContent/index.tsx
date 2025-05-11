@@ -31,6 +31,14 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   chapterId,
   initialContent = ''
 }) => {
+  // Usando chapterId como chave para forçar recriação completa
+  // do componente quando mudar de capítulo
+  const editorKey = `editor-${bookId}-${chapterId || 'novo'}`;
+
+  console.log('Renderizando EditorContent com key:', editorKey);
+  console.log('chapterTitle:', chapterTitle);
+  console.log('initialContent:', initialContent ? `${initialContent.substring(0, 20)}...` : 'vazio');
+
   return (
     <Content>
       <Toolbar>
@@ -52,6 +60,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
       <EditorWrapper>
         <EditorContainer>
           <LexicalEditor
+            key={editorKey}
             initialContent={initialContent}
             onChange={onEditorChange}
             bookId={bookId}
