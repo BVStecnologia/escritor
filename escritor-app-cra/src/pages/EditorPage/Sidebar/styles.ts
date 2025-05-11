@@ -119,6 +119,10 @@ export const ChaptersContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+
+  /* Garantir que ainda permaneça visível quando o sidebar estiver recolhido */
+  overflow-x: hidden;
+  max-width: 100%;
 `;
 
 export const ChapterCardContainer = styled.div<{ $active: boolean; $index: number }>`

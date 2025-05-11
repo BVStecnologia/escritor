@@ -53,20 +53,70 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <ChaptersContainer>
-        {filteredChapters.map((chapter, index) => (
-          <ChapterCard
-            key={chapter.id}
-            chapter={chapter}
-            index={index}
-            isActive={chapter.id === activeChapterId}
-            onClick={() => onChapterSelect(chapter.id)}
-          />
-        ))}
+        {isOpen ? (
+          // Versão completa quando aberto
+          <>
+            {filteredChapters.map((chapter, index) => (
+              <ChapterCard
+                key={chapter.id}
+                chapter={chapter}
+                index={index}
+                isActive={chapter.id === activeChapterId}
+                onClick={() => onChapterSelect(chapter.id)}
+              />
+            ))}
 
-        <NewChapterButton onClick={onNewChapter}>
-          <PlusIcon />
-          Novo Capítulo
-        </NewChapterButton>
+            <NewChapterButton onClick={onNewChapter}>
+              <PlusIcon />
+              Novo Capítulo
+            </NewChapterButton>
+          </>
+        ) : (
+          // Versão recolhida - apenas ícones ou versão simplificada
+          <>
+            {filteredChapters.map((chapter, index) => (
+              <div
+                key={chapter.id}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: chapter.id === activeChapterId ? 'var(--primary-color, #3b82f6)' : 'var(--background-paper, #fff)',
+                  color: chapter.id === activeChapterId ? '#fff' : 'inherit',
+                  margin: '0 auto',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                }}
+                onClick={() => onChapterSelect(chapter.id)}
+              >
+                {index + 1}
+              </div>
+            ))}
+
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'var(--primary-light, #60a5fa)',
+                color: '#fff',
+                margin: '8px auto 0',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+              }}
+              onClick={onNewChapter}
+            >
+              <PlusIcon />
+            </div>
+          </>
+        )}
       </ChaptersContainer>
     </SidebarContainer>
   );
