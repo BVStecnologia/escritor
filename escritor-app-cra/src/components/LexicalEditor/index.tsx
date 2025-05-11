@@ -201,7 +201,8 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <ImagePlugin />
         <AutocompletePlugin />
         <AIToolsSelectionPlugin />
-        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
+        {/* Plugin de auto-save desativado pois o salvamento agora é feito no useEditorPage */}
+        {/* {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />} */}
       </EditorContainer>
     </LexicalComposer>
   );

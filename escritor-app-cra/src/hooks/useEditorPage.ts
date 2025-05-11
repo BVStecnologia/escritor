@@ -56,13 +56,18 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
 
           if (capituloAtual) {
             console.log('Carregando título:', capituloAtual.titulo);
-            console.log('Carregando conteúdo:', capituloAtual.conteudo ? `${capituloAtual.conteudo.substring(0, 50)}...` : 'vazio');
+
+            // Usar o campo texto em vez de conteudo (para compatibilidade, verificar os dois campos)
+            const conteudoCapitulo = capituloAtual.texto || capituloAtual.conteudo || '';
+            console.log('Carregando conteúdo:', conteudoCapitulo ? `${conteudoCapitulo.substring(0, 50)}...` : 'vazio');
+            console.log('Campo texto:', capituloAtual.texto ? 'presente' : 'ausente');
+            console.log('Campo conteudo:', capituloAtual.conteudo ? 'presente' : 'ausente');
 
             setChapterTitle(capituloAtual.titulo || '');
-            setChapterContent(capituloAtual.conteudo || '');
+            setChapterContent(conteudoCapitulo);
 
-            if (capituloAtual.conteudo) {
-              const words = capituloAtual.conteudo.split(/\s+/).filter(Boolean).length;
+            if (conteudoCapitulo) {
+              const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
               setWordCount(words);
             }
           } else {
@@ -73,11 +78,17 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           const ultimoCapitulo = capitulosData[capitulosData.length - 1];
           console.log('Selecionando último capítulo:', ultimoCapitulo.titulo);
 
-          setChapterTitle(ultimoCapitulo.titulo || '');
-          setChapterContent(ultimoCapitulo.conteudo || '');
+          // Usar o campo texto em vez de conteudo (para compatibilidade, verificar os dois campos)
+          const conteudoUltimoCapitulo = ultimoCapitulo.texto || ultimoCapitulo.conteudo || '';
+          console.log('Conteúdo do último capítulo:', conteudoUltimoCapitulo ? `${conteudoUltimoCapitulo.substring(0, 50)}...` : 'vazio');
+          console.log('Campo texto (último):', ultimoCapitulo.texto ? 'presente' : 'ausente');
+          console.log('Campo conteudo (último):', ultimoCapitulo.conteudo ? 'presente' : 'ausente');
 
-          if (ultimoCapitulo.conteudo) {
-            const words = ultimoCapitulo.conteudo.split(/\s+/).filter(Boolean).length;
+          setChapterTitle(ultimoCapitulo.titulo || '');
+          setChapterContent(conteudoUltimoCapitulo);
+
+          if (conteudoUltimoCapitulo) {
+            const words = conteudoUltimoCapitulo.split(/\s+/).filter(Boolean).length;
             setWordCount(words);
           }
 
@@ -110,23 +121,43 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     };
   }, []);
 
-  // Auto-save
-  const simulateAutoSave = useCallback(() => {
-    if (chapterId) {
+  // Auto-save real para o banco de dados
+  const saveChapter = useCallback(async () => {
+    if (!chapterId) return;
+
+    try {
       setSaveStatus('saving');
-      
+
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      
-      saveTimerRef.current = setTimeout(() => {
-        // Aqui você faria o save real no banco
-        setSaveStatus('saved');
-        
-        setTimeout(() => {
+
+      saveTimerRef.current = setTimeout(async () => {
+        console.log('Salvando capítulo:', chapterId);
+        console.log('Título:', chapterTitle);
+        console.log('Conteúdo:', chapterContent ? `${chapterContent.substring(0, 50)}...` : 'vazio');
+
+        try {
+          // Salvar no banco de dados
+          await dbService.atualizarCapitulo(chapterId, {
+            titulo: chapterTitle,
+            conteudo: chapterContent
+          });
+
+          console.log('Capítulo salvo com sucesso');
+          setSaveStatus('saved');
+
+          setTimeout(() => {
+            setSaveStatus('idle');
+          }, 2000);
+        } catch (error) {
+          console.error('Erro ao salvar capítulo:', error);
           setSaveStatus('idle');
-        }, 2000);
+        }
       }, 1000);
+    } catch (error) {
+      console.error('Erro no processo de auto-save:', error);
+      setSaveStatus('idle');
     }
-  }, [chapterId]);
+  }, [chapterId, chapterTitle, chapterContent]);
 
   const handleEditorChange = useCallback((content: string) => {
     setChapterContent(content);
@@ -138,13 +169,15 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
       setWordCount(0);
     }
 
-    simulateAutoSave();
-  }, [simulateAutoSave]);
+    // Usar o saveChapter real em vez da simulação
+    saveChapter();
+  }, [saveChapter]);
 
   const handleChapterTitleChange = useCallback((value: string) => {
     setChapterTitle(value);
-    simulateAutoSave();
-  }, [simulateAutoSave]);
+    // Usar o saveChapter real em vez da simulação
+    saveChapter();
+  }, [saveChapter]);
 
   const handleChapterSelect = useCallback((selectedChapterId: string) => {
     navigate(`/editor/${bookId}/${selectedChapterId}`);

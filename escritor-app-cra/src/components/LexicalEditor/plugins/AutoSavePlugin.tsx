@@ -32,12 +32,13 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePlug
       });
 
       try {
+        // Atualizar usando conteudo que será mapeado para texto na função atualizarCapitulo
         await dbService.atualizarCapitulo(chapterId, {
           conteudo: content
         });
-        console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
+        console.log('Conteúdo salvo automaticamente pelo plugin:', new Date().toLocaleTimeString());
       } catch (error) {
-        console.error('Erro ao salvar automaticamente:', error);
+        console.error('Erro ao salvar automaticamente pelo plugin:', error);
       } finally {
         isSaving.current = false;
       }

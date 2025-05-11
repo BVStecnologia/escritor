@@ -8,9 +8,11 @@ export interface Capitulo {
   id: string;
   created_at: string;
   titulo: string;
-  conteudo?: string;
+  texto?: string;        // Campo para armazenar o conteúdo do capítulo
+  conteudo?: string;     // Campo mantido para compatibilidade com código existente
   livro_id: number;
   email_user?: string;
+  last_edit?: string;    // Timestamp da última edição
 }
 
 export interface Personagem {
@@ -241,17 +243,28 @@ export const dbService = {
         throw new Error('Usuário não autenticado');
       }
 
+      console.log('Criando capítulo:', capituloData);
+
+      // Criar objeto de dados para inserção
+      const newChapter = {
+        titulo: capituloData.titulo,
+        texto: capituloData.conteudo || '',  // Usar o campo 'texto' correto
+        livro_id: livroId,
+        email_user: email,
+        last_edit: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('Capitulo')
-        .insert([{
-          titulo: capituloData.titulo,
-          conteudo: capituloData.conteudo || '',
-          livro_id: livroId,
-          email_user: email
-        }])
+        .insert([newChapter])
         .select();
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro ao criar capítulo no Supabase:', error);
+        throw error;
+      }
+
+      console.log('Capítulo criado com sucesso:', data);
       return data[0] as Capitulo;
     } catch (error) {
       console.error(`Erro ao criar capítulo no livro ${livroId}:`, error);
@@ -264,16 +277,36 @@ export const dbService = {
    */
   async atualizarCapitulo(id: string, capituloData: { titulo?: string, conteudo?: string }) {
     try {
+      console.log('Atualizando capítulo:', id, capituloData);
+
+      // Cria objeto de atualização
+      const updateData: any = {};
+
+      // Se tiver título, inclui no objeto de atualização
+      if (capituloData.titulo !== undefined) {
+        updateData.titulo = capituloData.titulo;
+      }
+
+      // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
+      if (capituloData.conteudo !== undefined) {
+        updateData.texto = capituloData.conteudo;
+      }
+
+      // Adiciona timestamp de última edição
+      updateData.last_edit = new Date().toISOString();
+
       const { data, error } = await supabase
         .from('Capitulo')
-        .update({
-          titulo: capituloData.titulo,
-          conteudo: capituloData.conteudo
-        })
+        .update(updateData)
         .eq('id', id)
         .select();
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro ao atualizar capítulo no Supabase:', error);
+        throw error;
+      }
+
+      console.log('Capítulo atualizado com sucesso:', data);
       return data[0] as Capitulo;
     } catch (error) {
       console.error(`Erro ao atualizar capítulo ${id}:`, error);
