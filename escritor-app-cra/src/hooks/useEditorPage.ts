@@ -16,7 +16,7 @@ export interface UseEditorPageReturn {
   handleChapterTitleChange: (value: string) => void;
   handleEditorChange: (content: string) => void;
   handleChapterSelect: (chapterId: string) => void;
-  handleNewChapter: () => void;
+  handleNewChapter: (title?: string) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
 }
 
@@ -173,8 +173,31 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     navigate(`/editor/${bookId}/${selectedChapterId}`);
   }, [bookId, navigate]);
 
-  const handleNewChapter = useCallback(() => {
-    navigate(`/editor/${bookId}`);
+  const handleNewChapter = useCallback(async (title?: string) => {
+    if (!bookId) return;
+    try {
+      const livroId = parseInt(bookId);
+      // Sempre criar capítulo com conteúdo vazio
+      const novoCapitulo = await dbService.criarCapitulo(livroId, { titulo: title || 'Novo Capítulo', conteudo: '' });
+      // Atualiza a lista de capítulos
+      const capitulosAtualizados = await dbService.getCapitulosPorLivroId(livroId);
+      setCapitulos(capitulosAtualizados);
+      // Navega para o novo capítulo
+      navigate(`/editor/${bookId}/${novoCapitulo.id}`);
+    } catch (error: any) {
+      console.error('Erro detalhado ao criar capítulo:', error);
+      let msg = 'Erro ao criar novo capítulo.';
+      if (typeof error === 'object') {
+        msg = JSON.stringify(error, null, 2);
+      } else if (error?.message) {
+        msg = error.message;
+      } else if (error?.error_description) {
+        msg = error.error_description;
+      } else if (error?.toString) {
+        msg = error.toString();
+      }
+      setErro(msg);
+    }
   }, [bookId, navigate]);
 
   return {

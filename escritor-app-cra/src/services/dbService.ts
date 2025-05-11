@@ -248,10 +248,9 @@ export const dbService = {
       // Criar objeto de dados para inserção
       const newChapter = {
         titulo: capituloData.titulo,
-        texto: capituloData.conteudo || '',  // Usar o campo 'texto' correto
+        texto: capituloData.conteudo || '',
         livro_id: livroId,
-        email_user: email,
-        last_edit: new Date().toISOString()
+        last_edit: new Date().toTimeString().split(' ')[0]
       };
 
       const { data, error } = await supabase
