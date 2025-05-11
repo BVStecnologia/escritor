@@ -1,10 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { Container } from '../components/styled';
 import { dbService } from '../services/dbService';
 import { useAuth } from '../contexts/AuthContext';
 import { Livro } from '../types/livro';
+import defaultTheme from '../styles/theme';
+
+// Definição dos temas claro e escuro
+const lightTheme = {
+  ...defaultTheme,
+  background: 'linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+  headerBackground: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+  cardBackground: 'white',
+  textPrimary: '#0f172a',
+  textSecondary: '#64748b',
+  primaryGradient: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+  progressBackground: '#e2e8f0',
+  bookShadow: 'rgba(0, 0, 0, 0.1)',
+  bookPagesBackground: 'linear-gradient(90deg, #f5f5dc 0%, #ffffff 5%, #fafafa 95%, #f0f0dc 100%)',
+  shelfColor: 'linear-gradient(180deg, #8b4513 0%, #654321 50%, #8b4513 100%)',
+  shelfBottom: 'linear-gradient(180deg, #654321 0%, #4a2f1a 100%)',
+  addBookBorder: '#cbd5e1',
+  addBookColor: '#94a3b8',
+  addBookHoverBorder: '#3b82f6',
+  addBookHoverBackground: 'rgba(59, 130, 246, 0.05)',
+  addBookHoverColor: '#3b82f6'
+};
+
+const darkTheme = {
+  ...defaultTheme,
+  background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+  headerBackground: 'linear-gradient(135deg, #1d4ed8 0%, #7e22ce 100%)',
+  cardBackground: '#1e293b',
+  textPrimary: '#e2e8f0',
+  textSecondary: '#94a3b8',
+  primaryGradient: 'linear-gradient(135deg, #1d4ed8 0%, #7e22ce 100%)',
+  progressBackground: '#334155',
+  bookShadow: 'rgba(0, 0, 0, 0.3)',
+  bookPagesBackground: 'linear-gradient(90deg, #d1d5db 0%, #e5e7eb 5%, #d1d5db 95%, #c7cad1 100%)',
+  shelfColor: 'linear-gradient(180deg, #5b3925 0%, #42301a 50%, #5b3925 100%)',
+  shelfBottom: 'linear-gradient(180deg, #42301a 0%, #2c200e 100%)',
+  addBookBorder: '#475569',
+  addBookColor: '#64748b',
+  addBookHoverBorder: '#3b82f6',
+  addBookHoverBackground: 'rgba(59, 130, 246, 0.1)',
+  addBookHoverColor: '#60a5fa'
+};
+
+// Estilo global para aplicar background e outros estilos globais
+const GlobalStyle = createGlobalStyle`
+  body {
+    background: ${({ theme }) => theme.background};
+    color: ${({ theme }) => theme.textPrimary};
+    transition: all 0.3s ease;
+  }
+`;
 
 // ============= COMPONENTE BOOK3DLIBRARY =============
 const ShelfContainer = styled.div`
@@ -17,7 +68,7 @@ const ShelfContainer = styled.div`
 const Shelf = styled.div`
   width: 100%;
   height: 24px;
-  background: linear-gradient(180deg, #8b4513 0%, #654321 50%, #8b4513 100%);
+  background: ${({ theme }) => theme.shelfColor};
   border-radius: 2px;
   position: relative;
   box-shadow: 
@@ -33,7 +84,7 @@ const Shelf = styled.div`
     left: 0;
     right: 0;
     height: 10px;
-    background: linear-gradient(180deg, #654321 0%, #4a2f1a 100%);
+    background: ${({ theme }) => theme.shelfBottom};
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -225,11 +276,7 @@ const BookPages = styled.div<{ width: number }>`
   position: absolute;
   width: ${({ width }) => width - 10}px;
   height: 210px;
-  background: linear-gradient(90deg, 
-    #f5f5dc 0%, 
-    #ffffff 5%, 
-    #fafafa 95%, 
-    #f0f0dc 100%);
+  background: ${({ theme }) => theme.bookPagesBackground};
   left: 5px;
   top: 5px;
   transform: translateZ(0);
@@ -309,13 +356,13 @@ const BookLabel = styled.div<{ color: string }>`
   bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: ${({ theme }) => theme.cardBackground};
   padding: 6px 12px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px ${({ theme }) => theme.bookShadow};
   font-size: 0.8rem;
   font-weight: 600;
-  color: #334155;
+  color: ${({ theme }) => theme.textPrimary};
   white-space: nowrap;
   max-width: 150px;
   overflow: hidden;
@@ -326,7 +373,7 @@ const BookLabel = styled.div<{ color: string }>`
   ${BookWrapper}:hover & {
     opacity: 1;
     transform: translateX(-50%) translateY(-5px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px ${({ theme }) => theme.bookShadow};
   }
   
   &::before {
@@ -339,14 +386,14 @@ const BookLabel = styled.div<{ color: string }>`
     height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-bottom: 6px solid white;
+    border-bottom: 6px solid ${({ theme }) => theme.cardBackground};
   }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   
   svg {
     width: 120px;
@@ -358,12 +405,12 @@ const EmptyState = styled.div`
   h3 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #334155;
+    color: ${({ theme }) => theme.textPrimary};
     margin-bottom: 0.5rem;
   }
   
   p {
-    color: #64748b;
+    color: ${({ theme }) => theme.textSecondary};
     margin-bottom: 2rem;
   }
 `;
@@ -371,7 +418,7 @@ const EmptyState = styled.div`
 const AddBookButton = styled.button`
   width: 80px;
   height: 220px;
-  border: 3px dashed #cbd5e1;
+  border: 3px dashed ${({ theme }) => theme.addBookBorder};
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
@@ -379,14 +426,14 @@ const AddBookButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: ${({ theme }) => theme.addBookColor};
   font-size: 2rem;
   margin: 0 10px 40px 10px;
   
   &:hover {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
-    color: #3b82f6;
+    border-color: ${({ theme }) => theme.addBookHoverBorder};
+    background: ${({ theme }) => theme.addBookHoverBackground};
+    color: ${({ theme }) => theme.addBookHoverColor};
     transform: scale(1.05);
   }
 `;
@@ -525,7 +572,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
 // ============= COMPONENTES DO DASHBOARD =============
 const DashboardContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
+  background: ${({ theme }) => theme.background};
   padding: 2rem;
   position: relative;
   
@@ -536,7 +583,7 @@ const DashboardContainer = styled.div`
     left: 0;
     right: 0;
     height: 400px;
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: ${({ theme }) => theme.headerBackground};
     z-index: 0;
     border-radius: 0 0 50% 50%;
   }
@@ -609,11 +656,11 @@ const MainContent = styled.main`
 `;
 
 const WelcomeCard = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.cardBackground};
   border-radius: 24px;
   padding: 2.5rem;
   margin-bottom: 3rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px ${({ theme }) => theme.bookShadow};
   position: relative;
   overflow: hidden;
   
@@ -648,7 +695,7 @@ const WelcomeLeft = styled.div`
 const WelcomeTitle = styled.h2`
   font-size: 2.25rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: ${({ theme }) => theme.primaryGradient};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 0.75rem 0;
@@ -656,7 +703,7 @@ const WelcomeTitle = styled.h2`
 `;
 
 const WelcomeText = styled.p`
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   font-size: 1.125rem;
   margin: 0 0 2rem 0;
   line-height: 1.6;
@@ -669,7 +716,7 @@ const ActionButtons = styled.div`
 `;
 
 const PrimaryButton = styled.button`
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: ${({ theme }) => theme.primaryGradient};
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -678,18 +725,18 @@ const PrimaryButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 24px ${({ theme }) => theme.bookShadow};
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 12px 28px ${({ theme }) => theme.bookShadow};
   }
 `;
 
 const SecondaryButton = styled.button`
-  background: white;
+  background: ${({ theme }) => theme.cardBackground};
   color: #3b82f6;
-  border: 2px solid #e2e8f0;
+  border: 2px solid ${({ theme }) => theme.addBookBorder};
   padding: 1rem 2rem;
   border-radius: 16px;
   font-weight: 600;
@@ -698,7 +745,7 @@ const SecondaryButton = styled.button`
   transition: all 0.3s ease;
   
   &:hover {
-    background: #f8fafc;
+    background: ${({ theme }) => theme.addBookHoverBackground};
     border-color: #3b82f6;
     transform: translateY(-2px);
   }
@@ -727,13 +774,13 @@ const ProgressText = styled.div`
 const ProgressValue = styled.div`
   font-size: 3rem;
   font-weight: 800;
-  color: #0f172a;
+  color: ${({ theme }) => theme.textPrimary};
   line-height: 1;
 `;
 
 const ProgressLabel = styled.div`
   font-size: 0.875rem;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin-top: 0.5rem;
 `;
 
@@ -745,17 +792,17 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div<{ color: string; icon: string }>`
-  background: white;
+  background: ${({ theme }) => theme.cardBackground};
   border-radius: 20px;
   padding: 1.5rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 20px ${({ theme }) => theme.bookShadow};
   transition: all 0.3s ease;
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 30px ${({ theme }) => theme.bookShadow};
   }
   
   &::before {
@@ -810,13 +857,13 @@ const StatInfo = styled.div`
 const StatValue = styled.div`
   font-size: 2rem;
   font-weight: 800;
-  color: #0f172a;
+  color: ${({ theme }) => theme.textPrimary};
   line-height: 1;
 `;
 
 const StatLabel = styled.div`
   font-size: 0.875rem;
-  color: #64748b;
+  color: ${({ theme }) => theme.textSecondary};
   margin-top: 0.25rem;
 `;
 
@@ -838,7 +885,7 @@ const StatChange = styled.div<{ positive?: boolean }>`
 const StatBar = styled.div`
   flex: 1;
   height: 6px;
-  background: #e2e8f0;
+  background: ${({ theme }) => theme.progressBackground};
   border-radius: 3px;
   overflow: hidden;
 `;
@@ -852,10 +899,10 @@ const StatBarFill = styled.div<{ width: number; color: string }>`
 `;
 
 const BooksSection = styled.section`
-  background: white;
+  background: ${({ theme }) => theme.cardBackground};
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px ${({ theme }) => theme.bookShadow};
   position: relative;
   overflow: hidden;
   
@@ -882,7 +929,7 @@ const SectionHeader = styled.div`
 const SectionTitle = styled.h3`
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: ${({ theme }) => theme.textPrimary};
   margin: 0;
   display: flex;
   align-items: center;
@@ -894,12 +941,36 @@ const SectionTitle = styled.h3`
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: ${({ theme }) => theme.primaryGradient};
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
+  }
+`;
+
+// Componente de alternância de tema
+const ThemeToggle = styled.button`
+  background: none;
+  border: none;
+  padding: 8px;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  margin-left: 1rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
   }
 `;
 
@@ -920,6 +991,24 @@ const DashboardPage: React.FC = () => {
     progresso: 0
   });
   const [loading, setLoading] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Verifica se há uma preferência de tema salva
+    const savedTheme = localStorage.getItem('darkMode');
+    if (savedTheme) {
+      setDarkMode(savedTheme === 'true');
+    } else {
+      // Verifica a preferência do sistema
+      const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(prefersDarkMode);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Salva a preferência do tema
+    localStorage.setItem('darkMode', darkMode.toString());
+  }, [darkMode]);
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
@@ -970,175 +1059,187 @@ const DashboardPage: React.FC = () => {
 
   const calculateCircumference = (radius: number) => 2 * Math.PI * radius;
 
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
-    <DashboardContainer>
-      <Header>
-        <Logo>Escritor</Logo>
-        <UserCard onClick={() => navigate('/profile')}>
-          <UserAvatar>{getUserInitial()}</UserAvatar>
-          <div>
-            <div style={{ fontWeight: 600 }}>{getUserName()}</div>
-            <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Autor iniciante</div>
+    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
+      <GlobalStyle />
+      <DashboardContainer>
+        <Header>
+          <Logo>Escritor</Logo>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <UserCard onClick={() => navigate('/profile')}>
+              <UserAvatar>{getUserInitial()}</UserAvatar>
+              <div>
+                <div style={{ fontWeight: 600 }}>{getUserName()}</div>
+                <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Autor iniciante</div>
+              </div>
+            </UserCard>
+            <ThemeToggle onClick={toggleTheme}>
+              {darkMode ? '☀️' : '🌙'}
+            </ThemeToggle>
           </div>
-        </UserCard>
-      </Header>
+        </Header>
 
-      <MainContent>
-        <WelcomeCard>
-          <WelcomeContent>
-            <WelcomeLeft>
-              <WelcomeTitle>
-                Sua jornada de escrita começa aqui ✨
-              </WelcomeTitle>
-              <WelcomeText>
-                Já são {stats.palavras.toLocaleString('pt-BR')} palavras escritas! 
-                Continue criando e veja sua história ganhar vida.
-              </WelcomeText>
-              <ActionButtons>
-                <PrimaryButton onClick={() => navigate('/editor')}>
-                  Continuar Escrevendo
-                </PrimaryButton>
-                <SecondaryButton onClick={() => navigate('/books/new')}>
-                  Novo Livro
-                </SecondaryButton>
-              </ActionButtons>
-            </WelcomeLeft>
-            
-            <ProgressVisual>
-              <ProgressCircle viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#e2e8f0"
-                  strokeWidth="6"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="url(#gradient)"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={calculateCircumference(45)}
-                  strokeDashoffset={calculateCircumference(45) * (1 - stats.progresso / 100)}
-                  style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                />
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
-                  </linearGradient>
-                </defs>
-              </ProgressCircle>
-              <ProgressText>
-                <ProgressValue>{stats.progresso}%</ProgressValue>
-                <ProgressLabel>Progresso geral</ProgressLabel>
-              </ProgressText>
-            </ProgressVisual>
-          </WelcomeContent>
-        </WelcomeCard>
+        <MainContent>
+          <WelcomeCard>
+            <WelcomeContent>
+              <WelcomeLeft>
+                <WelcomeTitle>
+                  Sua jornada de escrita começa aqui ✨
+                </WelcomeTitle>
+                <WelcomeText>
+                  Já são {stats.palavras.toLocaleString('pt-BR')} palavras escritas! 
+                  Continue criando e veja sua história ganhar vida.
+                </WelcomeText>
+                <ActionButtons>
+                  <PrimaryButton onClick={() => navigate('/editor')}>
+                    Continuar Escrevendo
+                  </PrimaryButton>
+                  <SecondaryButton onClick={() => navigate('/books/new')}>
+                    Novo Livro
+                  </SecondaryButton>
+                </ActionButtons>
+              </WelcomeLeft>
+              
+              <ProgressVisual>
+                <ProgressCircle viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke={darkMode ? "#334155" : "#e2e8f0"}
+                    strokeWidth="6"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke="url(#gradient)"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={calculateCircumference(45)}
+                    strokeDashoffset={calculateCircumference(45) * (1 - stats.progresso / 100)}
+                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+                  />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={darkMode ? "#1d4ed8" : "#3b82f6"} />
+                      <stop offset="100%" stopColor={darkMode ? "#7e22ce" : "#8b5cf6"} />
+                    </linearGradient>
+                  </defs>
+                </ProgressCircle>
+                <ProgressText>
+                  <ProgressValue>{stats.progresso}%</ProgressValue>
+                  <ProgressLabel>Progresso geral</ProgressLabel>
+                </ProgressText>
+              </ProgressVisual>
+            </WelcomeContent>
+          </WelcomeCard>
 
-        <StatsGrid>
-          <StatCard color="#3b82f6" icon="📚">
-            <StatContent>
-              <StatTop>
-                <StatIcon color="#3b82f6">📚</StatIcon>
-                <StatInfo>
-                  <StatValue>{stats.livros}</StatValue>
-                  <StatLabel>Livros criados</StatLabel>
-                </StatInfo>
-              </StatTop>
-              <StatBottom>
-                <StatChange positive>
-                  <span>↑</span> +1 este mês
-                </StatChange>
-                <StatBar>
-                  <StatBarFill width={75} color="#3b82f6" />
-                </StatBar>
-              </StatBottom>
-            </StatContent>
-          </StatCard>
+          <StatsGrid>
+            <StatCard color="#3b82f6" icon="📚">
+              <StatContent>
+                <StatTop>
+                  <StatIcon color="#3b82f6">📚</StatIcon>
+                  <StatInfo>
+                    <StatValue>{stats.livros}</StatValue>
+                    <StatLabel>Livros criados</StatLabel>
+                  </StatInfo>
+                </StatTop>
+                <StatBottom>
+                  <StatChange positive>
+                    <span>↑</span> +1 este mês
+                  </StatChange>
+                  <StatBar>
+                    <StatBarFill width={75} color="#3b82f6" />
+                  </StatBar>
+                </StatBottom>
+              </StatContent>
+            </StatCard>
 
-          <StatCard color="#10b981" icon="📑">
-            <StatContent>
-              <StatTop>
-                <StatIcon color="#10b981">📑</StatIcon>
-                <StatInfo>
-                  <StatValue>{stats.capitulos}</StatValue>
-                  <StatLabel>Capítulos escritos</StatLabel>
-                </StatInfo>
-              </StatTop>
-              <StatBottom>
-                <StatChange positive>
-                  <span>↑</span> +3 esta semana
-                </StatChange>
-                <StatBar>
-                  <StatBarFill width={60} color="#10b981" />
-                </StatBar>
-              </StatBottom>
-            </StatContent>
-          </StatCard>
+            <StatCard color="#10b981" icon="📑">
+              <StatContent>
+                <StatTop>
+                  <StatIcon color="#10b981">📑</StatIcon>
+                  <StatInfo>
+                    <StatValue>{stats.capitulos}</StatValue>
+                    <StatLabel>Capítulos escritos</StatLabel>
+                  </StatInfo>
+                </StatTop>
+                <StatBottom>
+                  <StatChange positive>
+                    <span>↑</span> +3 esta semana
+                  </StatChange>
+                  <StatBar>
+                    <StatBarFill width={60} color="#10b981" />
+                  </StatBar>
+                </StatBottom>
+              </StatContent>
+            </StatCard>
 
-          <StatCard color="#f59e0b" icon="✍️">
-            <StatContent>
-              <StatTop>
-                <StatIcon color="#f59e0b">✍️</StatIcon>
-                <StatInfo>
-                  <StatValue>{stats.palavras.toLocaleString('pt-BR')}</StatValue>
-                  <StatLabel>Palavras totais</StatLabel>
-                </StatInfo>
-              </StatTop>
-              <StatBottom>
-                <StatChange positive>
-                  <span>↑</span> +2.458 hoje
-                </StatChange>
-                <StatBar>
-                  <StatBarFill width={85} color="#f59e0b" />
-                </StatBar>
-              </StatBottom>
-            </StatContent>
-          </StatCard>
+            <StatCard color="#f59e0b" icon="✍️">
+              <StatContent>
+                <StatTop>
+                  <StatIcon color="#f59e0b">✍️</StatIcon>
+                  <StatInfo>
+                    <StatValue>{stats.palavras.toLocaleString('pt-BR')}</StatValue>
+                    <StatLabel>Palavras totais</StatLabel>
+                  </StatInfo>
+                </StatTop>
+                <StatBottom>
+                  <StatChange positive>
+                    <span>↑</span> +2.458 hoje
+                  </StatChange>
+                  <StatBar>
+                    <StatBarFill width={85} color="#f59e0b" />
+                  </StatBar>
+                </StatBottom>
+              </StatContent>
+            </StatCard>
 
-          <StatCard color="#ef4444" icon="🔥">
-            <StatContent>
-              <StatTop>
-                <StatIcon color="#ef4444">🔥</StatIcon>
-                <StatInfo>
-                  <StatValue>7</StatValue>
-                  <StatLabel>Dias consecutivos</StatLabel>
-                </StatInfo>
-              </StatTop>
-              <StatBottom>
-                <StatChange positive>
-                  <span>🎯</span> Meta semanal atingida!
-                </StatChange>
-                <StatBar>
-                  <StatBarFill width={100} color="#ef4444" />
-                </StatBar>
-              </StatBottom>
-            </StatContent>
-          </StatCard>
-        </StatsGrid>
+            <StatCard color="#ef4444" icon="🔥">
+              <StatContent>
+                <StatTop>
+                  <StatIcon color="#ef4444">🔥</StatIcon>
+                  <StatInfo>
+                    <StatValue>7</StatValue>
+                    <StatLabel>Dias consecutivos</StatLabel>
+                  </StatInfo>
+                </StatTop>
+                <StatBottom>
+                  <StatChange positive>
+                    <span>🎯</span> Meta semanal atingida!
+                  </StatChange>
+                  <StatBar>
+                    <StatBarFill width={100} color="#ef4444" />
+                  </StatBar>
+                </StatBottom>
+              </StatContent>
+            </StatCard>
+          </StatsGrid>
 
-        <BooksSection>
-          <SectionHeader>
-            <SectionTitle>
-              📚 Sua Biblioteca
-            </SectionTitle>
-            <SecondaryButton 
-              onClick={() => navigate('/books')}
-              style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}
-            >
-              Ver todos os livros
-            </SecondaryButton>
-          </SectionHeader>
-          <Book3DLibrary maxBooks={8} />
-        </BooksSection>
-      </MainContent>
-    </DashboardContainer>
+          <BooksSection>
+            <SectionHeader>
+              <SectionTitle>
+                📚 Sua Biblioteca
+              </SectionTitle>
+              <SecondaryButton 
+                onClick={() => navigate('/books')}
+                style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}
+              >
+                Ver todos os livros
+              </SecondaryButton>
+            </SectionHeader>
+            <Book3DLibrary maxBooks={8} />
+          </BooksSection>
+        </MainContent>
+      </DashboardContainer>
+    </ThemeProvider>
   );
 };
 

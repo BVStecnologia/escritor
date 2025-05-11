@@ -169,5 +169,23 @@ export interface CustomTheme {
 }
 
 declare module 'styled-components' {
-  export interface DefaultTheme extends CustomTheme {}
+  export interface DefaultTheme extends CustomTheme {
+    // Propriedades adicionais usadas no DashboardPage
+    background?: string;
+    headerBackground?: string;
+    cardBackground?: string;
+    textPrimary?: string;
+    textSecondary?: string;
+    primaryGradient?: string;
+    progressBackground?: string;
+    bookShadow?: string;
+    bookPagesBackground?: string;
+    shelfColor?: string;
+    shelfBottom?: string;
+    addBookBorder?: string;
+    addBookColor?: string;
+    addBookHoverBorder?: string;
+    addBookHoverBackground?: string;
+    addBookHoverColor?: string;
+  }
 }
