@@ -536,10 +536,12 @@ const QuoteAuthor = styled.span`
 // Tipos
 interface ProfileData {
   nome: string;
+  Sobrenome: string;
   email: string;
-  bio: string;
+  biografia: string;
   generoPreferido: string;
   site: string;
+  Tema: string;
 }
 
 // Componente principal
@@ -550,10 +552,12 @@ const ProfilePage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [profile, setProfile] = useState<ProfileData>({
     nome: '',
+    Sobrenome: '',
     email: '',
-    bio: '',
+    biografia: '',
     generoPreferido: '',
-    site: ''
+    site: '',
+    Tema: 'claro'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -637,34 +641,55 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     const carregarPerfil = async () => {
       if (!user) return;
-      
+
       try {
         const perfilData = await dbService.getPerfilUsuario();
         if (perfilData) {
+          // Tema do perfil pode ser usado para sincronizar com o modo escuro/claro
+          const temaPerfil = perfilData.Tema === 'escuro';
+
+          // Se o tema do perfil for diferente do tema atual, atualize-o
+          if (temaPerfil !== isDarkMode) {
+            // Esta é apenas uma sincronização no carregamento
+            // Não estamos chamando toggleTheme() para evitar um loop
+          }
+
           setProfile({
             nome: perfilData.nome || '',
+            Sobrenome: perfilData.Sobrenome || '',
             email: user.email || '',
-            bio: perfilData.bio || '',
-            generoPreferido: '',
-            site: perfilData.site || ''
+            biografia: perfilData.biografia || '',
+            generoPreferido: perfilData.generoPreferido || '',
+            site: perfilData.site || '',
+            Tema: perfilData.Tema || 'claro'
           });
+
+          console.log('Perfil carregado:', perfilData);
         }
-        
+
         const livros = await dbService.getLivros();
         let totalCapitulos = 0;
         let totalPalavras = 0;
-        
+
         for (const livro of livros) {
           const capitulos = await dbService.getCapitulosPorLivroId(livro.id);
           totalCapitulos += capitulos?.length || 0;
-          
+
           for (const capitulo of capitulos || []) {
             if (capitulo.conteudo) {
               totalPalavras += capitulo.conteudo.split(/\s+/).filter(Boolean).length;
             }
           }
         }
-        
+
+        // Usar palavras do perfil se estiver disponível
+        if (perfilData && perfilData.palavras && perfilData.palavras > 0) {
+          totalPalavras = perfilData.palavras;
+        } else if (totalPalavras > 0) {
+          // Atualizar contagem de palavras no perfil
+          await dbService.atualizarPalavrasUsuario(totalPalavras);
+        }
+
         setStats({
           livros: livros.length,
           capitulos: totalCapitulos,
@@ -681,9 +706,9 @@ const ProfilePage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     carregarPerfil();
-  }, [user]);
+  }, [user, isDarkMode]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -697,14 +722,30 @@ const ProfilePage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setMessage(null);
-    
+
     try {
+      // Salvar o tema no perfil se mudou
+      const temaPerfil = isDarkMode ? 'escuro' : 'claro';
+
+      console.log('Salvando perfil com os seguintes dados:', {
+        nome: profile.nome,
+        Sobrenome: profile.Sobrenome,
+        biografia: profile.biografia,
+        generoPreferido: profile.generoPreferido,
+        site: profile.site,
+        Tema: temaPerfil
+      });
+
       await dbService.atualizarPerfilUsuario({
         nome: profile.nome,
-        bio: profile.bio,
-        site: profile.site
+        Sobrenome: profile.Sobrenome,
+        biografia: profile.biografia,
+        generoPreferido: profile.generoPreferido,
+        site: profile.site,
+        Tema: temaPerfil
       });
-      
+
+      console.log('Perfil atualizado com sucesso!');
       setMessage({
         text: "Perfil atualizado com sucesso!",
         isError: false
@@ -747,16 +788,27 @@ const ProfilePage: React.FC = () => {
               <SectionTitle>Informações Pessoais</SectionTitle>
               <Form onSubmit={handleSubmit}>
                 <FormGroup>
-                  <Label htmlFor="nome">Nome de Autor</Label>
+                  <Label htmlFor="nome">Nome</Label>
                   <Input
                     id="nome"
                     name="nome"
                     value={profile.nome}
                     onChange={handleInputChange}
-                    placeholder="Como você quer ser conhecido"
+                    placeholder="Seu nome"
                   />
                 </FormGroup>
-                
+
+                <FormGroup>
+                  <Label htmlFor="Sobrenome">Sobrenome</Label>
+                  <Input
+                    id="Sobrenome"
+                    name="Sobrenome"
+                    value={profile.Sobrenome}
+                    onChange={handleInputChange}
+                    placeholder="Seu sobrenome"
+                  />
+                </FormGroup>
+
                 <FormGroup>
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -767,18 +819,18 @@ const ProfilePage: React.FC = () => {
                     placeholder="Seu email"
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
-                  <Label htmlFor="bio">Biografia</Label>
+                  <Label htmlFor="biografia">Biografia</Label>
                   <Textarea
-                    id="bio"
-                    name="bio"
-                    value={profile.bio}
+                    id="biografia"
+                    name="biografia"
+                    value={profile.biografia}
                     onChange={handleInputChange}
                     placeholder="Conte sua história como escritor..."
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label htmlFor="generoPreferido">Gênero Literário Preferido</Label>
                   <Input
@@ -789,7 +841,7 @@ const ProfilePage: React.FC = () => {
                     placeholder="Ex: Romance, Ficção Científica, Fantasia..."
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label htmlFor="site">Website ou Blog</Label>
                   <Input

@@ -37,13 +37,17 @@ export interface Nota {
 }
 
 export interface Usuario {
-  id: string;
+  id: number;
+  created_at: string;
   nome?: string;
-  avatar_url?: string;
+  Sobrenome?: string;
+  Tema?: string;
+  palavras?: number;
+  email?: string;
+  user?: string;
+  biografia?: string;
   site?: string;
-  bio?: string;
-  criado_em: string;
-  atualizado_em: string;
+  generoPreferido?: string;
 }
 
 export const dbService = {
@@ -341,46 +345,138 @@ export const dbService = {
   async getPerfilUsuario() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
-      
+
       const { data, error } = await supabase
-        .from('Usuario')
+        .from('User')
         .select('*')
-        .eq('id', user.id)
+        .eq('user', user.id)
         .single();
-      
-      if (error) throw error;
+
+      if (error) {
+        // Se o usuário não foi encontrado, podemos criá-lo
+        if (error.code === 'PGRST116') {
+          return this.criarPerfilUsuario();
+        }
+        throw error;
+      }
+
       return data as Usuario;
     } catch (error) {
       console.error('Erro ao obter perfil do usuário:', error);
       throw error;
     }
   },
-  
+
   /**
-   * Atualizar o perfil do usuário
+   * Criar o perfil do usuário
    */
-  async atualizarPerfilUsuario(perfilData: Partial<Usuario>) {
+  async criarPerfilUsuario() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
-      
+
+      console.log('Criando perfil para o usuário:', user.id);
+
       const { data, error } = await supabase
-        .from('Usuario')
-        .update(perfilData)
-        .eq('id', user.id)
+        .from('User')
+        .insert([{
+          user: user.id,
+          email: user.email,
+          nome: user.user_metadata?.nome || '',
+          Sobrenome: user.user_metadata?.sobrenome || '',
+          Tema: 'claro',
+          palavras: 0,
+          generoPreferido: ''
+        }])
         .select();
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Erro ao criar perfil no Supabase:', error);
+        throw error;
+      }
+
+      console.log('Perfil criado com sucesso:', data);
+      return data[0] as Usuario;
+    } catch (error) {
+      console.error('Erro ao criar perfil do usuário:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar o perfil do usuário
+   */
+  async atualizarPerfilUsuario(perfilData: { nome?: string, biografia?: string, site?: string, Sobrenome?: string, Tema?: string, generoPreferido?: string }) {
+    try {
+      console.log('Atualizando perfil do usuário:', perfilData);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Adaptação dos campos para a nova estrutura
+      const dadosAtualizados: any = {};
+
+      if (perfilData.nome !== undefined) dadosAtualizados.nome = perfilData.nome;
+      if (perfilData.biografia !== undefined) dadosAtualizados.biografia = perfilData.biografia;
+      if (perfilData.site !== undefined) dadosAtualizados.site = perfilData.site;
+      if (perfilData.Sobrenome !== undefined) dadosAtualizados.Sobrenome = perfilData.Sobrenome;
+      if (perfilData.Tema !== undefined) dadosAtualizados.Tema = perfilData.Tema;
+      if (perfilData.generoPreferido !== undefined) {
+        console.log('Atualizando gênero preferido para:', perfilData.generoPreferido);
+        dadosAtualizados.generoPreferido = perfilData.generoPreferido;
+      }
+
+      console.log('Dados a serem atualizados:', dadosAtualizados);
+
+      const { data, error } = await supabase
+        .from('User')
+        .update(dadosAtualizados)
+        .eq('user', user.id)
+        .select();
+
+      if (error) {
+        console.error('Erro ao atualizar dados no Supabase:', error);
+        throw error;
+      }
+
+      console.log('Perfil atualizado com sucesso:', data);
       return data[0] as Usuario;
     } catch (error) {
       console.error('Erro ao atualizar perfil do usuário:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar contagem de palavras do usuário
+   */
+  async atualizarPalavrasUsuario(palavras: number) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data, error } = await supabase
+        .from('User')
+        .update({ palavras })
+        .eq('user', user.id)
+        .select();
+
+      if (error) throw error;
+      return data[0] as Usuario;
+    } catch (error) {
+      console.error('Erro ao atualizar palavras do usuário:', error);
       throw error;
     }
   }
