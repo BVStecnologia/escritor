@@ -11,9 +11,12 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { ListNode, ListItemNode } from '@lexical/list';
 import { CodeNode } from '@lexical/code';
 import { LinkNode } from '@lexical/link';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
+import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
 
@@ -73,7 +76,8 @@ const initialConfig: InitialConfigType = {
     ListItemNode,
     QuoteNode,
     CodeNode,
-    LinkNode
+    LinkNode,
+    ImageNode
   ]
 };
 
@@ -107,6 +111,9 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <HistoryPlugin />
         <AutoFocusPlugin />
         <OnChangePlugin onChange={handleChange} />
+        <ListPlugin />
+        <LinkPlugin />
+        <ImagePlugin />
         {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
       </EditorContainer>
     </LexicalComposer>
