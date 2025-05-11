@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabaseClient';
 import { authService } from '../services/authService';
 
-// Tema profissional para escritores (mesmo do login)
+// Tema profissional para autores (mesmo do login)
 const theme = {
   colors: {
     primary: '#1e40af',      // Azul profissional
@@ -592,7 +592,7 @@ const SignupPage: React.FC = () => {
             <FormHeader>
               <BookIcon />
               <Title>Crie sua Biblioteca</Title>
-              <Subtitle>Comece sua jornada como escritor</Subtitle>
+              <Subtitle>Comece sua jornada como bookwriter</Subtitle>
             </FormHeader>
 
             {error && <ErrorMessage>{error}</ErrorMessage>}

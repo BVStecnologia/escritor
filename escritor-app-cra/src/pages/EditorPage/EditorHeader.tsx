@@ -82,7 +82,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         <LogoSection>
           <Logo>
             <PenIcon />
-            Escritor
+            Bookwriter
           </Logo>
           {isEditing ? (
             <BookTitleInput

@@ -175,7 +175,7 @@ const Navigation: React.FC = () => {
   
   return (
     <NavContainer>
-      <Logo to="/">Escritor App</Logo>
+      <Logo to="/">Bookwriter</Logo>
       
       <NavLinks>
         {!loading && (

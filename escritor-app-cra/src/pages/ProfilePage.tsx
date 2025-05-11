@@ -816,7 +816,7 @@ const ProfilePage: React.FC = () => {
         
         <Header>
           <HeaderContent>
-            <ProfileTitle>Perfil do Escritor</ProfileTitle>
+            <ProfileTitle>Perfil do Bookwriter</ProfileTitle>
             <HeaderButtons>
               <ThemeToggle onClick={toggleTheme}>
                 {isDarkMode ? '☀️' : '🌙'}
@@ -873,7 +873,7 @@ const ProfilePage: React.FC = () => {
                     name="biografia"
                     value={profile.biografia}
                     onChange={handleInputChange}
-                    placeholder="Conte sua história como escritor..."
+                    placeholder="Conte sua história como autor..."
                   />
                 </FormGroup>
 

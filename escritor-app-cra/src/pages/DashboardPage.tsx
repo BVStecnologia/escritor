@@ -1075,7 +1075,7 @@ const DashboardPage: React.FC = () => {
       <GlobalStyle />
       <DashboardContainer>
         <Header>
-          <Logo>Escritor</Logo>
+          <Logo>Bookwriter</Logo>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <UserCard onClick={() => navigate('/profile')}>
               <UserAvatar>{getUserInitial()}</UserAvatar>

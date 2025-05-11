@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
 
-// Tema profissional para escritores
+// Tema profissional para autores
 const theme = {
   colors: {
     primary: '#1e40af',      // Azul profissional
@@ -549,7 +549,7 @@ const WriterPortalLogin: React.FC = () => {
               <Logo>
                 <QuillIcon>✍️</QuillIcon>
               </Logo>
-              <Title>Portal do Escritor</Title>
+              <Title>Portal do Bookwriter</Title>
               <Subtitle>Sua jornada literária começa aqui</Subtitle>
             </FormHeader>
 
@@ -602,7 +602,7 @@ const WriterPortalLogin: React.FC = () => {
             </Form>
 
             <LinkText>
-              Novo escritor? <a href="/signup">Crie sua conta</a>
+              Novo bookwriter? <a href="/signup">Crie sua conta</a>
             </LinkText>
           </LoginCard>
         </LibraryPortal>

@@ -40,7 +40,7 @@ const LandingPage: React.FC = () => {
       <NavBar>
         <Container>
           <NavContent>
-            <Logo>Escritor App</Logo>
+            <Logo>Bookwriter</Logo>
             <NavButtons>
               {isAuthenticated ? (
                 <DashboardButton to="/dashboard">Meu Painel</DashboardButton>
@@ -68,7 +68,7 @@ const LandingPage: React.FC = () => {
             </HeroHeadline>
             
             <HeroSubheadline>
-              Descubra como escritores iniciantes estão publicando livros profissionais em tempo recorde e gerando renda passiva de R$ 3.000 a R$ 50.000 por mês na Amazon KDP
+              Descubra como autores iniciantes estão publicando livros profissionais em tempo recorde e gerando renda passiva de R$ 3.000 a R$ 50.000 por mês na Amazon KDP
             </HeroSubheadline>
 
             <HeroStats>
@@ -145,7 +145,7 @@ const LandingPage: React.FC = () => {
       {/* Seção de Solução */}
       <SolutionSection>
         <Container>
-          <SectionTitle>Apresentando o Escritor App</SectionTitle>
+          <SectionTitle>Apresentando o Bookwriter</SectionTitle>
           <SectionSubtitle>
             A ferramenta brasileira que usa IA Claude para transformar suas ideias em livros profissionais
           </SectionSubtitle>
@@ -424,7 +424,7 @@ const LandingPage: React.FC = () => {
             </FinalCTATitle>
             
             <FinalCTAText>
-              Junte-se a centenas de escritores que já estão transformando suas ideias em livros publicados e gerando renda passiva na Amazon
+              Junte-se a centenas de autores que já estão transformando suas ideias em livros publicados e gerando renda passiva na Amazon
             </FinalCTAText>
 
             {isAuthenticated ? (
@@ -460,9 +460,9 @@ const LandingPage: React.FC = () => {
         <Container>
           <FooterContent>
             <FooterColumn>
-              <FooterLogo>Escritor App</FooterLogo>
+              <FooterLogo>Bookwriter</FooterLogo>
               <FooterText>
-                A plataforma definitiva para escritores que querem viver de seus livros.
+                A plataforma definitiva para autores que querem viver de seus livros.
               </FooterText>
             </FooterColumn>
             
@@ -476,13 +476,13 @@ const LandingPage: React.FC = () => {
             
             <FooterColumn>
               <FooterTitle>Contato</FooterTitle>
-              <FooterLink href="mailto:suporte@escritorapp.com">suporte@escritorapp.com</FooterLink>
+              <FooterLink href="mailto:suporte@bookwriter.com">suporte@bookwriter.com</FooterLink>
               <FooterLink href="#">WhatsApp: (11) 99999-9999</FooterLink>
             </FooterColumn>
           </FooterContent>
           
           <FooterBottom>
-            <p>© 2024 Escritor App. Todos os direitos reservados.</p>
+            <p>© 2024 Bookwriter. Todos os direitos reservados.</p>
             <PaymentBadge>
               <span>🔒 Pagamento 100% seguro</span>
             </PaymentBadge>
