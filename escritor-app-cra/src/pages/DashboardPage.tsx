@@ -51,14 +51,9 @@ const BooksContainer = styled.div`
   align-items: flex-end;
 `;
 
-const BookWrapper = styled.div`
-  position: relative;
-  margin-bottom: 40px;
-`;
-
 const Tooltip = styled.div`
   position: absolute;
-  top: -40px;
+  top: -50px;
   left: 50%;
   transform: translateX(-50%) translateY(10px);
   background: rgba(0, 0, 0, 0.9);
@@ -68,7 +63,7 @@ const Tooltip = styled.div`
   font-size: 0.9rem;
   font-weight: 600;
   white-space: nowrap;
-  max-width: 200px;
+  max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0;
@@ -77,7 +72,7 @@ const Tooltip = styled.div`
   pointer-events: none;
   z-index: 30;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -90,8 +85,13 @@ const Tooltip = styled.div`
     border-right: 6px solid transparent;
     border-top: 6px solid rgba(0, 0, 0, 0.9);
   }
-  
-  ${BookWrapper}:hover & {
+`;
+
+const BookWrapper = styled.div`
+  position: relative;
+  margin-bottom: 40px;
+
+  &:hover ${Tooltip} {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0);
@@ -492,7 +492,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
           
           return (
             <BookWrapper key={livro.id}>
-              <Tooltip>{livro.titulo}</Tooltip>
+              <Tooltip>{livro.titulo || livro["Nome do livro"] || "Sem título"}</Tooltip>
               <Book3D
                 color={color}
                 width={width}
