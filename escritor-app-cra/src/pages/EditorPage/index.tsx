@@ -116,6 +116,7 @@ const EditorPage: React.FC = () => {
     saveStatus,
     wordCount,
     chapterTitle,
+    chapterContent,
     handleChapterTitleChange,
     handleEditorChange,
     handleChapterSelect,
@@ -168,6 +169,7 @@ const EditorPage: React.FC = () => {
             onEditorChange={handleEditorChange}
             bookId={bookId}
             chapterId={chapterId}
+            initialContent={chapterContent}
           />
         </MainLayout>
 

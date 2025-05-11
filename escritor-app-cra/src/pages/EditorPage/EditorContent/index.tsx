@@ -19,6 +19,7 @@ interface EditorContentProps {
   onEditorChange: (content: string) => void;
   bookId?: string;
   chapterId?: string;
+  initialContent?: string;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -27,7 +28,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   onChapterTitleChange,
   onEditorChange,
   bookId,
-  chapterId
+  chapterId,
+  initialContent = ''
 }) => {
   return (
     <Content>
@@ -50,7 +52,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
       <EditorWrapper>
         <EditorContainer>
           <LexicalEditor
-            initialContent=""
+            initialContent={initialContent}
             onChange={onEditorChange}
             bookId={bookId}
             chapterId={chapterId}

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { $getRoot } from 'lexical';
 import { dbService } from '../../../services/dbService';
 
 interface AutoSavePluginProps {
@@ -10,6 +11,7 @@ interface AutoSavePluginProps {
 
 export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
+  const isSaving = useRef(false);
 
   useEffect(() => {
     if (!bookId || !chapterId) return;
@@ -18,12 +20,17 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePlug
     
     // Function to save content to database
     const saveContent = async () => {
-      const editorState = editor.getEditorState();
-      const content = editorState.read(() => {
-        const root = editor.getEditorState()._nodeMap.get('root');
-        return root ? root.getTextContent() : '';
+      if (isSaving.current) return;
+
+      isSaving.current = true;
+
+      let content = '';
+      // Usa read() dentro do contexto do editor para obter o conteúdo de forma segura
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        content = root.getTextContent();
       });
-      
+
       try {
         await dbService.atualizarCapitulo(chapterId, {
           conteudo: content
@@ -31,6 +38,8 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePlug
         console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
       } catch (error) {
         console.error('Erro ao salvar automaticamente:', error);
+      } finally {
+        isSaving.current = false;
       }
     };
 
@@ -40,19 +49,24 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePlug
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      
-      // Only trigger save if content actually changed
-      if (
-        ((): string => {
-          const root = prevEditorState._nodeMap.get('root');
-          return root ? root.getTextContent() : '';
-        })() !==
-        ((): string => {
-          const root = editorState._nodeMap.get('root');
-          return root ? root.getTextContent() : '';
-        })()
-      ) {
-        // Set new timeout for delayed save
+
+      // Obtenha o texto atual e anterior usando read() de forma segura
+      let prevText = '';
+      let currentText = '';
+
+      prevEditorState.read(() => {
+        const root = $getRoot();
+        prevText = root.getTextContent();
+      });
+
+      editorState.read(() => {
+        const root = $getRoot();
+        currentText = root.getTextContent();
+      });
+
+      // Só salva se o conteúdo realmente mudou
+      if (prevText !== currentText) {
+        // Define timeout para salvar com delay
         timeoutId = setTimeout(saveContent, delay);
       }
     });

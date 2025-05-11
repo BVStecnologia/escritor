@@ -11,6 +11,7 @@ export interface UseEditorPageReturn {
   saveStatus: 'idle' | 'saving' | 'saved';
   wordCount: number;
   chapterTitle: string;
+  chapterContent: string;
   handleChapterTitleChange: (value: string) => void;
   handleEditorChange: (content: string) => void;
   handleChapterSelect: (chapterId: string) => void;
@@ -27,6 +28,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [wordCount, setWordCount] = useState(0);
   const [chapterTitle, setChapterTitle] = useState('');
+  const [chapterContent, setChapterContent] = useState('');
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Carrega dados do livro e capítulos
@@ -48,12 +50,26 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           const capituloAtual = capitulosData?.find(cap => cap.id === chapterId);
           if (capituloAtual) {
             setChapterTitle(capituloAtual.titulo || '');
-            
+            setChapterContent(capituloAtual.conteudo || '');
+
             if (capituloAtual.conteudo) {
               const words = capituloAtual.conteudo.split(/\s+/).filter(Boolean).length;
               setWordCount(words);
             }
           }
+        } else if (capitulosData && capitulosData.length > 0) {
+          // Se não tiver um capítulo específico, seleciona o primeiro capítulo do livro
+          const primeiroCapitulo = capitulosData[0];
+          setChapterTitle(primeiroCapitulo.titulo || '');
+          setChapterContent(primeiroCapitulo.conteudo || '');
+
+          if (primeiroCapitulo.conteudo) {
+            const words = primeiroCapitulo.conteudo.split(/\s+/).filter(Boolean).length;
+            setWordCount(words);
+          }
+
+          // Redireciona para o primeiro capítulo
+          navigate(`/editor/${bookId}/${primeiroCapitulo.id}`);
         }
       } catch (error) {
         console.error('Erro ao carregar livro:', error);
@@ -100,13 +116,15 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   }, [chapterId]);
 
   const handleEditorChange = useCallback((content: string) => {
+    setChapterContent(content);
+
     if (content) {
       const words = content.split(/\s+/).filter(Boolean).length;
       setWordCount(words);
     } else {
       setWordCount(0);
     }
-    
+
     simulateAutoSave();
   }, [simulateAutoSave]);
 
@@ -138,6 +156,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     saveStatus,
     wordCount,
     chapterTitle,
+    chapterContent,
     handleChapterTitleChange,
     handleEditorChange,
     handleChapterSelect,

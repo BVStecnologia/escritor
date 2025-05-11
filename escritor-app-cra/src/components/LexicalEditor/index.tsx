@@ -1,5 +1,5 @@
-import React from 'react';
-import { $getRoot, $getSelection, EditorState } from 'lexical';
+import React, { useEffect, useRef } from 'react';
+import { $getRoot, $getSelection, EditorState, $createParagraphNode, $createTextNode } from 'lexical';
 import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -13,6 +13,7 @@ import { CodeNode } from '@lexical/code';
 import { LinkNode } from '@lexical/link';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
@@ -114,6 +115,45 @@ const initialConfig: InitialConfigType = {
   ]
 };
 
+// Plugin para inicializar o editor com conteúdo
+function InitialContentPlugin({ initialContent }: { initialContent?: string }) {
+  const [editor] = useLexicalComposerContext();
+  const isInitialized = useRef(false);
+
+  useEffect(() => {
+    // Se já inicializou ou não tem conteúdo inicial, não faz nada
+    if (isInitialized.current || !initialContent) return;
+
+    // Define uma flag para indicar que o plugin já inicializou o editor
+    isInitialized.current = true;
+
+    // Atualiza o editor com o conteúdo inicial
+    editor.update(() => {
+      // Limpa o editor antes de adicionar o conteúdo inicial
+      const root = $getRoot();
+      root.clear();
+
+      // Divide o conteúdo em parágrafos pela quebra de linha
+      const paragraphs = initialContent.split('\n').filter(Boolean);
+
+      if (paragraphs.length === 0) {
+        // Se não houver conteúdo, adiciona um parágrafo vazio
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+      } else {
+        // Para cada parágrafo, cria um nó de parágrafo e adiciona o texto
+        paragraphs.forEach(text => {
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode(text));
+          root.append(paragraph);
+        });
+      }
+    });
+  }, [editor, initialContent]);
+
+  return null;
+};
+
 export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   initialContent,
   onChange,
@@ -128,8 +168,12 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
     });
   };
 
+  // Usamos uma chave dinâmica baseada no ID do capítulo para forçar a recriação do editor
+  // quando mudamos de capítulo
+  const editorKey = `editor-${bookId}-${chapterId || 'new'}`;
+
   return (
-    <LexicalComposer initialConfig={initialConfig}>
+    <LexicalComposer key={editorKey} initialConfig={initialConfig}>
       <EditorContainer>
         <ToolbarPlugin />
         <EditorInner>
@@ -144,6 +188,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <HistoryPlugin />
         <AutoFocusPlugin />
         <OnChangePlugin onChange={handleChange} />
+        <InitialContentPlugin initialContent={initialContent} />
         <ListPlugin />
         <LinkPlugin />
         <ImagePlugin />
