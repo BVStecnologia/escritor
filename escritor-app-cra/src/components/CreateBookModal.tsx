@@ -34,7 +34,7 @@ const ModalOverlay = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: ${({ theme }) => theme.colors.background.overlay};
+  background: ${({ theme }) => theme.isDarkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,14 +47,14 @@ const ModalContainer = styled.div`
   position: relative;
   width: 600px;
   max-width: 95%;
-  background: ${({ theme }) => theme.colors.background.paper};
+  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
   border-radius: 16px;
   padding: 3rem;
   box-shadow: ${({ theme }) => theme.colors.shadow?.xl || theme.shadows.xl};
-  border: 1px solid ${({ theme }) => theme.colors.border?.light || theme.colors.gray[200]};
+  border: 1px solid ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : (theme.colors.border?.light || theme.colors.gray[200])};
   animation: ${slideUp} 0.5s ease-out, ${bookOpen} 0.8s ease-out;
   overflow: hidden;
-  
+
   @media (max-width: 768px) {
     padding: 2rem;
   }
@@ -91,16 +91,16 @@ const Title = styled.h2`
   font-family: ${({ theme }) => theme.fonts.heading};
   font-size: 2.5rem;
   font-weight: 900;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   margin-bottom: 0.5rem;
-  
+
   @media (max-width: 768px) {
     font-size: 2rem;
   }
 `;
 
 const Subtitle = styled.p`
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
   font-size: 1.1rem;
   font-weight: 500;
 `;
@@ -119,75 +119,75 @@ const Label = styled.label`
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   margin-bottom: 0.5rem;
 `;
 
 const Input = styled.input`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.colors.border?.light || theme.colors.gray[200]};
+  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   transition: all 0.2s ease;
-  
+
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
     box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
   }
-  
+
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text.tertiary};
+    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.colors.border?.light || theme.colors.gray[200]};
+  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   min-height: 120px;
   resize: vertical;
   transition: all 0.2s ease;
   font-family: ${({ theme }) => theme.fonts.body};
-  
+
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
     box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
   }
-  
+
   &::placeholder {
-    color: ${({ theme }) => theme.colors.text.tertiary};
+    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
   }
 `;
 
 const Select = styled.select`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.colors.border?.light || theme.colors.gray[200]};
+  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   transition: all 0.2s ease;
   cursor: pointer;
-  
+
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
     box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
   }
-  
+
   option {
-    background: ${({ theme }) => theme.colors.background.paper};
-    color: ${({ theme }) => theme.colors.text.primary};
+    background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.paper};
+    color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   }
 `;
 
@@ -283,18 +283,18 @@ const CloseButton = styled.button`
   width: 40px;
   height: 40px;
   border: none;
-  background: ${({ theme }) => theme.colors.background.light};
+  background: ${({ theme }) => theme.isDarkMode ? '#374151' : theme.colors.background.light};
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: ${({ theme }) => theme.colors.text.secondary};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
   transition: all 0.2s ease;
   font-size: 1.5rem;
-  
+
   &:hover {
-    background: ${({ theme }) => theme.colors.primary}10;
+    background: ${({ theme }) => theme.isDarkMode ? 'rgba(59, 130, 246, 0.15)' : `${theme.colors.primary}10`};
     color: ${({ theme }) => theme.colors.primary};
     transform: rotate(90deg);
   }
