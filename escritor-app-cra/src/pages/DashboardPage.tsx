@@ -472,7 +472,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
     const carregarLivros = async () => {
       try {
         const livrosCarregados = await dbService.getLivros();
-        setLivros(livrosCarregados.slice(0, maxBooks));
+        setLivros(livrosCarregados.slice(0, maxBooks).reverse());
       } catch (error) {
         console.error("Erro ao carregar livros:", error);
       } finally {
