@@ -1003,11 +1003,14 @@ const DashboardPage: React.FC = () => {
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [totalLivros, setTotalLivros] = useState(0);
+  const maxBooks = 8;
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
       try {
         const livros = await dbService.getLivros();
+        setTotalLivros(livros.length);
         let totalCapitulos = 0;
         let totalPalavras = 0;
         
@@ -1232,14 +1235,16 @@ const DashboardPage: React.FC = () => {
               <SectionTitle>
                 📚 Sua Biblioteca
               </SectionTitle>
-              <SecondaryButton 
-                onClick={() => navigate('/books')}
-                style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}
-              >
-                Ver todos os livros
-              </SecondaryButton>
+              {totalLivros > maxBooks && (
+                <SecondaryButton 
+                  onClick={() => navigate('/books')}
+                  style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}
+                >
+                  Ver todos os livros
+                </SecondaryButton>
+              )}
             </SectionHeader>
-            <Book3DLibrary maxBooks={8} onAddBook={() => setIsCreateModalOpen(true)} />
+            <Book3DLibrary maxBooks={maxBooks} onAddBook={() => setIsCreateModalOpen(true)} />
           </BooksSection>
         </MainContent>
         <CreateBookModal

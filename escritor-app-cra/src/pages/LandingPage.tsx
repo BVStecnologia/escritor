@@ -277,11 +277,11 @@ const LandingPage: React.FC = () => {
               
               <PlanCTA>
                 {isAuthenticated ? (
-                  <CTAButton $secondary as={Link} to="/dashboard">
+                  <CTAButton as={Link} to="/dashboard">
                     ACESSAR PAINEL
                   </CTAButton>
                 ) : (
-                  <CTAButton $secondary as={Link} to="/signup">
+                  <CTAButton as={Link} to="/signup">
                     COMEÇAR AGORA
                   </CTAButton>
                 )}
@@ -342,11 +342,11 @@ const LandingPage: React.FC = () => {
               
               <PlanCTA>
                 {isAuthenticated ? (
-                  <CTAButton $secondary as={Link} to="/dashboard">
+                  <CTAButton as={Link} to="/dashboard">
                     ACESSAR PAINEL
                   </CTAButton>
                 ) : (
-                  <CTAButton $secondary as={Link} to="/signup">
+                  <CTAButton as={Link} to="/signup">
                     PLANO ILIMITADO
                   </CTAButton>
                 )}
@@ -606,7 +606,9 @@ const CTAButton = styled.a<{ $secondary?: boolean }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+    background: linear-gradient(90deg, #4361ee, #3f37c9);
     color: white;
+    border: ${props => props.$secondary ? '2px solid #4361ee' : 'none'};
   }
 
   &:visited, &:active, &:focus {
