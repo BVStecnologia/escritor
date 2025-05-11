@@ -10,16 +10,21 @@ interface ColorPalette {
     light: string;
     dark: string;
     gradient: string;
+    glass?: string;
+    overlay?: string;
   };
   primary: string;
   primaryLight: string;
   primaryDark: string;
+  primaryGradient?: string;
   secondary: string;
   secondaryLight: string;
   secondaryDark: string;
+  secondaryGradient?: string;
   accent: string;
   accentLight: string;
   accentDark: string;
+  accentGradient?: string;
   warning: string;
   danger: string;
   error: string;
@@ -31,6 +36,19 @@ interface ColorPalette {
     secondary: string;
     tertiary: string;
     light: string;
+    inverse?: string;
+  };
+  border?: {
+    light: string;
+    medium: string;
+    heavy: string;
+  };
+  shadow?: {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    glow?: string;
   };
   gray: {
     100: string;
