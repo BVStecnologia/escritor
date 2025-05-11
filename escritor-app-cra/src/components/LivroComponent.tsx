@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { dbService } from '../services/dbService';
-import { Livro } from '../services/dbService';
+import { Livro } from '../types/livro';
 import { Button, Card, Title, Text } from './styled';
 
 const LivrosContainer = styled.div`

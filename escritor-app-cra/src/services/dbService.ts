@@ -1,15 +1,8 @@
 import { supabase } from './supabaseClient';
+import { Livro } from '../types/livro';
 
 // Serviço para interagir com as tabelas existentes no Supabase
 // Adaptaremos este serviço para corresponder à sua estrutura de banco de dados existente
-
-export interface Livro {
-  id: number;
-  created_at: string;
-  "Nome do livro": string;
-  "Autor"?: string;
-  email_user?: string;
-}
 
 export interface Capitulo {
   id: string;
