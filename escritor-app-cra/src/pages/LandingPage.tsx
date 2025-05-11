@@ -9,7 +9,7 @@ const LandingPage: React.FC = () => {
         <Container>
           <HeroContent>
             <AttentionGrabber>
-              ⚡ REVELADO: O Segredo dos Autores que Faturam R$ 10.000+ por Mês na Amazon
+              ⚡ O Segredo dos Autores que Faturam R$ 10.000+ por Mês na Amazon
             </AttentionGrabber>
             
             <HeroHeadline>
