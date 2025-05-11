@@ -289,14 +289,20 @@ const CloseButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
-  transition: all 0.2s ease;
-  font-size: 1.5rem;
+  color: ${({ theme }) => theme.isDarkMode ? '#94a3b8' : theme.colors.text.secondary};
+  transition: all 0.3s ease;
+  font-size: 1.75rem;
+  z-index: 10;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 
   &:hover {
-    background: ${({ theme }) => theme.isDarkMode ? 'rgba(59, 130, 246, 0.15)' : `${theme.colors.primary}10`};
-    color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'};
+    color: #ef4444;
     transform: rotate(90deg);
+  }
+
+  &:active {
+    transform: rotate(90deg) scale(0.9);
   }
 `;
 
@@ -406,7 +412,14 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
   return (
     <ModalOverlay onClick={handleOverlayClick}>
       <ModalContainer ref={modalRef}>
-        <CloseButton onClick={onClose}>×</CloseButton>
+        <CloseButton
+          title="Fechar"
+          aria-label="Fechar modal"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+        >✕</CloseButton>
         <BookDecoration>📚</BookDecoration>
         
         <ModalHeader>
