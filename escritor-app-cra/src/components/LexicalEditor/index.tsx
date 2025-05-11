@@ -17,6 +17,8 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
 import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
+import { AutocompletePlugin } from './plugins/AutocompletePlugin';
+import { AIToolsSelectionPlugin } from './plugins/AIToolsSelectionPlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
 
@@ -38,7 +40,7 @@ const EditorInner = styled.div`
 const ContentEditableWrapper = styled.div`
   min-height: 100%;
   padding: 2rem;
-  
+
   .editor-input {
     outline: none;
     min-height: 100%;
@@ -56,6 +58,37 @@ const ContentEditableWrapper = styled.div`
     font-size: 1.125rem;
     pointer-events: none;
     user-select: none;
+  }
+
+  /* Estilos específicos para os headings no editor */
+  .editor-heading-h1 {
+    font-size: ${({ theme }) => theme.fontSizes['4xl']};
+    font-weight: ${({ theme }) => theme.fontWeights.bold};
+    color: ${({ theme }) => theme.colors.text.primary};
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-family: ${({ theme }) => theme.fonts.heading};
+    line-height: 1.2;
+  }
+
+  .editor-heading-h2 {
+    font-size: ${({ theme }) => theme.fontSizes['3xl']};
+    font-weight: ${({ theme }) => theme.fontWeights.semibold};
+    color: ${({ theme }) => theme.colors.text.primary};
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    font-family: ${({ theme }) => theme.fonts.heading};
+    line-height: 1.3;
+  }
+
+  .editor-heading-h3 {
+    font-size: ${({ theme }) => theme.fontSizes['2xl']};
+    font-weight: ${({ theme }) => theme.fontWeights.semibold};
+    color: ${({ theme }) => theme.colors.text.primary};
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-family: ${({ theme }) => theme.fonts.heading};
+    line-height: 1.4;
   }
 `;
 
@@ -114,6 +147,8 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <ListPlugin />
         <LinkPlugin />
         <ImagePlugin />
+        <AutocompletePlugin />
+        <AIToolsSelectionPlugin />
         {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
       </EditorContainer>
     </LexicalComposer>
