@@ -272,47 +272,54 @@ export const dbService = {
     }
   },
   
-  /**
+ /**
    * Atualizar um capítulo existente
    */
-  async atualizarCapitulo(id: string, capituloData: { titulo?: string, conteudo?: string }) {
-    try {
-      console.log('Atualizando capítulo:', id, capituloData);
+ async atualizarCapitulo(id: string, capituloData: { titulo?: string, conteudo?: string }) {
+  try {
+    console.log('Atualizando capítulo:', id, capituloData);
 
-      // Cria objeto de atualização
-      const updateData: any = {};
+    // Cria objeto de atualização
+    const updateData: any = {};
 
-      // Se tiver título, inclui no objeto de atualização
-      if (capituloData.titulo !== undefined) {
-        updateData.titulo = capituloData.titulo;
-      }
+    // Se tiver título, inclui no objeto de atualização
+    if (capituloData.titulo !== undefined) {
+      updateData.titulo = capituloData.titulo;
+    }
 
-      // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
-      if (capituloData.conteudo !== undefined) {
-        updateData.texto = capituloData.conteudo;
-      }
+    // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
+    if (capituloData.conteudo !== undefined) {
+      updateData.texto = capituloData.conteudo;
+    }
 
-      // Adiciona timestamp de última edição
-      updateData.last_edit = new Date().toISOString();
+    // Adiciona timestamp de última edição
+    updateData.last_edit = new Date().toISOString();
 
-      const { data, error } = await supabase
-        .from('Capitulo')
-        .update(updateData)
-        .eq('id', id)
-        .select();
+    const { data, error } = await supabase
+      .from('Capitulo')
+      .update(updateData)
+      .eq('id', id)
+      .select();
 
-      if (error) {
-        console.error('Erro ao atualizar capítulo no Supabase:', error);
-        throw error;
-      }
-
-      console.log('Capítulo atualizado com sucesso:', data);
-      return data[0] as Capitulo;
-    } catch (error) {
-      console.error(`Erro ao atualizar capítulo ${id}:`, error);
+    if (error) {
+      console.error('Erro ao atualizar capítulo no Supabase:', error);
       throw error;
     }
-  },
+
+    console.log('Capítulo atualizado com sucesso:', data);
+    
+    // Retornar com o campo conteudo para manter compatibilidade
+    const result = data[0];
+    if (result && result.texto) {
+      result.conteudo = result.texto;
+    }
+    
+    return result as Capitulo;
+  } catch (error) {
+    console.error(`Erro ao atualizar capítulo ${id}:`, error);
+    throw error;
+  }
+},
   
   /**
    * Excluir um capítulo

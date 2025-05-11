@@ -60,7 +60,6 @@ export const EditorContent: React.FC<EditorContentProps> = ({
       <EditorWrapper>
         <EditorContainer>
           <LexicalEditor
-            key={editorKey}
             initialContent={initialContent}
             onChange={onEditorChange}
             bookId={bookId}

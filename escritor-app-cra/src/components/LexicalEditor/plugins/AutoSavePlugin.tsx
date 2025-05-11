@@ -9,74 +9,49 @@ interface AutoSavePluginProps {
   delay?: number;
 }
 
-export function AutoSavePlugin({ bookId, chapterId, delay = 3000 }: AutoSavePluginProps) {
+export function AutoSavePlugin({ bookId, chapterId, delay = 15000 }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
-  const isSaving = useRef(false);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedContent = useRef<string>('');
 
   useEffect(() => {
     if (!bookId || !chapterId) return;
 
-    let timeoutId: NodeJS.Timeout;
-    
-    // Function to save content to database
-    const saveContent = async () => {
-      if (isSaving.current) return;
-
-      isSaving.current = true;
-
-      let content = '';
-      // Usa read() dentro do contexto do editor para obter o conteúdo de forma segura
-      editor.getEditorState().read(() => {
-        const root = $getRoot();
-        content = root.getTextContent();
-      });
+    const saveContent = async (content: string) => {
+      if (content === lastSavedContent.current) {
+        return; // Não salva se o conteúdo não mudou
+      }
 
       try {
-        // Atualizar usando conteudo que será mapeado para texto na função atualizarCapitulo
         await dbService.atualizarCapitulo(chapterId, {
           conteudo: content
         });
-        console.log('Conteúdo salvo automaticamente pelo plugin:', new Date().toLocaleTimeString());
+        lastSavedContent.current = content;
+        console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
       } catch (error) {
-        console.error('Erro ao salvar automaticamente pelo plugin:', error);
-      } finally {
-        isSaving.current = false;
+        console.error('Erro ao salvar automaticamente:', error);
       }
     };
 
-    // Register listener for changes
-    const removeListener = editor.registerUpdateListener(({ editorState, prevEditorState, tags }) => {
-      // Clear previous timeout
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+    const removeListener = editor.registerUpdateListener(({ editorState }) => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
       }
-
-      // Obtenha o texto atual e anterior usando read() de forma segura
-      let prevText = '';
-      let currentText = '';
-
-      prevEditorState.read(() => {
-        const root = $getRoot();
-        prevText = root.getTextContent();
-      });
 
       editorState.read(() => {
         const root = $getRoot();
-        currentText = root.getTextContent();
-      });
+        const content = root.getTextContent();
 
-      // Só salva se o conteúdo realmente mudou
-      if (prevText !== currentText) {
-        // Define timeout para salvar com delay
-        timeoutId = setTimeout(saveContent, delay);
-      }
+        saveTimerRef.current = setTimeout(() => {
+          saveContent(content);
+        }, delay);
+      });
     });
 
-    // Cleanup
     return () => {
       removeListener();
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
       }
     };
   }, [bookId, chapterId, delay, editor]);

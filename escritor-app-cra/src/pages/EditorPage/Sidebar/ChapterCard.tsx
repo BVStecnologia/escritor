@@ -30,8 +30,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
     ? chapter.conteudo.split(/\s+/).filter(Boolean).length 
     : 0;
   
-  // Mock progress for now (could be based on word count targets or other metrics)
-  const progress = Math.floor(Math.random() * 100);
+  // Progresso fixo para evitar flicker
+  const progress = 100;
 
   return (
     <ChapterCardContainer 

@@ -14,6 +14,7 @@ import { LinkNode } from '@lexical/link';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { $isRangeSelection } from 'lexical';
 
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
@@ -116,39 +117,23 @@ const initialConfig: InitialConfigType = {
 };
 
 // Plugin para inicializar o editor com conteúdo
-function InitialContentPlugin({ initialContent }: { initialContent?: string }) {
+function InitialContentPlugin({ initialContent, chapterId }: { initialContent?: string, chapterId?: string }) {
   const [editor] = useLexicalComposerContext();
-  const previousContent = useRef<string>('');
+  const lastChapterId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    // Log para depuração
-    console.log('InitialContentPlugin: conteúdo recebido', initialContent ? `${initialContent.substring(0, 20)}...` : 'vazio');
+    if (!initialContent) return;
+    if (lastChapterId.current === chapterId) return; // Só atualiza se mudou de capítulo
 
-    // Se não há conteúdo ou é o mesmo que já foi carregado, não faz nada
-    if (!initialContent || initialContent === previousContent.current) {
-      return;
-    }
-
-    // Atualiza a referência para o conteúdo atual
-    previousContent.current = initialContent;
-
-    console.log('InitialContentPlugin: atualizando editor com novo conteúdo');
-
-    // Atualiza o editor com o conteúdo
     editor.update(() => {
-      // Limpa o editor antes de adicionar o conteúdo inicial
       const root = $getRoot();
       root.clear();
 
-      // Divide o conteúdo em parágrafos pela quebra de linha
       const paragraphs = initialContent.split('\n').filter(Boolean);
-
       if (paragraphs.length === 0) {
-        // Se não houver conteúdo, adiciona um parágrafo vazio
         const paragraph = $createParagraphNode();
         root.append(paragraph);
       } else {
-        // Para cada parágrafo, cria um nó de parágrafo e adiciona o texto
         paragraphs.forEach(text => {
           const paragraph = $createParagraphNode();
           paragraph.append($createTextNode(text));
@@ -156,10 +141,12 @@ function InitialContentPlugin({ initialContent }: { initialContent?: string }) {
         });
       }
     });
-  }, [editor, initialContent]); // Esta dependência garante que o efeito seja executado quando o conteúdo mudar
+
+    lastChapterId.current = chapterId;
+  }, [editor, initialContent, chapterId]);
 
   return null;
-};
+}
 
 export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   initialContent,
@@ -167,20 +154,22 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   bookId,
   chapterId
 }) => {
-  const handleChange = (editorState: EditorState) => {
+  // Throttled handleChange para reduzir a frequência de atualizações
+  const handleChange = React.useCallback((editorState: EditorState) => {
     editorState.read(() => {
       const root = $getRoot();
       const content = root.getTextContent();
-      onChange?.(content);
+
+      // Usar um timeout para evitar múltiplas atualizações em sequência
+      setTimeout(() => {
+        onChange?.(content);
+      }, 50);
     });
-  };
+  }, [onChange]);
 
-  // Usamos uma chave dinâmica baseada no ID do capítulo para forçar a recriação do editor
-  // quando mudamos de capítulo
-  const editorKey = `editor-${bookId}-${chapterId || 'new'}`;
-
+  // Removida a chave dinâmica que estava causando recriação do editor
   return (
-    <LexicalComposer key={editorKey} initialConfig={initialConfig}>
+    <LexicalComposer initialConfig={initialConfig}>
       <EditorContainer>
         <ToolbarPlugin />
         <EditorInner>
@@ -195,14 +184,17 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <HistoryPlugin />
         <AutoFocusPlugin />
         <OnChangePlugin onChange={handleChange} />
-        <InitialContentPlugin initialContent={initialContent} />
+        <InitialContentPlugin
+          initialContent={initialContent}
+          chapterId={chapterId}
+        />
         <ListPlugin />
         <LinkPlugin />
         <ImagePlugin />
         <AutocompletePlugin />
         <AIToolsSelectionPlugin />
-        {/* Plugin de auto-save desativado pois o salvamento agora é feito no useEditorPage */}
-        {/* {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />} */}
+        {/* AutoSavePlugin reativado */}
+        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
       </EditorContainer>
     </LexicalComposer>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbService, Capitulo } from '../services/dbService';
+import debounce from 'lodash/debounce';
 
 export interface UseEditorPageReturn {
   livro: any | null;
@@ -29,7 +30,6 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const [wordCount, setWordCount] = useState(0);
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterContent, setChapterContent] = useState('');
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Carrega dados do livro e capítulos
   useEffect(() => {
@@ -50,18 +50,14 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
         console.log('chapterId da URL:', chapterId);
 
         if (chapterId) {
-          // Importante: Converter ambos os IDs para string para garantir uma comparação consistente
           const capituloAtual = capitulosData?.find(cap => String(cap.id) === String(chapterId));
           console.log('Capítulo encontrado:', capituloAtual ? capituloAtual.titulo : 'Nenhum');
 
           if (capituloAtual) {
             console.log('Carregando título:', capituloAtual.titulo);
 
-            // Usar o campo texto em vez de conteudo (para compatibilidade, verificar os dois campos)
             const conteudoCapitulo = capituloAtual.texto || capituloAtual.conteudo || '';
             console.log('Carregando conteúdo:', conteudoCapitulo ? `${conteudoCapitulo.substring(0, 50)}...` : 'vazio');
-            console.log('Campo texto:', capituloAtual.texto ? 'presente' : 'ausente');
-            console.log('Campo conteudo:', capituloAtual.conteudo ? 'presente' : 'ausente');
 
             setChapterTitle(capituloAtual.titulo || '');
             setChapterContent(conteudoCapitulo);
@@ -74,16 +70,11 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
             console.warn('Capítulo não encontrado com ID:', chapterId);
           }
         } else if (capitulosData && capitulosData.length > 0) {
-          // Se não tiver um capítulo específico, seleciona o último capítulo do livro
           const ultimoCapitulo = capitulosData[capitulosData.length - 1];
           console.log('Selecionando último capítulo:', ultimoCapitulo.titulo);
 
-          // Usar o campo texto em vez de conteudo (para compatibilidade, verificar os dois campos)
           const conteudoUltimoCapitulo = ultimoCapitulo.texto || ultimoCapitulo.conteudo || '';
-          console.log('Conteúdo do último capítulo:', conteudoUltimoCapitulo ? `${conteudoUltimoCapitulo.substring(0, 50)}...` : 'vazio');
-          console.log('Campo texto (último):', ultimoCapitulo.texto ? 'presente' : 'ausente');
-          console.log('Campo conteudo (último):', ultimoCapitulo.conteudo ? 'presente' : 'ausente');
-
+          
           setChapterTitle(ultimoCapitulo.titulo || '');
           setChapterContent(conteudoUltimoCapitulo);
 
@@ -92,7 +83,6 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
             setWordCount(words);
           }
 
-          // Redireciona para o último capítulo
           navigate(`/editor/${bookId}/${ultimoCapitulo.id}`);
         }
       } catch (error) {
@@ -121,45 +111,29 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     };
   }, []);
 
-  // Auto-save real para o banco de dados
-  const saveChapter = useCallback(async () => {
-    if (!chapterId) return;
+  // Salvar título do capítulo
+  const saveChapterTitle = useCallback(async () => {
+    if (!chapterId || !chapterTitle) return;
 
     try {
       setSaveStatus('saving');
+      
+      await dbService.atualizarCapitulo(chapterId, {
+        titulo: chapterTitle
+      });
 
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-
-      saveTimerRef.current = setTimeout(async () => {
-        console.log('Salvando capítulo:', chapterId);
-        console.log('Título:', chapterTitle);
-        console.log('Conteúdo:', chapterContent ? `${chapterContent.substring(0, 50)}...` : 'vazio');
-
-        try {
-          // Salvar no banco de dados
-          await dbService.atualizarCapitulo(chapterId, {
-            titulo: chapterTitle,
-            conteudo: chapterContent
-          });
-
-          console.log('Capítulo salvo com sucesso');
-          setSaveStatus('saved');
-
-          setTimeout(() => {
-            setSaveStatus('idle');
-          }, 2000);
-        } catch (error) {
-          console.error('Erro ao salvar capítulo:', error);
-          setSaveStatus('idle');
-        }
-      }, 1000);
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
     } catch (error) {
-      console.error('Erro no processo de auto-save:', error);
+      console.error('Erro ao salvar título:', error);
       setSaveStatus('idle');
     }
-  }, [chapterId, chapterTitle, chapterContent]);
+  }, [chapterId, chapterTitle]);
 
-  const handleEditorChange = useCallback((content: string) => {
+  // Função com debounce para mudança no editor
+  const updateContent = useCallback((content: string) => {
     setChapterContent(content);
 
     if (content) {
@@ -168,16 +142,43 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     } else {
       setWordCount(0);
     }
+  }, []);
 
-    // Usar o saveChapter real em vez da simulação
-    saveChapter();
-  }, [saveChapter]);
+  // Limpar debounce quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (debouncedFnRef.current) {
+        debouncedFnRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Referência para o debounce
+  const debouncedFnRef = useRef<any>(null);
+
+  // Versão corrigida que gerencia corretamente o ciclo de vida do debounce
+  const handleEditorChange = useCallback((content: string) => {
+    // Cancelar debounce anterior se existir
+    if (debouncedFnRef.current) {
+      debouncedFnRef.current.cancel();
+    }
+
+    // Criar novo debounce
+    const debouncedFn = debounce(() => {
+      updateContent(content);
+    }, 100);
+
+    // Armazenar referência
+    debouncedFnRef.current = debouncedFn;
+
+    // Executar
+    debouncedFn();
+  }, [updateContent]);
 
   const handleChapterTitleChange = useCallback((value: string) => {
     setChapterTitle(value);
-    // Usar o saveChapter real em vez da simulação
-    saveChapter();
-  }, [saveChapter]);
+    saveChapterTitle();
+  }, [saveChapterTitle]);
 
   const handleChapterSelect = useCallback((selectedChapterId: string) => {
     navigate(`/editor/${bookId}/${selectedChapterId}`);
@@ -186,12 +187,6 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const handleNewChapter = useCallback(() => {
     navigate(`/editor/${bookId}`);
   }, [bookId, navigate]);
-
-  useEffect(() => {
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, []);
 
   return {
     livro,

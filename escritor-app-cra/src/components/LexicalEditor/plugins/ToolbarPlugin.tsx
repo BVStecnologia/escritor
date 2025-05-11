@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import debounce from 'lodash/debounce';
 import {
   $getSelection,
   $isRangeSelection,
@@ -92,6 +93,7 @@ export const ToolbarPlugin = () => {
   const [isLink, setIsLink] = useState(false);
   const [isBulletList, setIsBulletList] = useState(false);
   const [isNumberedList, setIsNumberedList] = useState(false);
+  const debouncedUpdateRef = useRef<any>(null);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -158,11 +160,42 @@ export const ToolbarPlugin = () => {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
+    // Função para criar o debounce
+    const createDebouncedUpdate = () => {
+      if (debouncedUpdateRef.current) {
+        debouncedUpdateRef.current.cancel();
+      }
+      
+      // Criar um novo debounce que atualiza a barra de ferramentas
+      const debouncedFn = debounce(() => {
+        try {
+          updateToolbar();
+        } catch (error) {
+          console.error('Erro ao atualizar toolbar:', error);
+        }
+      }, 200);
+      
+      debouncedUpdateRef.current = debouncedFn;
+      return debouncedFn;
+    };
+    
+    // Criar o debounce inicial
+    const debouncedUpdate = createDebouncedUpdate();
+    
+    // Registrar listener para atualizações do editor
+    const unregisterListener = editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
-        updateToolbar();
+        debouncedUpdate();
       });
     });
+    
+    // Limpar na desmontagem
+    return () => {
+      unregisterListener();
+      if (debouncedUpdateRef.current) {
+        debouncedUpdateRef.current.cancel();
+      }
+    };
   }, [editor, updateToolbar]);
 
   const formatHeading = (headingSize: HeadingTagType) => {
