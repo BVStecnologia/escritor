@@ -12,6 +12,7 @@ import CreateBookModal from '../components/CreateBookModal';
 // Definição dos temas claro e escuro
 const lightTheme = {
   ...defaultTheme,
+  isDarkMode: false,
   background: 'linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
   headerBackground: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
   cardBackground: 'white',
@@ -32,6 +33,7 @@ const lightTheme = {
 
 const darkTheme = {
   ...defaultTheme,
+  isDarkMode: true,
   background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
   headerBackground: 'linear-gradient(135deg, #1d4ed8 0%, #7e22ce 100%)',
   cardBackground: '#1e293b',

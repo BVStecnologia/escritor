@@ -217,5 +217,6 @@ declare module 'styled-components' {
     addBookHoverBorder?: string;
     addBookHoverBackground?: string;
     addBookHoverColor?: string;
+    isDarkMode?: boolean;
   }
 }
