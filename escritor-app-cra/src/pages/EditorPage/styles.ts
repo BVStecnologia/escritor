@@ -435,7 +435,7 @@ export const EditorContainer = styled.div`
 // AI Assistant components
 export const AIAssistantButton = styled.button<{ $active: boolean }>`
   position: fixed;
-  bottom: 2rem;
+  bottom: 5.5rem;
   right: 2rem;
   width: 60px;
   height: 60px;
