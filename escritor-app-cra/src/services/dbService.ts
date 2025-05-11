@@ -275,9 +275,11 @@ export const dbService = {
  /**
    * Atualizar um capítulo existente
    */
- async atualizarCapitulo(id: string, capituloData: { titulo?: string, conteudo?: string }) {
+ async atualizarCapitulo(id: string | number, capituloData: { titulo?: string, conteudo?: string }) {
   try {
-    console.log('Atualizando capítulo:', id, capituloData);
+    // Garante que o id é number
+    const numericId = typeof id === 'string' ? Number(id) : id;
+    console.log('Atualizando capítulo:', numericId, capituloData);
 
     // Cria objeto de atualização
     const updateData: any = {};
@@ -292,13 +294,14 @@ export const dbService = {
       updateData.texto = capituloData.conteudo;
     }
 
-    // Adiciona timestamp de última edição
-    updateData.last_edit = new Date().toISOString();
+    // Adiciona horário de última edição (HH:MM:SS)
+    const now = new Date();
+    updateData.last_edit = now.toTimeString().split(' ')[0];
 
     const { data, error } = await supabase
       .from('Capitulo')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', numericId)
       .select();
 
     if (error) {

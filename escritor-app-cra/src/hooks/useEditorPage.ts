@@ -111,26 +111,19 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     };
   }, []);
 
-  // Salvar título do capítulo
-  const saveChapterTitle = useCallback(async () => {
-    if (!chapterId || !chapterTitle) return;
+  // Salvar título do capítulo com debounce
+  const saveChapterTitleDebounced = useRef(
+    debounce((id, title) => {
+      dbService.atualizarCapitulo(id, { titulo: title });
+    }, 500)
+  ).current;
 
-    try {
-      setSaveStatus('saving');
-      
-      await dbService.atualizarCapitulo(chapterId, {
-        titulo: chapterTitle
-      });
-
-      setSaveStatus('saved');
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 2000);
-    } catch (error) {
-      console.error('Erro ao salvar título:', error);
-      setSaveStatus('idle');
+  const handleChapterTitleChange = useCallback((value: string) => {
+    setChapterTitle(value);
+    if (chapterId) {
+      saveChapterTitleDebounced(chapterId, value);
     }
-  }, [chapterId, chapterTitle]);
+  }, [chapterId, saveChapterTitleDebounced]);
 
   // Função com debounce para mudança no editor
   const updateContent = useCallback((content: string) => {
@@ -174,11 +167,6 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     // Executar
     debouncedFn();
   }, [updateContent]);
-
-  const handleChapterTitleChange = useCallback((value: string) => {
-    setChapterTitle(value);
-    saveChapterTitle();
-  }, [saveChapterTitle]);
 
   const handleChapterSelect = useCallback((selectedChapterId: string) => {
     navigate(`/editor/${bookId}/${selectedChapterId}`);
