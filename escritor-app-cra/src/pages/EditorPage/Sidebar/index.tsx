@@ -365,25 +365,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       index={index}
                       isDragDisabled={String(chapter.id) === String(activeChapterId)}
                     >
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          style={{
-                            ...provided.draggableProps.style,
-                            opacity: snapshot.isDragging ? 0.8 : 1
-                          }}
-                        >
-                          <ChapterCard
-                            chapter={chapter}
-                            index={index}
-                            isActive={String(chapter.id) === String(activeChapterId)}
-                            onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
-                            onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
-                          />
-                        </div>
-                      )}
+                      {(provided, snapshot) => {
+                        return (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            style={{
+                              ...provided.draggableProps.style,
+                              opacity: snapshot.isDragging ? 0.8 : 1,
+                              border: snapshot.isDragging ? '2px dashed #4f46e5' : 'none',
+                              borderRadius: '8px',
+                              userSelect: 'none',
+                              touchAction: 'manipulation'
+                            }}
+                            data-is-dragging={snapshot.isDragging}
+                          >
+                            <ChapterCard
+                              chapter={chapter}
+                              index={index}
+                              isActive={String(chapter.id) === String(activeChapterId)}
+                              onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
+                              onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
+                            />
+                          </div>
+                        );
+                      }}
                     </Draggable>
                   ))}
                   {provided.placeholder}
