@@ -61,13 +61,13 @@ const LoadingText = styled.h2`
   margin: 0;
 `;
 
-export const LoadingState: React.FC = () => {
+export const LoadingState: React.FC<{ mensagem?: string }> = ({ mensagem }) => {
   return (
     <LoadingContainer>
       <LoadingAnimation>
         <LoadingBook />
       </LoadingAnimation>
-      <LoadingText>Preparando seu ambiente de escrita...</LoadingText>
+      <LoadingText>{mensagem || 'Preparando seu ambiente de escrita...'}</LoadingText>
     </LoadingContainer>
   );
 };

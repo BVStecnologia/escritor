@@ -123,7 +123,8 @@ const EditorPage: React.FC = () => {
     handleChapterSelect,
     handleNewChapter,
     handleBookTitleChange,
-    setSaveStatus
+    setSaveStatus,
+    loadingChapter
   } = useEditorPage(bookId, chapterId);
 
   if (loading) {
@@ -167,18 +168,22 @@ const EditorPage: React.FC = () => {
             onNewChapter={handleNewChapter}
           />
 
-          <EditorContent
-            chapterTitle={chapterTitle}
-            wordCount={wordCount}
-            onChapterTitleChange={handleChapterTitleChange}
-            onEditorChange={handleEditorChange}
-            bookId={bookId}
-            chapterId={chapterId}
-            initialContent={chapterContent}
-            saveStatus={saveStatus}
-            isOnline={isOnline}
-            setSaveStatus={setSaveStatus}
-          />
+          {loadingChapter ? (
+            <LoadingState mensagem="Carregando capítulo..." />
+          ) : (
+            <EditorContent
+              chapterTitle={chapterTitle}
+              wordCount={wordCount}
+              onChapterTitleChange={handleChapterTitleChange}
+              onEditorChange={handleEditorChange}
+              bookId={bookId}
+              chapterId={chapterId}
+              initialContent={chapterContent}
+              saveStatus={saveStatus}
+              isOnline={isOnline}
+              setSaveStatus={setSaveStatus}
+            />
+          )}
         </MainLayout>
 
         <AIAssistant

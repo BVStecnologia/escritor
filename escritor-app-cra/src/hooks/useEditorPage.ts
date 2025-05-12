@@ -22,7 +22,7 @@ export interface UseEditorPageReturn {
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
 }
 
-export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPageReturn {
+export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPageReturn & { loadingChapter: boolean; setLoadingChapter: React.Dispatch<React.SetStateAction<boolean>> } {
   const navigate = useNavigate();
   const [livro, setLivro] = useState<any>(null);
   const [capitulos, setCapitulos] = useState<Capitulo[]>([]);
@@ -34,12 +34,13 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const [wordCount, setWordCount] = useState(0);
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterContent, setChapterContent] = useState('');
+  const [loadingChapter, setLoadingChapter] = useState(false);
 
   // Carrega dados do livro e capítulos
   useEffect(() => {
     const carregarLivro = async () => {
       if (!bookId) return;
-
+      setLoadingChapter(true);
       try {
         const livroId = parseInt(bookId);
         const livroData = await dbService.getLivroPorId(livroId);
@@ -93,7 +94,10 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
         console.error('Erro ao carregar livro:', error);
         setErro('Não foi possível carregar as informações do livro.');
       } finally {
-        setTimeout(() => setLoading(false), 1000);
+        setTimeout(() => {
+          setLoading(false);
+          setLoadingChapter(false);
+        }, 1000);
       }
     };
 
@@ -173,8 +177,9 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   }, [updateContent]);
 
   const handleChapterSelect = useCallback((selectedChapterId: string) => {
-    window.location.href = `/editor/${bookId}/${selectedChapterId}`;
-  }, [bookId]);
+    setLoadingChapter(true);
+    navigate(`/editor/${bookId}/${selectedChapterId}`);
+  }, [bookId, navigate]);
 
   const handleNewChapter = useCallback(async (title?: string) => {
     if (!bookId) return;
@@ -251,6 +256,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     handleChapterSelect,
     handleNewChapter,
     handleBookTitleChange,
-    setSaveStatus
+    setSaveStatus,
+    loadingChapter,
+    setLoadingChapter
   };
 }
