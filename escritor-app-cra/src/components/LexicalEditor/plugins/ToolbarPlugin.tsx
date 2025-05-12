@@ -105,6 +105,15 @@ const FontSelect = styled.select`
   }
 `;
 
+const BibliotecaIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 4H8V20H4V4Z" fill="currentColor" />
+    <path d="M10 4H14V20H10V4Z" fill="currentColor" />
+    <path d="M20 4H16V20H20V4Z" fill="currentColor" />
+    <path d="M2 2H22V4H21V22H3V4H2V2Z" fill="currentColor" />
+  </svg>
+);
+
 export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
@@ -373,9 +382,9 @@ export const ToolbarPlugin = () => {
       <ToolbarSection>
         <ToolButton
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
-          title="Desfazer"
+          title="Minha Biblioteca"
         >
-          ↩️
+          <BibliotecaIcon />
         </ToolButton>
         <ToolButton
           onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
