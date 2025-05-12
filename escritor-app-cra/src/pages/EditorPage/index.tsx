@@ -126,8 +126,34 @@ const EditorPage: React.FC = () => {
     handleDeleteChapter,
     handleBookTitleChange,
     setSaveStatus,
-    loadingChapter
+    loadingChapter,
+    setCapitulos,
+    setWordCount
   } = useEditorPage(bookId, chapterId);
+
+  // Função para atualizar a contagem de palavras em tempo real
+  const handleWordCountChanged = React.useCallback((newWordCount: number) => {
+    console.log('Contagem de palavras atualizada:', newWordCount);
+    // Atualiza o estado local com a nova contagem
+    setWordCount(newWordCount);
+    
+    // Também é possível atualizar o capítulo atual na lista de capítulos
+    // com a nova contagem, para mostrar em tempo real na sidebar
+    if (chapterId) {
+      const updatedCapitulos = capitulos.map(cap => {
+        if (String(cap.id) === String(chapterId)) {
+          return {
+            ...cap,
+            palavras: newWordCount
+          };
+        }
+        return cap;
+      });
+      
+      // Atualiza a lista de capítulos com o valor atualizado
+      setCapitulos(updatedCapitulos);
+    }
+  }, [chapterId, capitulos, setCapitulos, setWordCount]);
 
   if (loading) {
     return (
@@ -176,6 +202,7 @@ const EditorPage: React.FC = () => {
             wordCount={wordCount}
             onChapterTitleChange={handleChapterTitleChange}
             onEditorChange={handleEditorChange}
+            onWordCountChanged={handleWordCountChanged}
             bookId={bookId}
             chapterId={chapterId}
             initialContent={chapterContent}

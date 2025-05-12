@@ -100,6 +100,7 @@ interface LexicalEditorProps {
   bookId?: string;
   chapterId?: string;
   setSaveStatus?: (status: 'saving' | 'saved' | 'idle') => void;
+  onWordCountChanged?: (wordCount: number) => void;
 }
 
 const initialConfig: InitialConfigType = {
@@ -160,7 +161,8 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   onChange,
   bookId,
   chapterId,
-  setSaveStatus
+  setSaveStatus,
+  onWordCountChanged
 }) => {
   // Throttled handleChange para reduzir a frequência de atualizações
   const handleChange = React.useCallback((editorState: EditorState) => {
@@ -201,8 +203,15 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <ImagePlugin />
         <AutocompletePlugin />
         <AIToolsSelectionPlugin />
-        {/* AutoSavePlugin reativado */}
-        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} onStatusChange={setSaveStatus} />}
+        {/* AutoSavePlugin com callback de contagem de palavras */}
+        {bookId && chapterId && (
+          <AutoSavePlugin 
+            bookId={bookId} 
+            chapterId={chapterId} 
+            onStatusChange={setSaveStatus}
+            onWordCountChanged={onWordCountChanged}
+          />
+        )}
       </EditorContainer>
     </LexicalComposer>
   );

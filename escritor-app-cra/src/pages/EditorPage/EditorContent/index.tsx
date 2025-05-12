@@ -19,6 +19,7 @@ interface EditorContentProps {
   wordCount: number;
   onChapterTitleChange: (value: string) => void;
   onEditorChange: (content: string) => void;
+  onWordCountChanged?: (wordCount: number) => void;
   bookId?: string;
   chapterId?: string;
   initialContent?: string;
@@ -33,6 +34,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   wordCount,
   onChapterTitleChange,
   onEditorChange,
+  onWordCountChanged,
   bookId,
   chapterId,
   initialContent = '',
@@ -79,6 +81,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               bookId={bookId}
               chapterId={chapterId}
               setSaveStatus={setSaveStatus}
+              onWordCountChanged={onWordCountChanged}
             />
           </EditorContainer>
           <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
