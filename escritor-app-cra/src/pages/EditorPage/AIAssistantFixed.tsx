@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AIBrainIcon, LightbulbIcon, SendIcon } from '../../components/icons';
+import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon } from '../../components/icons';
 import styled from 'styled-components';
 import { AIContainer } from './styles';
 
@@ -11,12 +11,12 @@ const AIHeader = styled.div`
   justify-content: space-between;
 `;
 
-const AITitle = styled.h2`
+const AITitle = styled.h2<{ $isOpen: boolean }>`
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
   color: ${({ theme }) => theme.colors.text.primary};
-  display: flex;
+  display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
   align-items: center;
   gap: 0.5rem;
 
@@ -27,11 +27,35 @@ const AITitle = styled.h2`
   }
 `;
 
-const AIContent = styled.div`
+const ToggleAIButton = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: ${({ theme }) => theme.colors.background.paper};
+  color: ${({ theme }) => theme.colors.text.primary};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primaryGradient};
+    color: white;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+`;
+
+const AIContent = styled.div<{ $isOpen: boolean }>`
   flex: 1;
   overflow-y: auto;
   padding: 1.25rem;
-  display: flex;
+  display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
   flex-direction: column;
   gap: 1.25rem;
 `;
@@ -101,9 +125,10 @@ const AIActionButton = styled.button`
   }
 `;
 
-const AIFooter = styled.div`
+const AIFooter = styled.div<{ $isOpen: boolean }>`
   padding: 1.25rem;
   border-top: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  display: ${({ $isOpen }) => $isOpen ? 'block' : 'none'};
 `;
 
 const AIInputForm = styled.form`
@@ -159,6 +184,43 @@ const AISubmitButton = styled.button<{ disabled: boolean }>`
   }
 `;
 
+// Componentes para versão colapsada
+const CollapsedAIActions = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  width: 100%;
+`;
+
+const CollapsedAIAction = styled.button`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: ${({ theme }) => theme.colors.background.paper};
+  color: ${({ theme }) => theme.colors.text.primary};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: ${({ theme }) => theme.colors.shadow?.sm || "0 2px 8px rgba(0, 0, 0, 0.05)"};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primaryGradient};
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+`;
+
 interface AIAssistantFixedProps {
   bookId?: string;
   chapterId?: string;
@@ -169,6 +231,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   chapterId
 }) => {
   const [aiPrompt, setAiPrompt] = useState('');
+  const [isOpen, setIsOpen] = useState(true);
 
   const aiSuggestions = [
     { icon: <LightbulbIcon />, text: "Melhorar a descrição desta cena" },
@@ -194,47 +257,68 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
     setAiPrompt('');
   };
 
+  const toggleAIPanel = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const renderCollapsed = () => (
+    <CollapsedAIActions>
+      {aiActions.slice(0, 4).map((action, index) => (
+        <CollapsedAIAction key={index}>
+          {action.icon}
+        </CollapsedAIAction>
+      ))}
+    </CollapsedAIActions>
+  );
+
   return (
-    <AIContainer>
+    <AIContainer $isOpen={isOpen}>
       <AIHeader>
-        <AITitle>
+        <AITitle $isOpen={isOpen}>
           <AIBrainIcon />
           Assistente IA
         </AITitle>
+        <ToggleAIButton onClick={toggleAIPanel}>
+          <CollapseLeftIcon />
+        </ToggleAIButton>
       </AIHeader>
 
-      <AIContent>
-        <AISuggestionsGrid>
-          {aiSuggestions.map((suggestion, index) => (
-            <AISuggestion key={index}>
-              {suggestion.icon}
-              {suggestion.text}
-            </AISuggestion>
-          ))}
-        </AISuggestionsGrid>
+      {!isOpen ? renderCollapsed() : (
+        <>
+          <AIContent $isOpen={isOpen}>
+            <AISuggestionsGrid>
+              {aiSuggestions.map((suggestion, index) => (
+                <AISuggestion key={index}>
+                  {suggestion.icon}
+                  {suggestion.text}
+                </AISuggestion>
+              ))}
+            </AISuggestionsGrid>
 
-        <AIActionsGrid>
-          {aiActions.map((action) => (
-            <AIActionButton key={action.name}>
-              {action.icon}
-              {action.name}
-            </AIActionButton>
-          ))}
-        </AIActionsGrid>
-      </AIContent>
+            <AIActionsGrid>
+              {aiActions.map((action) => (
+                <AIActionButton key={action.name}>
+                  {action.icon}
+                  {action.name}
+                </AIActionButton>
+              ))}
+            </AIActionsGrid>
+          </AIContent>
 
-      <AIFooter>
-        <AIInputForm onSubmit={handleSubmit}>
-          <AIInput
-            placeholder="Peça ajuda com seu texto..."
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-          />
-          <AISubmitButton type="submit" disabled={!aiPrompt.trim()}>
-            <SendIcon />
-          </AISubmitButton>
-        </AIInputForm>
-      </AIFooter>
+          <AIFooter $isOpen={isOpen}>
+            <AIInputForm onSubmit={handleSubmit}>
+              <AIInput
+                placeholder="Peça ajuda com seu texto..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+              <AISubmitButton type="submit" disabled={!aiPrompt.trim()}>
+                <SendIcon />
+              </AISubmitButton>
+            </AIInputForm>
+          </AIFooter>
+        </>
+      )}
     </AIContainer>
   );
 }; 

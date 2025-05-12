@@ -670,8 +670,8 @@ export const AISubmitButton = styled.button<{ disabled: boolean }>`
 `;
 
 // AI Container (coluna direita fixa)
-export const AIContainer = styled.aside`
-  width: 320px;
+export const AIContainer = styled.aside<{ $isOpen: boolean }>`
+  width: ${({ $isOpen }) => $isOpen ? '320px' : '80px'};
   background: ${({ theme }) => theme.colors.background.glass};
   backdrop-filter: blur(20px);
   border-radius: 24px;
@@ -683,6 +683,7 @@ export const AIContainer = styled.aside`
   position: sticky;
   top: 100px;
   height: calc(100vh - 120px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);
