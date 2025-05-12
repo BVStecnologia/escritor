@@ -5,22 +5,25 @@ const FloatingStatus = styled.div`
   position: absolute;
   bottom: 24px;
   right: 24px;
-  background: ${({ theme }) => theme.colors.background.paper};
-  color: ${({ theme }) => theme.colors.text.primary};
+  background: rgba(40, 40, 45, 0.9);
+  color: #aaaaaa;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 1rem;
   z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 `;
 
 const SpinnerIcon = styled.div`
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(0,0,0,0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-top-color: #3498db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -35,6 +38,7 @@ const StatusIcon = styled.div<{ color: string }>`
   height: 16px;
   background-color: ${props => props.color};
   border-radius: 50%;
+  box-shadow: 0 0 4px ${props => props.color};
 `;
 
 export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: string, isOnline: boolean }) => {

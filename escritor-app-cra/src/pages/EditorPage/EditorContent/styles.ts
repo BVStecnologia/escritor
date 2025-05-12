@@ -52,22 +52,27 @@ export const WordCountBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 24px;
   font-size: 0.875rem;
-  background: ${({ theme }) => theme.colors.background.paper};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
-
+  background: rgba(40, 40, 45, 0.9);
+  color: #aaaaaa;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
   svg {
     width: 16px;
     height: 16px;
-    opacity: 0.7;
+    opacity: 0.8;
+    color: #aaaaaa;
   }
 
   span {
     font-weight: 600;
-    color: ${({ theme }) => theme.colors.text.primary};
+    color: #cccccc;
   }
 `;
 
@@ -79,6 +84,14 @@ export const EditorWrapper = styled.div`
   background: ${({ theme }) => theme.colors.background.paper};
   display: flex;
   flex-direction: column;
+  position: relative;
+  
+  .word-count-floating {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+  }
 `;
 
 export const EditorContainer = styled.div`

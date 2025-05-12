@@ -52,18 +52,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
 
   return (
     <Content>
-      <Toolbar>
-        <ToolbarLeft>
-          {/* Título do capítulo removido conforme solicitado */}
-        </ToolbarLeft>
-        <ToolbarRight>
-          <WordCountBadge>
-            <WordCountIcon />
-            Palavras: <span>{wordCount}</span>
-          </WordCountBadge>
-        </ToolbarRight>
-      </Toolbar>
-
+      {/* Removemos a barra de ferramentas, já que não temos mais elementos nela */}
+      
       {loadingChapter ? (
         <LoadingChapter mensagem="Carregando capítulo..." alinhamentoEsquerda />
       ) : (
@@ -79,6 +69,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               onWordCountChanged={onWordCountChanged}
             />
           </EditorContainer>
+          {/* Contador de palavras flutuante */}
+          <WordCountBadge className="word-count-floating">
+            <WordCountIcon />
+            Palavras: <span>{wordCount}</span>
+          </WordCountBadge>
           <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
         </EditorWrapper>
       )}

@@ -45,7 +45,7 @@ export const MainLayout = styled.div`
   display: flex;
   flex: 1;
   gap: 2rem;
-  padding: 2rem;
+  padding: 0.5rem 2rem 2rem 2rem;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;

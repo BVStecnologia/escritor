@@ -49,6 +49,7 @@ const EditorInner = styled.div`
 const ContentEditableWrapper = styled.div`
   min-height: 100%;
   padding: 2rem;
+  padding-bottom: 5rem; /* Adicionar espaço extra na parte inferior para o contador de palavras */
 
   .editor-input {
     outline: none;
