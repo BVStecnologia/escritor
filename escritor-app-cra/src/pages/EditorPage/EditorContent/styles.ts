@@ -5,6 +5,7 @@ export const Content = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 `;
 
 export const Toolbar = styled.div`
@@ -78,23 +79,47 @@ export const WordCountBadge = styled.div`
 
 export const EditorWrapper = styled.div`
   flex: 1;
-  overflow: hidden;
   border-radius: 24px;
   box-shadow: ${({ theme }) => theme.colors.shadow?.lg || "0 16px 48px rgba(0, 0, 0, 0.15)"};
   background: ${({ theme }) => theme.colors.background.paper};
   display: flex;
   flex-direction: column;
   position: relative;
+  height: 100%;
+  overflow: hidden;
   
   .word-count-floating {
     position: absolute;
     bottom: 24px;
     right: 24px;
     z-index: 9999;
+    backdrop-filter: blur(5px);
+    background: ${({ theme }) => theme.colors.background.glass};
+    box-shadow: ${({ theme }) => theme.colors.shadow?.sm || "0 2px 8px rgba(0, 0, 0, 0.05)"};
+    border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
   }
 `;
 
 export const EditorContainer = styled.div`
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
+  height: 100%;
+  
+  /* Personalizar a barra de rolagem */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.colors.primary + '40'};
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: ${({ theme }) => theme.colors.primary + '80'};
+  }
 `;

@@ -20,7 +20,7 @@ const pulse = keyframes`
 // Main container
 export const EditorPageContainer = styled.div`
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: ${({ theme }) => theme.colors.background.gradient};
@@ -45,12 +45,14 @@ export const MainLayout = styled.div`
   display: flex;
   flex: 1;
   gap: 2rem;
-  padding: 0.5rem 2rem 2rem 2rem;
+  padding: 0 2rem;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
   position: relative;
   z-index: 1;
+  height: calc(100vh - 98px); /* Altura da viewport menos altura do cabeçalho (98px) */
+  overflow: hidden; /* Evitar que a página inteira role */
 `;
 
 // Header components
@@ -62,6 +64,9 @@ export const Header = styled.header`
   backdrop-filter: blur(20px);
   border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
   padding: 1rem 2rem;
+  height: 98px; /* Altura fixa para o cabeçalho */
+  display: flex;
+  align-items: center;
   
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);
@@ -234,9 +239,8 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
-  position: sticky;
-  top: 100px;
   height: calc(100vh - 120px);
+  flex-shrink: 0;
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);
@@ -320,6 +324,24 @@ export const ChaptersContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  
+  /* Personalizar a barra de rolagem */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.colors.primary + '40'};
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: ${({ theme }) => theme.colors.primary + '80'};
+  }
 `;
 
 export const NewChapterButton = styled.button`
@@ -472,10 +494,10 @@ export const AIAssistantButton = styled.button<{ $active: boolean }>`
 
 export const AIAssistantPanel = styled.div<{ $active: boolean }>`
   position: fixed;
-  top: 190px;
+  top: 120px;
   right: ${({ $active }) => $active ? '2rem' : '-420px'};
   width: 350px;
-  max-height: calc(100vh - 220px);
+  height: calc(100vh - 140px);
   border-radius: 24px;
   background: ${({ theme }) => theme.colors.background.paper};
   box-shadow: ${({ theme }) => theme.colors.shadow?.xl || "0 24px 64px rgba(0, 0, 0, 0.2)"};
@@ -539,11 +561,26 @@ export const AICloseButton = styled.button`
 
 export const AIContent = styled.div`
   flex: 1;
+  padding: 1rem;
   overflow-y: auto;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  
+  /* Personalizar a barra de rolagem */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.colors.primary + '40'};
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: ${({ theme }) => theme.colors.primary + '80'};
+  }
 `;
 
 export const AISuggestionsGrid = styled.div`

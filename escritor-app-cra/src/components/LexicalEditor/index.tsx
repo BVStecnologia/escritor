@@ -39,6 +39,25 @@ const EditorInner = styled.div`
   position: relative;
   overflow: auto;
   height: 100%;
+  
+  /* Personalizar a barra de rolagem */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.colors.primary + '40'};
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: ${({ theme }) => theme.colors.primary + '80'};
+  }
+  
   /* Importante para posicionamento dos componentes flutuantes */
   .editor-container {
     position: relative;
@@ -49,7 +68,7 @@ const EditorInner = styled.div`
 const ContentEditableWrapper = styled.div`
   min-height: 100%;
   padding: 2rem;
-  padding-bottom: 5rem; /* Adicionar espaço extra na parte inferior para o contador de palavras */
+  padding-bottom: 8rem; /* Adicionar espaço extra na parte inferior para o contador de palavras */
 
   .editor-input {
     outline: none;
