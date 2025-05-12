@@ -66,10 +66,12 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
 }) => {
   const { isDarkMode } = useTheme();
   
-  // Calculate word count
-  const wordCount = chapter.conteudo 
-    ? chapter.conteudo.split(/\s+/).filter(Boolean).length 
-    : 0;
+  // Use o campo 'palavras' do capítulo quando disponível, senão calcule a partir do conteúdo
+  const wordCount = typeof chapter.palavras === 'number' 
+    ? chapter.palavras 
+    : chapter.conteudo 
+      ? chapter.conteudo.split(/\s+/).filter(Boolean).length 
+      : 0;
   
   // Progresso fixo para evitar flicker
   const progress = 100;

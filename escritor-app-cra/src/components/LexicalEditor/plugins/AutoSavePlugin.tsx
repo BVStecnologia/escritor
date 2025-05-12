@@ -8,9 +8,16 @@ interface AutoSavePluginProps {
   chapterId?: string;
   delay?: number;
   onStatusChange?: (status: 'saving' | 'saved' | 'idle') => void;
+  onWordCountChanged?: (wordCount: number) => void;
 }
 
-export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange }: AutoSavePluginProps) {
+export function AutoSavePlugin({ 
+  bookId, 
+  chapterId, 
+  delay = 5000, 
+  onStatusChange,
+  onWordCountChanged 
+}: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
@@ -70,6 +77,11 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
         // Calcular contagem de palavras
         const palavras = plainText.split(/\s+/).filter(Boolean).length;
         
+        // Notificar sobre a mudança na contagem de palavras, se o callback existir
+        if (onWordCountChanged) {
+          onWordCountChanged(palavras);
+        }
+        
         // Atualizar o capítulo com o conteúdo e a contagem de palavras explicitamente
         const updateData = {
           titulo: chapterTitle, // Usar o título atual do capítulo
@@ -113,7 +125,7 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, chapterTitle]);
+  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, chapterTitle, onWordCountChanged]);
 
   return null;
 }
