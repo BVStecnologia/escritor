@@ -182,6 +182,7 @@ const EditorPage: React.FC = () => {
               saveStatus={saveStatus}
               isOnline={isOnline}
               setSaveStatus={setSaveStatus}
+              loadingChapter={loadingChapter}
             />
           )}
         </MainLayout>

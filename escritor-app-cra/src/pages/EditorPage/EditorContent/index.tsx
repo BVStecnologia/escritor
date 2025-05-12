@@ -12,6 +12,7 @@ import {
   EditorContainer
 } from './styles';
 import { FloatingSaveStatus } from '../../../components/LexicalEditor/FloatingSaveStatus';
+import { LoadingState } from '../LoadingState';
 
 interface EditorContentProps {
   chapterTitle: string;
@@ -24,6 +25,7 @@ interface EditorContentProps {
   saveStatus: string;
   isOnline: boolean;
   setSaveStatus?: (status: 'saving' | 'saved' | 'idle') => void;
+  loadingChapter: boolean;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -36,7 +38,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   initialContent = '',
   saveStatus,
   isOnline,
-  setSaveStatus
+  setSaveStatus,
+  loadingChapter
 }) => {
   // Usando chapterId como chave para forçar recriação completa
   // do componente quando mudar de capítulo
@@ -66,14 +69,18 @@ export const EditorContent: React.FC<EditorContentProps> = ({
 
       <EditorWrapper style={{ position: 'relative' }}>
         <EditorContainer>
-          <LexicalEditor
-            key={editorKey}
-            initialContent={initialContent}
-            onChange={onEditorChange}
-            bookId={bookId}
-            chapterId={chapterId}
-            setSaveStatus={setSaveStatus}
-          />
+          {loadingChapter ? (
+            <LoadingState mensagem="Carregando capítulo..." alinhamentoEsquerda />
+          ) : (
+            <LexicalEditor
+              key={editorKey}
+              initialContent={initialContent}
+              onChange={onEditorChange}
+              bookId={bookId}
+              chapterId={chapterId}
+              setSaveStatus={setSaveStatus}
+            />
+          )}
         </EditorContainer>
         <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
       </EditorWrapper>

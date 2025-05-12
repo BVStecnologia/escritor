@@ -6,15 +6,16 @@ const float = keyframes`
   50% { transform: translateY(-10px); }
 `;
 
-const LoadingContainer = styled.div`
+const LoadingContainer = styled.div<{ $alinhamentoEsquerda?: boolean }>`
+  width: 100%;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: ${({ $alinhamentoEsquerda }) => $alinhamentoEsquerda ? 'flex-start' : 'center'};
   justify-content: center;
-  min-height: 100vh;
   background: ${({ theme }) => theme.colors.background.gradient};
-  padding: ${({ theme }) => theme.space.xl};
-  text-align: center;
+  padding: 2rem;
+  text-align: ${({ $alinhamentoEsquerda }) => $alinhamentoEsquerda ? 'left' : 'center'};
 `;
 
 const LoadingAnimation = styled.div`
@@ -61,9 +62,9 @@ const LoadingText = styled.h2`
   margin: 0;
 `;
 
-export const LoadingState: React.FC<{ mensagem?: string }> = ({ mensagem }) => {
+export const LoadingState: React.FC<{ mensagem?: string; alinhamentoEsquerda?: boolean }> = ({ mensagem, alinhamentoEsquerda }) => {
   return (
-    <LoadingContainer>
+    <LoadingContainer $alinhamentoEsquerda={alinhamentoEsquerda}>
       <LoadingAnimation>
         <LoadingBook />
       </LoadingAnimation>
