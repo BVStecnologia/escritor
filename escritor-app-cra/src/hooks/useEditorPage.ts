@@ -173,8 +173,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   }, [updateContent]);
 
   const handleChapterSelect = useCallback((selectedChapterId: string) => {
-    navigate(`/editor/${bookId}/${selectedChapterId}`);
-  }, [bookId, navigate]);
+    window.location.href = `/editor/${bookId}/${selectedChapterId}`;
+  }, [bookId]);
 
   const handleNewChapter = useCallback(async (title?: string) => {
     if (!bookId) return;
