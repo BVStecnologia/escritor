@@ -18,6 +18,7 @@ export interface UseEditorPageReturn {
   handleEditorChange: (content: string) => void;
   handleChapterSelect: (chapterId: string) => void;
   handleNewChapter: (title?: string) => void;
+  handleDeleteChapter: (chapterId: string) => void;
   handleBookTitleChange: (value: string) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
 }
@@ -208,6 +209,35 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     }
   }, [bookId, navigate]);
 
+  const handleDeleteChapter = useCallback(async (chapterIdToDelete: string) => {
+    if (!bookId) return;
+    try {
+      const livroId = parseInt(bookId);
+      
+      // Exclui o capítulo
+      await dbService.excluirCapitulo(chapterIdToDelete);
+      
+      // Atualiza a lista de capítulos
+      const capitulosAtualizados = await dbService.getCapitulosPorLivroId(livroId);
+      setCapitulos(capitulosAtualizados);
+      
+      // Se o capítulo excluído é o atual, navegue para o último capítulo restante
+      if (String(chapterId) === String(chapterIdToDelete)) {
+        if (capitulosAtualizados && capitulosAtualizados.length > 0) {
+          // Navega para o último capítulo 
+          const ultimoCapitulo = capitulosAtualizados[capitulosAtualizados.length - 1];
+          navigate(`/editor/${bookId}/${ultimoCapitulo.id}`);
+        } else {
+          // Se não houver mais capítulos, cria um novo
+          handleNewChapter('Capítulo 1');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao excluir capítulo:', error);
+      setErro('Não foi possível excluir o capítulo.');
+    }
+  }, [bookId, chapterId, navigate, handleNewChapter]);
+
   // Salvar título do livro com debounce
   const saveBookTitleDebounced = useRef(
     debounce(async (id, title) => {
@@ -255,6 +285,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,
+    handleDeleteChapter,
     handleBookTitleChange,
     setSaveStatus,
     loadingChapter,

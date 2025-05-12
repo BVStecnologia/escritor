@@ -1,7 +1,8 @@
 import React from 'react';
 import { Capitulo } from '../../../services/dbService';
-import { WordCountIcon } from '../../../components/icons';
+import { WordCountIcon, DeleteIcon } from '../../../components/icons';
 import { useTheme } from '../../../contexts/ThemeContext';
+import styled from 'styled-components';
 import {
   ChapterCardContainer,
   ChapterInfo,
@@ -13,18 +14,55 @@ import {
   ChapterProgressBar
 } from './styles';
 
+// Botão de exclusão que aparece apenas quando o mouse está sobre o card
+const DeleteButton = styled.button`
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'};
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  color: ${({ theme }) => theme.colors.danger || theme.colors.error || "#f87171"};
+  z-index: 10;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.danger || theme.colors.error || "#f87171"};
+    color: white;
+    transform: scale(1.1);
+  }
+  
+  ${ChapterCardContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
 interface ChapterCardProps {
   chapter: Capitulo;
   index: number;
   isActive: boolean;
   onClick: () => void;
+  onDelete?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const ChapterCard: React.FC<ChapterCardProps> = ({
   chapter,
   index,
   isActive,
-  onClick
+  onClick,
+  onDelete
 }) => {
   const { isDarkMode } = useTheme();
   
@@ -36,13 +74,27 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
   // Progresso fixo para evitar flicker
   const progress = 100;
 
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (onDelete) {
+      console.log('Botão de exclusão clicado');
+      onDelete(e);
+    }
+  };
+
   return (
     <ChapterCardContainer 
       $active={isActive} 
       $index={index}
       onClick={onClick}
-      style={{ cursor: isActive ? 'default' : 'pointer' }}
+      style={{ cursor: isActive ? 'default' : 'pointer', position: 'relative' }}
     >
+      {onDelete && (
+        <DeleteButton onClick={handleDeleteClick}>
+          <DeleteIcon />
+        </DeleteButton>
+      )}
+      
       <ChapterInfo $active={isActive}>
         <ChapterNumber $active={isActive}>
           Capítulo {index + 1}

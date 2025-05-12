@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Capitulo } from '../../../services/dbService';
 import { ChapterCard } from './ChapterCard';
-import { MenuIcon, PlusIcon } from '../../../components/icons';
+import { MenuIcon, PlusIcon, DeleteIcon, CloseIcon } from '../../../components/icons';
 import {
   SidebarContainer,
   SidebarHeader,
@@ -21,9 +22,9 @@ const PopupOverlay = styled.div`
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: ${({ theme }) => theme.isDarkMode ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'};
+  background: ${({ theme }) => theme.isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)'};
   backdrop-filter: blur(4px);
-  z-index: 200;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,6 +87,54 @@ const PopupButton = styled.button`
   transition: all 0.2s;
   &:hover {
     background: ${({ theme }) => theme.colors.primaryDark};
+  }
+`;
+
+const DeletePopupContainer = styled(PopupContainer)`
+  max-width: 400px;
+  box-shadow: ${({ theme }) => theme.isDarkMode 
+    ? '0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)' 
+    : '0 16px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05)'};
+  z-index: 1010;
+  animation: scaleIn 0.2s ease-out;
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+`;
+
+const DeleteMessage = styled.p`
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  color: ${({ theme }) => theme.colors.text.primary};
+  text-align: center;
+`;
+
+const DeleteWarning = styled.p`
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: ${({ theme }) => theme.colors.danger || theme.colors.error || "#f87171"};
+  text-align: center;
+  font-weight: 500;
+`;
+
+const DeleteButton = styled(PopupButton)`
+  background: ${({ theme }) => theme.colors.danger || theme.colors.error || "#f87171"};
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.danger 
+      ? `${theme.colors.danger}dd` 
+      : theme.colors.error 
+        ? `${theme.colors.error}dd` 
+        : "#ef4444"};
   }
 `;
 
@@ -153,28 +202,98 @@ const CollapsedNewButton = styled.div`
   }
 `;
 
+// DeleteConfirmationModal componente separado para renderizar através de portais
+const DeleteConfirmationModal = ({ 
+  onConfirm, 
+  onCancel, 
+  chapter, 
+  isDarkMode 
+}: { 
+  onConfirm: () => void; 
+  onCancel: () => void; 
+  chapter: Capitulo; 
+  isDarkMode: boolean; 
+}) => {
+  // Usando ReactDOM.createPortal para renderizar o modal fora da hierarquia do DOM
+  return ReactDOM.createPortal(
+    <PopupOverlay onClick={onCancel}>
+      <DeletePopupContainer onClick={e => e.stopPropagation()}>
+        <PopupTitle style={{ color: "#f87171" }}>
+          Excluir Capítulo
+        </PopupTitle>
+        <DeleteMessage>
+          Tem certeza que deseja excluir o capítulo "{chapter.titulo || 'Sem título'}"?
+        </DeleteMessage>
+        <DeleteWarning>
+          Esta ação não pode ser desfeita e todo o conteúdo será perdido.
+        </DeleteWarning>
+        <PopupActions>
+          <PopupButton
+            style={{ 
+              background: isDarkMode ? '#334155' : '#eee', 
+              color: isDarkMode ? '#e2e8f0' : '#333' 
+            }}
+            onClick={onCancel}
+          >
+            Cancelar
+          </PopupButton>
+          <DeleteButton onClick={onConfirm}>
+            Excluir
+          </DeleteButton>
+        </PopupActions>
+      </DeletePopupContainer>
+    </PopupOverlay>,
+    document.body // Renderiza diretamente no body do documento
+  );
+};
+
 interface SidebarProps {
   chapters: Capitulo[];
   activeChapterId?: string;
   onChapterSelect: (chapterId: string) => void;
   onNewChapter: (title?: string) => void;
+  onDeleteChapter?: (chapterId: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   chapters,
   activeChapterId,
   onChapterSelect,
-  onNewChapter
+  onNewChapter,
+  onDeleteChapter
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [chapterToDelete, setChapterToDelete] = useState<Capitulo | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const { isDarkMode } = useTheme();
 
   const filteredChapters = chapters.filter(chapter =>
     chapter.titulo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteClick = (chapter: Capitulo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Capítulo selecionado para exclusão:', chapter.titulo);
+    setChapterToDelete(chapter);
+    setShowDeletePopup(true);
+  };
+
+  const confirmDelete = () => {
+    if (chapterToDelete && onDeleteChapter) {
+      console.log('Excluindo capítulo:', chapterToDelete.titulo);
+      onDeleteChapter(chapterToDelete.id);
+      setShowDeletePopup(false);
+      setChapterToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeletePopup(false);
+    setChapterToDelete(null);
+  };
 
   return (
     <SidebarContainer $isOpen={isOpen}>
@@ -206,6 +325,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 index={index}
                 isActive={String(chapter.id) === String(activeChapterId)}
                 onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
+                onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
               />
             ))}
 
@@ -234,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </ChaptersContainer>
 
-      {/* Popup de novo capítulo sempre visível quando showPopup for true */}
+      {/* Popup de novo capítulo */}
       {showPopup && (
         <PopupOverlay onClick={() => setShowPopup(false)}>
           <PopupContainer onClick={e => e.stopPropagation()}>
@@ -280,6 +400,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </PopupActions>
           </PopupContainer>
         </PopupOverlay>
+      )}
+
+      {/* Popup de confirmação de exclusão usando portal */}
+      {showDeletePopup && chapterToDelete && (
+        <DeleteConfirmationModal
+          chapter={chapterToDelete}
+          isDarkMode={isDarkMode}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+        />
       )}
     </SidebarContainer>
   );
