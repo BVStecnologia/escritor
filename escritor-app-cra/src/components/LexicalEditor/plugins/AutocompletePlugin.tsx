@@ -45,8 +45,13 @@ const SuggestionItem = styled.li<{ $active: boolean }>`
   }
 `;
 
+// Adicionar tipagem para o dicionário de sugestões
+interface WritingSuggestions {
+  [key: string]: string[];
+}
+
 // Mock autocomplete suggestions
-const WRITING_SUGGESTIONS = {
+export const WRITING_SUGGESTIONS: WritingSuggestions = {
   'personag': ['personagem', 'personagens', 'personagem principal', 'personagens secundários'],
   'histor': ['história', 'histórico', 'histórias', 'histórica'],
   'cap': ['capítulo', 'capitulo', 'capítulos', 'capital'],
@@ -96,22 +101,32 @@ export const AutocompletePlugin = () => {
 
   // Função para verificar se uma palavra está mal escrita
   const checkSpellingError = (word: string): boolean => {
-    // Lista simplificada de verificação - uma implementação real usaria uma biblioteca ou API
+    if (word.length <= 2) return false;
+    
+    // Remover pontuação para verificação mais precisa
+    const cleanWord = word.toLowerCase().replace(/[.,;:!?"'()\-]/g, '');
+    
+    // Lista simplificada de verificação - mesma do SpellCheckPlugin
     const commonWords = [
       'a', 'e', 'i', 'o', 'u', 'de', 'da', 'do', 'em', 'no', 'na', 'para', 
       'com', 'por', 'que', 'se', 'um', 'uma', 'os', 'as', 'era', 'vez', 
       'muito', 'pouco', 'quase', 'sempre', 'nunca', 'história', 'cidade',
-      'texto', 'palavra', 'exemplo', 'capítulo', 'livro', 'personagem'
+      'texto', 'palavra', 'exemplo', 'capítulo', 'livro', 'personagem', 'foi', 'tem'
     ];
     
     // Se a palavra estiver na lista de palavras comuns, está correta
-    if (commonWords.includes(word.toLowerCase())) {
+    if (commonWords.includes(cleanWord)) {
       return false;
     }
     
-    // Se a palavra for um prefixo conhecido em nosso dicionário
+    // Verificar correspondência exata primeiro
+    if (WRITING_SUGGESTIONS[cleanWord]) {
+      return true;
+    }
+    
+    // Depois verificar se contém algum prefixo conhecido
     return Object.keys(WRITING_SUGGESTIONS).some(prefix => 
-      word.toLowerCase().includes(prefix.toLowerCase())
+      cleanWord.includes(prefix.toLowerCase())
     );
   }
 
@@ -140,18 +155,26 @@ export const AutocompletePlugin = () => {
             // Verificar se a palavra selecionada tem erro ortográfico
             const hasError = checkSpellingError(wordToCheck);
 
-            // Procurar sugestões para a palavra
+            // Procurar sugestões para a palavra usando a mesma lógica melhorada
             let foundSuggestions: string[] = [];
+            const wordLower = wordToCheck.toLowerCase();
             
-            Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
-              // Verificar se o prefixo está contido na palavra
-              if (wordToCheck.toLowerCase().includes(prefix.toLowerCase())) {
-                foundSuggestions = [...foundSuggestions, ...words];
-              }
-            });
+            // Primeiro verificar correspondência exata
+            if (WRITING_SUGGESTIONS[wordLower]) {
+              foundSuggestions = WRITING_SUGGESTIONS[wordLower];
+            } else {
+              // Caso contrário, verificar prefixos
+              Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
+                if (wordLower.includes(prefix.toLowerCase())) {
+                  foundSuggestions = [...foundSuggestions, ...words];
+                }
+              });
+            }
             
             if (foundSuggestions.length > 0) {
-              setSuggestions(foundSuggestions);
+              // Eliminar duplicatas e limitar a 5 sugestões
+              const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
+              setSuggestions(uniqueSuggestions);
               setActiveIndex(0);
               
               // Limpar a referência do elemento atual com erro
@@ -219,21 +242,32 @@ export const AutocompletePlugin = () => {
         // Salvar referência ao elemento com erro
         currentMisspelledElementRef.current = spellingErrorElement as HTMLElement;
         
-        // Obter o texto da palavra com erro
-        const word = spellingErrorElement.textContent?.trim() || '';
+        // Obter o texto da palavra com erro - usar o atributo data-word se disponível
+        const errorWord = (spellingErrorElement as HTMLElement).getAttribute('data-word');
+        const word = errorWord || spellingErrorElement.textContent?.trim() || '';
         
         if (word) {
-          // Encontrar sugestões para esta palavra
+          // Encontrar sugestões para esta palavra - usar correspondência mais precisa
           let foundSuggestions: string[] = [];
           
-          Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
-            if (word.toLowerCase().includes(prefix.toLowerCase())) {
-              foundSuggestions = [...foundSuggestions, ...words];
-            }
-          });
+          // Primeiro, tentar encontrar uma correspondência exata na chave
+          const wordLower = word.toLowerCase();
+          if (WRITING_SUGGESTIONS[wordLower]) {
+            foundSuggestions = WRITING_SUGGESTIONS[wordLower];
+          } else {
+            // Caso contrário, procurar por prefixos contidos na palavra
+            Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
+              if (wordLower.includes(prefix.toLowerCase())) {
+                foundSuggestions = [...foundSuggestions, ...words];
+              }
+            });
+          }
           
+          // Remover duplicatas e limitar a 5 sugestões para não sobrecarregar
           if (foundSuggestions.length > 0) {
-            setSuggestions(foundSuggestions);
+            // Eliminar duplicatas e limitar a 5 sugestões - usando Array.from com Set
+            const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
+            setSuggestions(uniqueSuggestions);
             setActiveIndex(0);
             
             // Posicionar o menu próximo da palavra clicada

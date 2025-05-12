@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px); }
@@ -12,7 +13,7 @@ const LoadingContainer = styled.div`
   z-index: 99999;
   width: 100vw;
   height: 100vh;
-  background-color: #121212;
+  background-color: ${({ theme }) => theme.colors.background.main};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,14 +30,14 @@ const LoadingAnimation = styled.div`
   animation: ${float} 3s ease-in-out infinite;
 `;
 
-const LoadingBook = styled.div`
+const LoadingBook = styled.div<{ $isDarkMode: boolean }>`
   width: 160px;
   height: 110px;
   position: relative;
   border-radius: 8px 4px 4px 8px;
   background: ${({ theme }) => theme.colors.primaryGradient};
   box-shadow: ${({ theme }) => theme.colors.shadow?.lg || "0 16px 48px rgba(0, 0, 0, 0.15)"};
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -47,7 +48,7 @@ const LoadingBook = styled.div`
     background: ${({ theme }) => theme.colors.secondary};
     border-radius: 8px 0 0 8px;
   }
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -55,9 +56,9 @@ const LoadingBook = styled.div`
     left: 40px;
     right: 15px;
     height: 10px;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 30px 0 rgba(255, 255, 255, 0.2),
-                0 60px 0 rgba(255, 255, 255, 0.2);
+    background: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+    box-shadow: 0 30px 0 ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'},
+                0 60px 0 ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
   }
 `;
 
@@ -68,11 +69,15 @@ const LoadingText = styled.h2`
   margin: 0;
 `;
 
-export const LoadingGlobal: React.FC<{ mensagem?: string }> = ({ mensagem }) => (
-  <LoadingContainer>
-    <LoadingAnimation>
-      <LoadingBook />
-    </LoadingAnimation>
-    <LoadingText>{mensagem || 'Preparando seu ambiente de escrita...'}</LoadingText>
-  </LoadingContainer>
-); 
+export const LoadingGlobal: React.FC<{ mensagem?: string }> = ({ mensagem }) => {
+  const { isDarkMode } = useTheme();
+
+  return (
+    <LoadingContainer>
+      <LoadingAnimation>
+        <LoadingBook $isDarkMode={isDarkMode} />
+      </LoadingAnimation>
+      <LoadingText>{mensagem || 'Preparando seu ambiente de escrita...'}</LoadingText>
+    </LoadingContainer>
+  );
+};

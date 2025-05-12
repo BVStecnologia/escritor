@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px); }
@@ -30,14 +31,14 @@ const LoadingAnimation = styled.div`
   justify-content: center;
 `;
 
-const LoadingBook = styled.div`
+const LoadingBook = styled.div<{ $isDarkMode: boolean }>`
   width: 120px;
   height: 80px;
   position: relative;
   border-radius: 8px 4px 4px 8px;
   background: ${({ theme }) => theme.colors.primaryGradient};
   box-shadow: ${({ theme }) => theme.colors.shadow?.lg || "0 16px 48px rgba(0, 0, 0, 0.15)"};
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -48,7 +49,7 @@ const LoadingBook = styled.div`
     background: ${({ theme }) => theme.colors.secondary};
     border-radius: 8px 0 0 8px;
   }
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -56,9 +57,9 @@ const LoadingBook = styled.div`
     left: 30px;
     right: 10px;
     height: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 20px 0 rgba(255, 255, 255, 0.2),
-                0 40px 0 rgba(255, 255, 255, 0.2);
+    background: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
+    box-shadow: 0 20px 0 ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'},
+                0 40px 0 ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'};
   }
 `;
 
@@ -69,11 +70,15 @@ const LoadingText = styled.h2`
   margin: 0;
 `;
 
-export const LoadingChapter: React.FC<{ mensagem?: string; alinhamentoEsquerda?: boolean }> = ({ mensagem, alinhamentoEsquerda }) => (
-  <LoadingContainer>
-    <LoadingAnimation>
-      <LoadingBook />
-    </LoadingAnimation>
-    <LoadingText>{mensagem || 'Carregando capítulo...'}</LoadingText>
-  </LoadingContainer>
-); 
+export const LoadingChapter: React.FC<{ mensagem?: string; alinhamentoEsquerda?: boolean }> = ({ mensagem, alinhamentoEsquerda }) => {
+  const { isDarkMode } = useTheme();
+
+  return (
+    <LoadingContainer>
+      <LoadingAnimation>
+        <LoadingBook $isDarkMode={isDarkMode} />
+      </LoadingAnimation>
+      <LoadingText>{mensagem || 'Carregando capítulo...'}</LoadingText>
+    </LoadingContainer>
+  );
+};

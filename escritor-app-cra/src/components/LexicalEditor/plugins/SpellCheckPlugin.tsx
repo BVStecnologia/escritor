@@ -14,6 +14,7 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand
 } from 'lexical';
+import { WRITING_SUGGESTIONS } from './AutocompletePlugin';
 
 // Lista simplificada de palavras comuns para verificação ortográfica
 const COMMON_WORDS = [
@@ -23,13 +24,11 @@ const COMMON_WORDS = [
   'texto', 'palavra', 'exemplo', 'capítulo', 'livro', 'personagem', 'foi', 'tem'
 ];
 
-// Palavras com erro ortográfico conhecidas
-const MISSPELLED_WORDS = [
-  'gabina', 'histori', 'muiot', 'divertid', 'personag', 'tram', 'cen', 'desc',
-  'narr', 'dialo', 'confl', 'desf', 'prot', 'antag', 'inidgena', 'morava',
-  'fio', 'foi', 'hh', 'ter', 'msotrar', 'copreta', 'aslecionar', 'mia',
-  'loge', 'invex', 'unica', 'interi', 'linah', 'cidad', 'gabinete'
-];
+// Garantir que as palavras com erro tenham correspondência exata com as sugestões
+// Importando do AutocompletePlugin
+
+// Palavras com erro ortográfico conhecidas - derivadas das chaves de WRITING_SUGGESTIONS
+const MISSPELLED_WORDS = Object.keys(WRITING_SUGGESTIONS);
 
 // Função para verificar se uma palavra é potencialmente incorreta
 function hasPotentialSpellingError(word: string): boolean {
@@ -44,6 +43,7 @@ function hasPotentialSpellingError(word: string): boolean {
   }
   
   // Verificar se a palavra está na lista de palavras incorretas
+  // ou se contém algum prefixo conhecido de erro
   return MISSPELLED_WORDS.some(badWord => 
     cleanWord === badWord || cleanWord.includes(badWord)
   );
@@ -85,7 +85,8 @@ export const SpellCheckPlugin = () => {
         newHTML += textContent.substring(currentIndex, match.index);
         
         // A palavra com erro, envolvida em um span com a classe de erro
-        newHTML += `<span class="spelling-error" data-lexical-node-key="${domElement.getAttribute('data-lexical-node-key')}">${word}</span>`;
+        // Adicionar atributo data-word para ajudar na identificação posterior
+        newHTML += `<span class="spelling-error" data-lexical-node-key="${domElement.getAttribute('data-lexical-node-key')}" data-word="${word}">${word}</span>`;
         
         // Atualizar o índice atual
         currentIndex = match.index + word.length;
@@ -129,8 +130,8 @@ export const SpellCheckPlugin = () => {
             }
           }, 0);
           
-          // Sair após encontrar o primeiro erro para não sobrecarregar a interface
-          break;
+          // Não sair após encontrar o primeiro erro para marcar múltiplos erros
+          // Remova o break para marcar todas as palavras com erro
         }
       }
     };
