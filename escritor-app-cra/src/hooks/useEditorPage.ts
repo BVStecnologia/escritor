@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { dbService, Capitulo } from '../services/dbService';
+import { dbService, Capitulo, CapituloData } from '../services/dbService';
 import debounce from 'lodash/debounce';
 
 export interface UseEditorPageReturn {
@@ -123,7 +123,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   // Salvar título do capítulo com debounce
   const saveChapterTitleDebounced = useRef(
     debounce((id, title) => {
-      dbService.atualizarCapitulo(id, { titulo: title });
+      const capituloData: CapituloData = { titulo: title };
+      dbService.atualizarCapitulo(id, capituloData);
     }, 500)
   ).current;
 
@@ -187,7 +188,11 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     try {
       const livroId = parseInt(bookId);
       // Sempre criar capítulo com conteúdo vazio
-      const novoCapitulo = await dbService.criarCapitulo(livroId, { titulo: title || 'Novo Capítulo', conteudo: '' });
+      const capituloData: CapituloData = {
+        titulo: title || 'Novo Capítulo',
+        conteudo: ''
+      };
+      const novoCapitulo = await dbService.criarCapitulo(livroId, capituloData);
       // Atualiza a lista de capítulos
       const capitulosAtualizados = await dbService.getCapitulosPorLivroId(livroId);
       setCapitulos(capitulosAtualizados);

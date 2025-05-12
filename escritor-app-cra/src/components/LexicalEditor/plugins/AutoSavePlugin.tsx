@@ -15,6 +15,25 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   const [isEditorActive, setIsEditorActive] = useState(false);
+  const [chapterTitle, setChapterTitle] = useState('');
+
+  // Carregar título do capítulo quando o componente for montado
+  useEffect(() => {
+    const fetchChapterTitle = async () => {
+      if (!chapterId) return;
+      
+      try {
+        const capitulo = await dbService.getCapituloPorId(chapterId);
+        if (capitulo && capitulo.titulo) {
+          setChapterTitle(capitulo.titulo);
+        }
+      } catch (error) {
+        console.error('Erro ao obter título do capítulo:', error);
+      }
+    };
+    
+    fetchChapterTitle();
+  }, [chapterId]);
 
   useEffect(() => {
     // Adiciona listeners globais para saber se o último clique foi dentro do editor
@@ -45,11 +64,27 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
 
       if (onStatusChange) onStatusChange('saving');
       try {
-        await dbService.atualizarCapitulo(chapterId, {
-          conteudo: content
-        });
+        // Extrair o texto limpo do estado do editor para calcular contagem de palavras
+        const plainText = editor.getEditorState().read(() => $getRoot().getTextContent());
+        
+        // Calcular contagem de palavras
+        const palavras = plainText.split(/\s+/).filter(Boolean).length;
+        
+        // Atualizar o capítulo com o conteúdo e a contagem de palavras explicitamente
+        const updateData = {
+          titulo: chapterTitle, // Usar o título atual do capítulo
+          conteudo: content, 
+          customData: {
+            palavras
+          }
+        };
+        
+        await dbService.atualizarCapitulo(chapterId, updateData);
+        
         lastSavedContent.current = content;
         console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
+        console.log('Contagem de palavras:', palavras);
+        
         if (onStatusChange) onStatusChange('saved');
       } catch (error) {
         console.error('Erro ao salvar automaticamente:', error);
@@ -62,16 +97,14 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
         clearTimeout(saveTimerRef.current);
       }
 
-      editorState.read(() => {
-        // Salvar o conteúdo serializado (JSON) do editor
-        const content = JSON.stringify(editorState.toJSON());
-        // Só salva se o último clique foi dentro do editor
-        if (isEditorActive) {
-          saveTimerRef.current = setTimeout(() => {
-            saveContent(content);
-          }, delay);
-        }
-      });
+      // Use o editorState fornecido no callback em vez de chamar editor.getEditorState()
+      const content = JSON.stringify(editorState.toJSON());
+      // Só salva se o último clique foi dentro do editor
+      if (isEditorActive) {
+        saveTimerRef.current = setTimeout(() => {
+          saveContent(content);
+        }, delay);
+      }
     });
 
     return () => {
@@ -80,7 +113,7 @@ export function AutoSavePlugin({ bookId, chapterId, delay = 5000, onStatusChange
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive]);
+  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, chapterTitle]);
 
   return null;
 }

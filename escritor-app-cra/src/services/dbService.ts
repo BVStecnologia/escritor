@@ -53,6 +53,15 @@ export interface Usuario {
   generoPreferido?: string;
 }
 
+export interface CapituloData {
+  titulo: string;
+  conteudo?: string;
+  customData?: {
+    palavras?: number;
+    [key: string]: any;
+  };
+}
+
 export const dbService = {
   /**
    * Obter todos os livros do usuário atual
@@ -235,7 +244,7 @@ export const dbService = {
   /**
    * Criar um novo capítulo
    */
-  async criarCapitulo(livroId: number, capituloData: { titulo: string, conteudo?: string }) {
+  async criarCapitulo(livroId: number, capituloData: CapituloData) {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData?.user?.email;
@@ -248,7 +257,13 @@ export const dbService = {
 
       // Calcular número de palavras
       const texto = capituloData.conteudo || '';
-      const palavras = texto.split(/\s+/).filter(Boolean).length;
+      let palavras = texto.split(/\s+/).filter(Boolean).length;
+      
+      // Se tiver customData com palavras, usa essa contagem
+      if (capituloData.customData?.palavras !== undefined) {
+        palavras = capituloData.customData.palavras;
+        console.log('Usando contagem de palavras do customData:', palavras);
+      }
 
       // Criar objeto de dados para inserção
       const newChapter = {
@@ -280,7 +295,7 @@ export const dbService = {
  /**
    * Atualizar um capítulo existente
    */
- async atualizarCapitulo(id: string | number, capituloData: { titulo?: string, conteudo?: string }) {
+ async atualizarCapitulo(id: string | number, capituloData: CapituloData) {
   try {
     // Garante que o id é number
     const numericId = typeof id === 'string' ? Number(id) : id;
@@ -297,8 +312,18 @@ export const dbService = {
     // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
     if (capituloData.conteudo !== undefined) {
       updateData.texto = capituloData.conteudo;
-      // Calcular número de palavras
-      updateData.palavras = capituloData.conteudo.split(/\s+/).filter(Boolean).length;
+      
+      // Se não tiver customData.palavras, calcula a partir do conteúdo
+      if (!capituloData.customData?.palavras) {
+        // Calcular número de palavras
+        updateData.palavras = capituloData.conteudo.split(/\s+/).filter(Boolean).length;
+      }
+    }
+    
+    // Se tiver customData com palavras, usa essa contagem
+    if (capituloData.customData?.palavras !== undefined) {
+      updateData.palavras = capituloData.customData.palavras;
+      console.log('Usando contagem de palavras do customData:', updateData.palavras);
     }
 
     // Adiciona horário de última edição (HH:MM:SS)

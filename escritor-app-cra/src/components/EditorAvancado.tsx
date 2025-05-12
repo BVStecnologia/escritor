@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { dbService } from '../services/dbService';
 import { assistantService } from '../services/assistantService';
 import { Button, Card, Title, Text } from './styled';
+import { CapituloData } from '../services/dbService';
 
 // Animações
 const fadeIn = keyframes`
@@ -507,20 +508,24 @@ const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved, o
     try {
       if (capituloId) {
         // Atualizar capítulo existente
-        const resultado = await dbService.atualizarCapitulo(capituloId, {
+        const capituloData: CapituloData = {
           titulo,
           conteudo
-        });
+        };
+        
+        const resultado = await dbService.atualizarCapitulo(capituloId, capituloData);
 
         if (!resultado) {
           throw new Error('Falha ao salvar capítulo');
         }
       } else {
         // Criar novo capítulo
-        const novoCapitulo = await dbService.criarCapitulo(livroId, {
+        const capituloData: CapituloData = {
           titulo,
           conteudo
-        });
+        };
+        
+        const novoCapitulo = await dbService.criarCapitulo(livroId, capituloData);
 
         if (!novoCapitulo) {
           throw new Error('Falha ao criar capítulo');
