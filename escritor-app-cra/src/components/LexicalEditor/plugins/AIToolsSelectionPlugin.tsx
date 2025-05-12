@@ -10,31 +10,44 @@ import styled from 'styled-components';
 
 const AIToolsContainer = styled.div`
   position: absolute;
-  z-index: 50;
+  z-index: 100;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  background: ${({ theme }) => theme.colors.background.paper};
-  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background: ${({ theme }) => theme.colors.primary + '10'};
+  border: 1px solid ${({ theme }) => theme.colors.primary + '30'};
   padding: 4px;
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  transform: translateX(-50%);
+  margin-top: 5px;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease-in-out;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
 `;
 
 const ToolButton = styled.button`
-  background: transparent;
-  border: none;
+  background: ${({ theme }) => theme.colors.background.paper + '90'};
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
   border-radius: 4px;
-  padding: 6px 12px;
+  padding: 5px 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 500;
+  transition: all 0.15s ease;
   
   &:hover {
-    background: ${({ theme }) => theme.colors.primary + '10'};
+    background: ${({ theme }) => theme.colors.primary + '20'};
     color: ${({ theme }) => theme.colors.primary};
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
 `;
 
@@ -74,8 +87,8 @@ export const AIToolsSelectionPlugin = () => {
           if ($isRangeSelection(selection) && !selection.isCollapsed()) {
             const text = selection.getTextContent();
             
-            // Mostrar ferramentas apenas se tiver selecionado texto significativo
-            if (text && text.trim().length > 3) {
+            // Mostrar ferramentas com seleção menor (2 caracteres ao invés de 3)
+            if (text && text.trim().length > 2) {
               // Obter posição da seleção
               const domSelection = window.getSelection();
               if (domSelection && domSelection.rangeCount > 0) {
@@ -83,21 +96,18 @@ export const AIToolsSelectionPlugin = () => {
                 const rect = range.getBoundingClientRect();
                 
                 // Encontrar o elemento do editor correto
-                // Primeiro tentamos encontrar o contêiner do editor específico
                 const editorEl = document.querySelector('.editor-input');
                 if (!editorEl) return false;
                 
                 const editorRect = editorEl.getBoundingClientRect();
                 
-                // Calculamos a posição relativa ao editor
-                const relativeTop = rect.top - editorRect.top;
-                const relativeLeft = rect.left - editorRect.left;
+                // Calculamos a posição relativa ao centro da seleção, na parte inferior
+                const relativeTop = rect.bottom - editorRect.top + 5; // Um pouco abaixo da seleção
+                const relativeLeft = rect.left + (rect.width / 2) - editorRect.left;
                 
-                // Posicionamos dentro dos limites do editor
-                // Deixar espaço da ferramenta no topo da seleção
                 setPosition({
-                  top: Math.max(relativeTop + window.scrollY - 50, 10),
-                  left: relativeLeft + (rect.width / 2) + window.scrollX
+                  top: relativeTop + window.scrollY,
+                  left: relativeLeft + window.scrollX
                 });
                 
                 setSelectedText(text);
@@ -132,44 +142,40 @@ export const AIToolsSelectionPlugin = () => {
     };
   }, []);
   
-  // Ajustar posição para garantir que não fique cortada nas bordas
+  // Modificar a função de ajuste de posição para ser mais precisa
   useEffect(() => {
     if (containerRef.current && isVisible) {
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
       
-      // Encontrar o elemento pai mais próximo com posição relativa
-      // Isso pode ser o ContentEditableWrapper ou EditorInner
       const editorEl = document.querySelector('.editor-input');
       if (!editorEl) return;
       
       const editorRect = editorEl.getBoundingClientRect();
       
-      // Ajustar posição horizontal para ficar dentro do editor
-      let adjustedLeft = position.left - (containerRect.width / 2);
+      // Ajustar posição horizontal mantendo centralizado na seleção
+      let adjustedLeft = position.left;
       
-      // Garantir que não saia pela direita
-      if (adjustedLeft + containerRect.width > editorRect.width - 20) {
-        adjustedLeft = editorRect.width - containerRect.width - 20;
+      // Garantir que não saia pela direita (descontando a centralização)
+      if (adjustedLeft + (containerRect.width / 2) > editorRect.width - 10) {
+        adjustedLeft = editorRect.width - (containerRect.width / 2) - 10;
       }
       
-      // Garantir que não saia pela esquerda
-      if (adjustedLeft < 20) {
-        adjustedLeft = 20;
+      // Garantir que não saia pela esquerda (descontando a centralização)
+      if (adjustedLeft - (containerRect.width / 2) < 10) {
+        adjustedLeft = (containerRect.width / 2) + 10;
       }
       
-      // Ajustar posição vertical
+      // Ajustar posição vertical para ficar visível
       let adjustedTop = position.top;
       
-      // Se estiver muito no topo
-      if (adjustedTop < 10) {
-        // Tentar posicionar abaixo da seleção
+      // Se estiver fora da área visível, colocar acima da seleção
+      if (adjustedTop + containerRect.height > editorRect.height - 10) {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
-          const relativeBottom = rect.bottom - editorRect.top;
-          adjustedTop = relativeBottom + window.scrollY + 10;
+          adjustedTop = rect.top - editorRect.top - containerRect.height - 5 + window.scrollY;
         }
       }
       
@@ -180,8 +186,22 @@ export const AIToolsSelectionPlugin = () => {
   }, [isVisible, position, containerRef]);
   
   const handleToolAction = (toolId: string) => {
-    // Implementar ações de IA aqui
-    alert(`Ferramenta de IA "${toolId}" aplicada ao texto: "${selectedText}"`);
+    // Feedback visual para o usuário
+    const originalText = selectedText;
+    
+    switch(toolId) {
+      case 'rewrite':
+        alert(`A ferramenta irá reescrever o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
+        break;
+      case 'expand':
+        alert(`A ferramenta irá expandir o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
+        break;
+      case 'summarize':
+        alert(`A ferramenta irá resumir o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
+        break;
+    }
+    
+    // Aqui seria a implementação real da ação de IA
     setIsVisible(false);
   };
   
