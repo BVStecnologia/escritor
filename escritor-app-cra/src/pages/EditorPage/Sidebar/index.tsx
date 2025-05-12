@@ -363,7 +363,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       key={chapter.id} 
                       draggableId={String(chapter.id)} 
                       index={index}
-                      isDragDisabled={String(chapter.id) === String(activeChapterId)}
                     >
                       {(provided, snapshot) => {
                         return (
