@@ -12,7 +12,7 @@ import {
   EditorContainer
 } from './styles';
 import { FloatingSaveStatus } from '../../../components/LexicalEditor/FloatingSaveStatus';
-import { LoadingState } from '../LoadingState';
+import { LoadingChapter } from '../LoadingChapter';
 
 interface EditorContentProps {
   chapterTitle: string;
@@ -67,11 +67,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
         </ToolbarRight>
       </Toolbar>
 
-      <EditorWrapper style={{ position: 'relative' }}>
-        <EditorContainer>
-          {loadingChapter ? (
-            <LoadingState mensagem="Carregando capítulo..." alinhamentoEsquerda />
-          ) : (
+      {loadingChapter ? (
+        <LoadingChapter mensagem="Carregando capítulo..." alinhamentoEsquerda />
+      ) : (
+        <EditorWrapper style={{ position: 'relative' }}>
+          <EditorContainer style={{ position: 'relative', height: '100%' }}>
             <LexicalEditor
               key={editorKey}
               initialContent={initialContent}
@@ -80,10 +80,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               chapterId={chapterId}
               setSaveStatus={setSaveStatus}
             />
-          )}
-        </EditorContainer>
-        <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
-      </EditorWrapper>
+          </EditorContainer>
+          <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
+        </EditorWrapper>
+      )}
     </Content>
   );
 };

@@ -104,20 +104,20 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             </BookTitle>
           )}
         </LogoSection>
-
+        
         <HeaderControls>
-          <StatusIndicator
+          <StatusIndicator 
             $status={saveStatus === 'saving' ? 'saving' : saveStatus === 'saved' ? 'saved' : isOnline ? 'online' : 'offline'}
           >
-            {saveStatus === 'saving' ? 'Salvando...' :
+            {saveStatus === 'saving' ? 'Salvando...' : 
              saveStatus === 'saved' ? 'Salvo' :
              isOnline ? 'Online' : 'Offline'}
           </StatusIndicator>
-
+          
           <ThemeToggleButton onClick={onToggleTheme}>
             {isDarkMode ? '☀️' : '🌙'}
           </ThemeToggleButton>
-
+          
           <ActionButton onClick={onBackToDashboard}>
             <ArrowBackIcon />
             Dashboard

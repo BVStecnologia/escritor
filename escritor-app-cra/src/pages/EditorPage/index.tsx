@@ -5,12 +5,13 @@ import { EditorHeader } from './EditorHeader';
 import { Sidebar } from './Sidebar';
 import { EditorContent } from './EditorContent';
 import { AIAssistant } from './AIAssistant';
-import { LoadingState } from './LoadingState';
+import { LoadingGlobal } from './LoadingGlobal';
 import { ErrorState } from './ErrorState';
 import { useEditorPage } from '../../hooks/useEditorPage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EditorPageContainer, MainLayout } from './styles';
 import defaultTheme from '../../styles/theme';
+import { LoadingChapter } from './LoadingChapter';
 
 const lightTheme = {
   ...defaultTheme,
@@ -130,7 +131,7 @@ const EditorPage: React.FC = () => {
   if (loading) {
     return (
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
-        <LoadingState />
+        <LoadingGlobal />
       </ThemeProvider>
     );
   }
@@ -168,23 +169,19 @@ const EditorPage: React.FC = () => {
             onNewChapter={handleNewChapter}
           />
 
-          {loadingChapter ? (
-            <LoadingState mensagem="Carregando capítulo..." />
-          ) : (
-            <EditorContent
-              chapterTitle={chapterTitle}
-              wordCount={wordCount}
-              onChapterTitleChange={handleChapterTitleChange}
-              onEditorChange={handleEditorChange}
-              bookId={bookId}
-              chapterId={chapterId}
-              initialContent={chapterContent}
-              saveStatus={saveStatus}
-              isOnline={isOnline}
-              setSaveStatus={setSaveStatus}
-              loadingChapter={loadingChapter}
-            />
-          )}
+          <EditorContent
+            chapterTitle={chapterTitle}
+            wordCount={wordCount}
+            onChapterTitleChange={handleChapterTitleChange}
+            onEditorChange={handleEditorChange}
+            bookId={bookId}
+            chapterId={chapterId}
+            initialContent={chapterContent}
+            saveStatus={saveStatus}
+            isOnline={isOnline}
+            setSaveStatus={setSaveStatus}
+            loadingChapter={loadingChapter}
+          />
         </MainLayout>
 
         <AIAssistant
