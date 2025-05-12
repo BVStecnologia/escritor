@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon } from '../../components/icons';
+import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon, CollapseRightIcon } from '../../components/icons';
 import styled from 'styled-components';
 import { AIContainer } from './styles';
 
@@ -279,7 +279,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
           Assistente IA
         </AITitle>
         <ToggleAIButton onClick={toggleAIPanel}>
-          <CollapseLeftIcon />
+          {isOpen ? <CollapseRightIcon /> : <CollapseLeftIcon />}
         </ToggleAIButton>
       </AIHeader>
 

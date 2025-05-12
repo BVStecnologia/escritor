@@ -10,7 +10,6 @@ import {
   EditorWrapper,
   EditorContainer
 } from './styles';
-import { FloatingSaveStatus } from '../../../components/LexicalEditor/FloatingSaveStatus';
 import { LoadingChapter } from '../LoadingChapter';
 
 interface EditorContentProps {
@@ -72,9 +71,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           {/* Contador de palavras flutuante */}
           <WordCountBadge className="word-count-floating">
             <WordCountIcon />
-            Palavras: <span>{wordCount}</span>
+            <span className="count-label">Palavras:</span> <span className="count-value">{wordCount}</span>
           </WordCountBadge>
-          <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
         </EditorWrapper>
       )}
     </Content>

@@ -55,24 +55,24 @@ export const WordCountBadge = styled.div`
   padding: 0.6rem 1.2rem;
   border-radius: 24px;
   font-size: 0.875rem;
-  background: rgba(40, 40, 45, 0.9);
-  color: #aaaaaa;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  color: ${({ theme }) => theme.isDarkMode ? '#aaaaaa' : '#555555'};
   transition: all 0.3s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   
   svg {
     width: 16px;
     height: 16px;
     opacity: 0.8;
-    color: #aaaaaa;
+    color: ${({ theme }) => theme.isDarkMode ? '#aaaaaa' : '#555555'};
   }
 
-  span {
+  .count-label {
+    color: ${({ theme }) => theme.isDarkMode ? '#aaaaaa' : '#555555'};
+  }
+
+  .count-value {
     font-weight: 600;
-    color: #cccccc;
+    color: ${({ theme }) => theme.isDarkMode ? '#cccccc' : theme.colors.primary};
   }
 `;
 

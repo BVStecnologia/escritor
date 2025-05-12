@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Capitulo, dbService } from '../../../services/dbService';
 import { ChapterCard } from './ChapterCard';
-import { PlusIcon, DeleteIcon, CloseIcon, CollapseRightIcon } from '../../../components/icons';
+import { PlusIcon, DeleteIcon, CloseIcon, CollapseRightIcon, CollapseLeftIcon } from '../../../components/icons';
 import {
   SidebarContainer,
   SidebarHeader,
@@ -367,7 +367,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <SidebarHeader $isOpen={isOpen}>
         {isOpen && <SidebarTitle $isOpen={isOpen}>Partes</SidebarTitle>}
         <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
-          <CollapseRightIcon />
+          {isOpen ? <CollapseLeftIcon /> : <CollapseRightIcon />}
         </ToggleSidebarButton>
       </SidebarHeader>
 
