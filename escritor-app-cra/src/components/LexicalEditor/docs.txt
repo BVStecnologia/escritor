@@ -1,0 +1,1159 @@
+Introduction
+Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
+
+Lexical works by attaching itself to a contentEditable element and from there you can work with Lexical's declarative APIs to make things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in most cases (unless you build your own custom nodes).
+
+Modular Design
+Modular architecture allows fine grained control over functionality
+The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins until the user actually interacts with the editor itself – which can greatly help improve performance.
+
+What can be built with Lexical?
+Lexical makes it possible to easily create complex text editing experiences that otherwise would be very complex with the built-in browser tooling. We built Lexical to enable developers to move-fast and create different types of text experiences that scale to specific requirements. Here are some (but not all) examples of what you can do with Lexical:
+
+Simple plain-text editors that have more requirements than a <textarea>, such as requiring features like mentions, custom emojis, links and hashtags.
+More complex rich-text editors that can be used to post content on blogs, social media, messaging applications.
+A full-blown WYSIWYG editor that can be used in a CMS or rich content editor.
+Real-time collaborative text editing experiences that combine many of the above points.
+You can think of Lexical as a text editor UI framework. Whilst Lexical is currently only usable on the web, the team is also experimenting with building native versions of Lexical for other platforms. At Meta, Lexical powers web text editing experiences for hundreds of millions of users everyday across Facebook, Workplace, Messenger, WhatsApp and Instagram.
+
+Lexical's Design
+Conceptual View
+The core of Lexical is a dependency-free text editor framework that allows developers to build powerful, simple and complex, editor surfaces. Lexical has a few concepts that are worth exploring:
+
+Editor instances
+Editor instances are the core thing that wires everything together. You can attach a contenteditable DOM element to editor instances, and also register listeners and commands. Most importantly, the editor allows for updates to its EditorState. You can create an editor instance using the createEditor() API, however you normally don't have to worry when using framework bindings such as @lexical/react as this is handled for you.
+
+Editor States
+An Editor State is the underlying data model that represents what you want to show on the DOM. Editor States contain two parts:
+
+a Lexical Node Tree
+a Lexical Selection object
+Editor States are immutable once created, and in order to update one, you must do so via editor.update(() => {...}). However, you can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update workflow to prevent cascading/water-falling of updates. You can retrieve the current editor state using editor.getEditorState().
+
+Editor States are also fully serializable to JSON and can easily be serialized back into the editor using editor.parseEditorState().
+
+Reading and Updating Editor State
+When you want to read and/or update the Lexical node tree, you must do it via editor.update(() => {...}). You may also do read-only operations with the editor state via editor.read(() => {...}) or editor.getEditorState().read(() => {...}). The closure passed to the update or read call is important, and must be synchronous. It's the only place where you have full "lexical" context of the active editor state, and providing you with access to the Editor State's node tree. We promote using the convention of using $ prefixed functions (such as $getRoot()) to convey that these functions must be called in this context. Attempting to use them outside of a read or update will trigger a runtime error.
+
+For those familiar with React Hooks, you can think of these $functions as having similar functionality:
+
+Feature	React Hooks	Lexical $functions
+Naming Convention	useFunction	$function
+Context Required	Can only be called while rendering	Can only be called while in an update or read
+Can be composed	Hooks can call other hooks	$functions can call other $functions
+Must be synchronous	✅	✅
+Other rules	❌ Must be called unconditionally in the same order	✅ None
+Node Transforms and Command Listeners are called with an implicit editor.update(() => {...}) context.
+
+It is permitted to do nested updates, or nested reads, but an update should not be nested in a read or vice versa. For example, editor.update(() => editor.update(() => {...})) is allowed. It is permitted to nest an editor.read at the end of an editor.update, but this will immediately flush the update and any additional update in that callback will throw an error.
+
+All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods and access properties of a Lexical Node while in a read or update call (just like $ functions). Methods on Lexical Nodes will first attempt to locate the latest (and possibly a writable) version of the node from the active editor state using the node's unique key. All versions of a logical node have the same key. These keys are managed by the Editor, are only present at runtime (not serialized), and should be considered to be random and opaque (do not write tests that assume hard-coded values for keys).
+
+This is done because the editor state's node tree is recursively frozen after reconciliation to support efficient time travel (undo/redo and similar use cases). Methods that update nodes first call node.getWritable(), which will create a writable clone of a frozen node. This would normally mean that any existing references (such as local variables) would refer to a stale version of the node, but having Lexical Nodes always refer to the editor state allows for a simpler and less error-prone data model.
+
+tip
+If you use editor.read(() => { /* callback */ }) it will first flush any pending updates, so you will always see a consistent state. When you are in an editor.update, you will always be working with the pending state, where node transforms and DOM reconciliation may not have run yet. editor.getEditorState().read() will use the latest reconciled EditorState (after any node transforms, DOM reconciliation, etc. have already run), any pending editor.update mutations will not yet be visible.
+
+DOM Reconciler
+Lexical has its own DOM reconciler that takes a set of Editor States (always the "current" and the "pending") and applies a "diff" on them. It then uses this diff to update only the parts of the DOM that need changing. You can think of this as a kind-of virtual DOM, except Lexical is able to skip doing much of the diffing work, as it knows what was mutated in a given update. The DOM reconciler adopts performance optimizations that benefit the typical heuristics of a content editable – and is able to ensure consistency for LTR and RTL languages automatically.
+
+Listeners, Node Transforms and Commands
+Outside of invoking updates, the bulk of work done with Lexical is via listeners, node transforms and commands. These all stem from the editor and are prefixed with register. Another important feature is that all the register methods return a function to easily unsubscribe them. For example here is how you listen to an update to a Lexical editor:
+
+const unregisterListener = editor.registerUpdateListener(({editorState}) => {
+  // An update has occurred!
+  console.log(editorState);
+});
+
+// Ensure we remove the listener later!
+unregisterListener();
+
+Commands are the communication system used to wire everything together in Lexical. Custom commands can be created using createCommand() and dispatched to an editor using editor.dispatchCommand(command, payload). Lexical dispatches commands internally when key presses are triggered and when other important signals occur. Commands can also be handled using editor.registerCommand(command, handler, priority), and incoming commands are propagated through all handlers by priority until a handler stops the propagation (in a similar way to event propagation in the browser).
+
+Quick Start (Vanilla JS)
+This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications, it's advisable to check out the Getting Started with React page.
+
+Creating an editor and using it
+When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible for wiring up an EditorState with the DOM. The editor is also the place where you can register custom nodes, add listeners, and transforms.
+
+An editor instance can be created from the lexical package and accepts an optional configuration object that allows for theming and other options:
+
+import {createEditor} from 'lexical';
+
+const config = {
+  namespace: 'MyEditor',
+  theme: {
+    ...
+  },
+  onError: console.error
+};
+
+const editor = createEditor(config);
+
+Once you have an editor instance, when ready, you can associate the editor instance with a content editable <div> element in your document:
+
+const contentEditableElement = document.getElementById('editor');
+
+editor.setRootElement(contentEditableElement);
+
+If you want to clear the editor instance from the element, you can pass null. Alternatively, you can switch to another element if need be, just pass an alternative element reference to setRootElement().
+
+Working with Editor States
+With Lexical, the source of truth is not the DOM, but rather an underlying state model that Lexical maintains and associates with an editor instance. You can get the latest editor state from an editor by calling editor.getEditorState().
+
+Editor states are serializable to JSON, and the editor instance provides a useful method to deserialize stringified editor states.
+
+const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
+
+const newEditorState = editor.parseEditorState(stringifiedEditorState);
+
+Updating an editor state
+While it's not necessarily needed if using @lexical/rich-text or @lexical/plain-text helper packages, it's still relevant for programmatic content modification as well as in case of the custom editor fine tuning.
+
+There are a few ways to update an editor instance:
+
+Trigger an update with editor.update()
+Setting the editor state via editor.setEditorState()
+Applying a change as part of an existing update via editor.registerNodeTransform()
+Using a command listener with editor.registerCommand(EXAMPLE_COMMAND, () => {...}, priority)
+The most common way to update the editor is to use editor.update(). Calling this function requires a function to be passed in that will provide access to mutate the underlying editor state. When starting a fresh update, the current editor state is cloned and used as the starting point. From a technical perspective, this means that Lexical leverages a technique called double-buffering during updates. There's an editor state to represent what is current on the screen, and another work-in-progress editor state that represents future changes.
+
+Creating an update is typically an async process that allows Lexical to batch multiple updates together in a single update – improving performance. When Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update will form a new immutable editor state. Calling editor.getEditorState() will then return the latest editor state based on the changes from the update.
+
+Here's an example of how you can update an editor instance:
+
+import {$getRoot, $getSelection, $createParagraphNode, $createTextNode} from 'lexical';
+
+// Inside the `editor.update` you can use special $ prefixed helper functions.
+// These functions cannot be used outside the closure, and will error if you try.
+// (If you're familiar with React, you can imagine these to be a bit like using a hook
+// outside of a React function component).
+editor.update(() => {
+  // Get the RootNode from the EditorState
+  const root = $getRoot();
+
+  // Get the selection from the EditorState
+  const selection = $getSelection();
+
+  // Create a new ParagraphNode
+  const paragraphNode = $createParagraphNode();
+
+  // Create a new TextNode
+  const textNode = $createTextNode('Hello world');
+
+  // Append the text node to the paragraph
+  paragraphNode.append(textNode);
+
+  // Finally, append the paragraph to the root
+  root.append(paragraphNode);
+});
+
+It's important to note that the core library (the 'lexical' package) does not listen for any commands or perform any updates to the editor state in response to user events out-of-the-box. In order to see text and other content appear in the editor, you need to register command listeners and update the editor in the callback. Lexical provides a couple of helper packages to make it easy to wire up a lot of the basic commands you might want for plain text or rich text experiences.
+
+If you want to know when the editor updates so you can react to the changes, you can add an update listener to the editor, as shown below:
+
+editor.registerUpdateListener(({editorState}) => {
+  // The latest EditorState can be found as `editorState`.
+  // To read the contents of the EditorState, use the following API:
+
+  editorState.read(() => {
+    // Just like editor.update(), .read() expects a closure where you can use
+    // the $ prefixed helper functions.
+  });
+});
+
+Putting it together
+Here we have simplest Lexical setup in rich text configuration (@lexical/rich-text) with history (@lexical/history) and accessibility (@lexical/dragon) features enabled.
+
+
+
+Getting Started with React
+Video Tutorials
+For a detailed walkthrough of setting up a basic editor with Lexical in React, check out these videos:
+
+Getting Started with Lexical & React
+Themes, Nodes, and Rich Text
+Headings, Lists, Toolbar
+Creating Nodes and Plugins
+Keep in mind that some of these videos may be partially outdated as we do not update them as often as textual documentation.
+
+Creating Basic Rich Text Editor
+To simplify Lexical integration with React we provide the @lexical/react package that wraps Lexical APIs with React components so the editor itself as well as all the plugins now can be easily composed using JSX. Furthermore, you can lazy load plugins if desired, so you don't pay the cost for plugins until you actually use them.
+
+To start, install lexical and @lexical/react:
+
+npm install --save lexical @lexical/react
+
+Below is an example of a basic rich text editor using lexical and @lexical/react.
+
+import {$getRoot, $getSelection} from 'lexical';
+import {useEffect} from 'react';
+
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+
+const theme = {
+  // Theme styling goes here
+  //...
+}
+
+// Catch any errors that occur during Lexical updates and log them
+// or throw them as needed. If you don't throw them, Lexical will
+// try to recover gracefully without losing user data.
+function onError(error) {
+  console.error(error);
+}
+
+function Editor() {
+  const initialConfig = {
+    namespace: 'MyEditor',
+    theme,
+    onError,
+  };
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <RichTextPlugin
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+      <HistoryPlugin />
+      <AutoFocusPlugin />
+    </LexicalComposer>
+  );
+}
+
+Adding UI to control text formatting
+Out of the box Lexical doesn't provide any type of UI as it's not a ready to use editor but rather a framework for creation of your own editor. Below you can find an example of the integration from the previous chapter that now features 2 new plugins:
+
+ToolbarPlugin - renders UI to control text formatting
+TreeViewPlugin - renders debug view below the editor so we can see its state in real time
+However no UI can be created w/o CSS and Lexical is not an exception here. Pay attention to ExampleTheme.ts and how it's used in this example, with corresponding styles defined in styles.css.
+
+
+Saving Lexical State
+tip
+While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for LexicalOnChangePlugin.
+
+Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance, save it in a database. We can do this via the an update listener, which will execute every time the editor state changes and provide us with the latest state. In React, we typically use the plugin system to set up listeners like this, since it provides us easy access to the LexicalEditor instance via a React Context. So, let's write our own plugin that notifies us when the editor updates.
+
+// When the editor changes, you can get notified via the
+// OnChangePlugin!
+function MyOnChangePlugin({ onChange }) {
+  // Access the editor through the LexicalComposerContext
+  const [editor] = useLexicalComposerContext();
+  // Wrap our listener in useEffect to handle the teardown and avoid stale references.
+  useEffect(() => {
+    // most listeners return a teardown function that can be called to clean them up.
+    return editor.registerUpdateListener(({editorState}) => {
+      // call onChange here to pass the latest state up to the parent.
+      onChange(editorState);
+    });
+  }, [editor, onChange]);
+  return null;
+}
+
+Now, we can implement this in our editor and save the EditorState in a React state variable:
+
+function MyOnChangePlugin({ onChange }) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    return editor.registerUpdateListener(({editorState}) => {
+      onChange(editorState);
+    });
+  }, [editor, onChange]);
+  return null;
+}
+
+function Editor() {
+  // ...
+
+  const [editorState, setEditorState] = useState();
+  function onChange(editorState) {
+    setEditorState(editorState);
+  }
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <RichTextPlugin
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+      <HistoryPlugin />
+      <MyCustomAutoFocusPlugin />
+      <MyOnChangePlugin onChange={onChange}/>
+    </LexicalComposer>
+  );
+}
+
+
+Ok, so now we're saving the EditorState object in a React state variable, but we can't save a JavaScript object to our database - so how do we persist the state so we can load it later? We need to serialize it to a storage format. For this purpose (among others) Lexical provides several serialization APIs that convert EditorState to a string that can be sent over the network and saved to a database. Building on our previous example, we can do that this way:
+
+function MyOnChangePlugin({ onChange }) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    return editor.registerUpdateListener(({editorState}) => {
+      onChange(editorState);
+    });
+  }, [editor, onChange]);
+  return null;
+}
+
+function Editor() {
+  // ...
+
+  const [editorState, setEditorState] = useState();
+  function onChange(editorState) {
+    // Call toJSON on the EditorState object, which produces a serialization safe string
+    const editorStateJSON = editorState.toJSON();
+    // However, we still have a JavaScript object, so we need to convert it to an actual string with JSON.stringify
+    setEditorState(JSON.stringify(editorStateJSON));
+  }
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      {/*...*/}
+      <MyOnChangePlugin onChange={onChange}/>
+    </LexicalComposer>
+  );
+
+
+
+From there, it's straightforward to wire up a submit button or some other UI trigger that will take the state from the React state variable and send it to a server for storage in a database.
+
+One important thing to note: Lexical is generally meant to be uncontrolled, so avoid trying to pass the EditorState back into Editor.setEditorState or something along those lines.
+
+Theming
+Lexical tries to make theming straight-forward, by providing a way of passing a customizable theming object that maps CSS class names to the editor on creation. Here's an example of a plain-text theme:
+
+const exampleTheme = {
+  ltr: 'ltr',
+  rtl: 'rtl',
+  paragraph: 'editor-paragraph',
+};
+
+In your CSS, you can then add something like:
+
+.ltr {
+  text-align: left;
+}
+
+.rtl {
+  text-align: right;
+}
+
+.editor-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.editor-paragraph {
+  margin: 0 0 15px 0;
+  position: relative;
+}
+
+To apply it, you need to pass it to your editor instance. If you're using a framework like React, this is done by passing it as a property of the initialConfig to <LexicalComposer>, like shown:
+
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {exampleTheme} from './exampleTheme';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+
+const initialConfig = {namespace: 'MyEditor', theme: exampleTheme};
+
+export default function Editor() {
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <PlainTextPlugin
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div className="editor-placeholder">Enter some text...</div>}
+          />
+        }
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+    </LexicalComposer>
+  );
+}
+
+If you are using vanilla JS, you can pass it to the createEditor() function, like shown:
+
+import {createEditor} from 'lexical';
+
+const editor = createEditor({
+  namespace: 'MyEditor',
+  theme: exampleTheme,
+});
+
+Many of the Lexical's core nodes also accept theming properties. Here's a more comprehensive theming object:
+
+const exampleTheme = {
+  ltr: 'ltr',
+  rtl: 'rtl',
+  paragraph: 'editor-paragraph',
+  quote: 'editor-quote',
+  heading: {
+    h1: 'editor-heading-h1',
+    h2: 'editor-heading-h2',
+    h3: 'editor-heading-h3',
+    h4: 'editor-heading-h4',
+    h5: 'editor-heading-h5',
+    h6: 'editor-heading-h6',
+  },
+  list: {
+    nested: {
+      listitem: 'editor-nested-listitem',
+    },
+    ol: 'editor-list-ol',
+    ul: 'editor-list-ul',
+    listitem: 'editor-listItem',
+    listitemChecked: 'editor-listItemChecked',
+    listitemUnchecked: 'editor-listItemUnchecked',
+  },
+  hashtag: 'editor-hashtag',
+  image: 'editor-image',
+  link: 'editor-link',
+  text: {
+    bold: 'editor-textBold',
+    code: 'editor-textCode',
+    italic: 'editor-textItalic',
+    strikethrough: 'editor-textStrikethrough',
+    subscript: 'editor-textSubscript',
+    superscript: 'editor-textSuperscript',
+    underline: 'editor-textUnderline',
+    underlineStrikethrough: 'editor-textUnderlineStrikethrough',
+  },
+  code: 'editor-code',
+  codeHighlight: {
+    atrule: 'editor-tokenAttr',
+    attr: 'editor-tokenAttr',
+    boolean: 'editor-tokenProperty',
+    builtin: 'editor-tokenSelector',
+    cdata: 'editor-tokenComment',
+    char: 'editor-tokenSelector',
+    class: 'editor-tokenFunction',
+    'class-name': 'editor-tokenFunction',
+    comment: 'editor-tokenComment',
+    constant: 'editor-tokenProperty',
+    deleted: 'editor-tokenProperty',
+    doctype: 'editor-tokenComment',
+    entity: 'editor-tokenOperator',
+    function: 'editor-tokenFunction',
+    important: 'editor-tokenVariable',
+    inserted: 'editor-tokenSelector',
+    keyword: 'editor-tokenAttr',
+    namespace: 'editor-tokenVariable',
+    number: 'editor-tokenProperty',
+    operator: 'editor-tokenOperator',
+    prolog: 'editor-tokenComment',
+    property: 'editor-tokenProperty',
+    punctuation: 'editor-tokenPunctuation',
+    regex: 'editor-tokenVariable',
+    selector: 'editor-tokenSelector',
+    string: 'editor-tokenSelector',
+    symbol: 'editor-tokenProperty',
+    tag: 'editor-tokenProperty',
+    url: 'editor-tokenOperator',
+    variable: 'editor-tokenVariable',
+  },
+};Creating a Plugin
+This page covers Lexical plugin creation, independently of any framework or library. For those not yet familiar with Lexical it's advisable to check out the Quick Start (Vanilla JS) page.
+
+Lexical, on the contrary to many other frameworks, doesn't define any specific interface for its plugins. The plugin in its simplest form is a function that accepts a LexicalEditor instance, and returns a cleanup function. With access to the LexicalEditor, plugin can extend editor via Commands, Transforms, Nodes, or other APIs.
+
+In this guide we'll create plugin that replaces smiles (:), :P, etc...) with actual emojis (using Node Transforms) and uses own graphics for emojis rendering by creating our own custom node that extends TextNode.
+
+Conceptual View
+Preconditions
+We assume that you have already implemented (see findEmoji.ts within provided code) function that allows you to find emoji shortcodes (smiles) in text and return their position as well as some other info:
+
+// findEmoji.ts
+export type EmojiMatch = Readonly<{position: number, shortcode: string, unifiedID: string}>;
+
+export default function findEmoji(text: string): EmojiMatch | null;
+
+
+Creating own LexicalNode
+Lexical as a framework provides 2 ways to customize appearance of it's content:
+
+By extending one of the base nodes:
+ElementNode – used as parent for other nodes, can be block level or inline.
+TextNode - leaf type (so it can't have child elements) of node that contains text.
+DecoratorNode - useful to insert arbitrary view (component) inside the editor.
+Via Node Replacement – useful if you want to augment behavior of the built in nodes, such as ParagraphNode.
+As in our case we don't expect EmojiNode to have any child nodes nor we aim to insert arbitrary component the best choice for us is to proceed with TextNode extension.
+
+export class EmojiNode extends TextNode {
+  __unifiedID: string;
+
+  static getType(): string {
+    return 'emoji';
+  }
+
+  static clone(node: EmojiNode): EmojiNode {
+    return new EmojiNode(node.__unifiedID, node.__key);
+  }
+
+  constructor(unifiedID: string, key?: NodeKey) {
+    const unicodeEmoji = /*...*/;
+    super(unicodeEmoji, key);
+
+    this.__unifiedID = unifiedID.toLowerCase();
+  }
+
+  /**
+  * DOM that will be rendered by browser within contenteditable
+  * This is what Lexical renders
+  */
+  createDOM(_config: EditorConfig): HTMLElement {
+    const dom = document.createElement('span');
+    dom.className = 'emoji-node';
+    dom.style.backgroundImage = `url('${BASE_EMOJI_URI}/${this.__unifiedID}.png')`;
+    dom.innerText = this.__text;
+
+    return dom;
+  }
+
+  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
+    return $createEmojiNode(serializedNode.unifiedID).updateFromJSON(serializedNode);
+  }
+
+  exportJSON(): SerializedEmojiNode {
+    return {
+      ...super.exportJSON(),
+      unifiedID: this.__unifiedID,
+    };
+  }
+}
+
+Example above represents absolute minimal setup of the custom node that extends TextNode. Let's look at the key elements here:
+
+constructor(...) + class props – Allows us to store custom data within nodes at runtime as well as accept custom parameters.
+getType() & clone(...) – methods allow Lexical to correctly identify node type as well as being able to clone it correctly as we may want to customize cloning behavior.
+importJSON(...) & exportJSON() – define how our data will be serialized / deserialized to/from Lexical state. Here you define your node presentation in state.
+createDOM(...) – defines DOM that will be rendered by Lexical
+Creating Node Transform
+Transforms allow efficient response to changes to the EditorState, and so user input. Their efficiency comes from the fact that transforms are executed before DOM reconciliation (the most expensive operation in Lexical's life cycle).
+
+Additionally it's important to mention that Lexical Node Transforms are smart enough to allow you not to think about any side effects of the modifications done within transform or interdependencies with other transform listeners. Rule of thumb here is that changes done to the node within a particular transform will trigger rerun of the other transforms till no changes are made to the EditorState. Read more about it in Transform heuristic.
+
+In our example we have simple transform that executes the following business logic:
+
+Attempt to transform TextNode. It will be run on any change to TextNode's.
+Check if emoji shortcodes (smiles) are present in the text within TextNode. Skip if none.
+Split TextNode into 2 or 3 pieces (depending on the position of the shortcode in text) so target emoji shortcode has own dedicated TextNode
+Replace emoji shortcode TextNode with EmojiNode
+import {LexicalEditor, TextNode} from 'lexical';
+
+
+import {$createEmojiNode} from './EmojiNode';
+import findEmoji from './findEmoji';
+
+
+function textNodeTransform(node: TextNode): void {
+  if (!node.isSimpleText() || node.hasFormat('code')) {
+    return;
+  }
+
+  const text = node.getTextContent();
+
+  // Find only 1st occurrence as transform will be re-run anyway for the rest
+  // because newly inserted nodes are considered to be dirty
+  const emojiMatch = findEmoji(text);
+  if (emojiMatch === null) {
+    return;
+  }
+
+  let targetNode;
+  if (emojiMatch.position === 0) {
+    // First text chunk within string, splitting into 2 parts
+    [targetNode] = node.splitText(
+      emojiMatch.position + emojiMatch.shortcode.length,
+    );
+  } else {
+    // In the middle of a string
+    [, targetNode] = node.splitText(
+      emojiMatch.position,
+      emojiMatch.position + emojiMatch.shortcode.length,
+    );
+  }
+
+
+  const emojiNode = $createEmojiNode(emojiMatch.unifiedID);
+  targetNode.replace(emojiNode);
+}
+
+
+export function registerEmoji(editor: LexicalEditor): () => void {
+  // We don't use editor.registerUpdateListener here as alternative approach where we rely
+  // on update listener is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
+  return editor.registerNodeTransform(TextNode, textNodeTransform);
+}
+
+
+Putting it all together
+Finally we configure Lexical instance with our newly created plugin by registering EmojiNode within editor config and executing registerEmoji(editor) plugin bootstrap function. Here for that sake of simplicity we assume that the plugin picks its own approach for CSS & Static Assets distribution (if any), Lexical doesn't enforce any rules on that.
+
+Refer to Quick Start (Vanilla JS) Example to fill the gaps in this pseudocode.
+
+import {createEditor} from 'lexical';
+import {mergeRegister} from '@lexical/utils';
+/* ... */
+
+import {EmojiNode} from './emoji-plugin/EmojiNode';
+import {registerEmoji} from './emoji-plugin/EmojiPlugin';
+
+const initialConfig = {
+  /* ... */
+  // Register our newly created node
+  nodes: [EmojiNode, /* ... */],
+};
+
+const editor = createEditor(config);
+
+const editorRef = document.getElementById('lexical-editor');
+editor.setRootElement(editorRef);
+
+// Registering Plugins
+mergeRegister(
+  /* ... */
+  registerEmoji(editor), // Our plugin
+);lexical
+See API Documentation
+
+Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
+
+The core of Lexical is a dependency-free text editor engine that allows for powerful, simple and complex, editor implementations to be built on top. Lexical's engine provides three main parts:
+
+editor instances that each attach to a single content editable element.
+a set of editor states that represent the current and pending states of the editor at any given time.
+a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
+By design, the core of Lexical tries to be as minimal as possible. Lexical doesn't directly concern itself with things that monolithic editors tend to do – such as UI components, toolbars or rich-text features and markdown. Instead the logic for those features can be included via a plugin interface and used as and when they're needed. This ensures great extensibility and keeps code-sizes to a minimum – ensuring apps only pay the cost for what they actually import.
+
+For React apps, Lexical has tight integration with React 18+ via the optional @lexical/react package. This package provides production-ready utility functions, helpers and React hooks that make it seamless to create text editors within React.
+
+Usage
+The lexical package contains only the core Lexical engine and nodes. This package is intended to be used in conjunction with packages that wire Lexical up to applications, such as @lexical/react.
+
+Working with Lexical
+This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications, it's advisable to check out the source-code for the hooks that are shipped in @lexical/react.
+
+Creating an editor and using it
+When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible for wiring up an EditorState with the DOM. The editor is also the place where you can register custom nodes, add listeners, and transforms.
+
+An editor instance can be created from the lexical package and accepts an optional configuration object that allows for theming and other options:
+
+import {createEditor} from 'lexical';
+
+const config = {
+  namespace: 'MyEditor',
+  theme: {
+    ...
+  },
+};
+
+const editor = createEditor(config);
+
+Once you have an editor instance, when ready, you can associate the editor instance with a content editable <div> element in your document:
+
+const contentEditableElement = document.getElementById('editor');
+
+editor.setRootElement(contentEditableElement);
+
+If you want to clear the editor instance from the element, you can pass null. Alternatively, you can switch to another element if need be, just pass an alternative element reference to setRootElement().
+
+Understanding the Editor State
+With Lexical, the source of truth is not the DOM, but rather an underlying state model that Lexical maintains and associates with an editor instance. You can get the latest editor state from an editor by calling editor.getEditorState().
+
+Editor states have two phases:
+
+During an update they can be thought of as "mutable". See "Updating an editor" below to mutate an editor state.
+After an update, the editor state is then locked and deemed immutable from there one. This editor state can therefore be thought of as a "snapshot".
+Editor states contain two core things:
+
+The editor node tree (starting from the root node).
+The editor selection (which can be null).
+Editor states are serializable to JSON, and the editor instance provides a useful method to deserialize stringified editor states.
+
+const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
+
+const newEditorState = editor.parseEditorState(stringifiedEditorState);
+
+Updating an editor
+There are a few ways to update an editor instance:
+
+Trigger an update with editor.update()
+Setting the editor state via editor.setEditorState()
+Applying a change as part of an existing update via editor.registerNodeTransform()
+Using a command listener with editor.registerCommand(EXAMPLE_COMMAND, () => {...}, priority)
+The most common way to update the editor is to use editor.update(). Calling this function requires a function to be passed in that will provide access to mutate the underlying editor state. When starting a fresh update, the current editor state is cloned and used as the starting point. From a technical perspective, this means that Lexical leverages a technique called double-buffering during updates. There's an editor state to represent what is current on the screen, and another work-in-progress editor state that represents future changes.
+
+Creating an update is typically an async process that allows Lexical to batch multiple updates together in a single update – improving performance. When Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update will form a new immutable editor state. Calling editor.getEditorState() will then return the latest editor state based on the changes from the update.
+
+Here's an example of how you can update an editor instance:
+
+import {$getRoot, $getSelection} from 'lexical';
+import {$createParagraphNode} from 'lexical/PargraphNode';
+
+// Inside the `editor.update` you can use special $ prefixed helper functions.
+// These functions cannot be used outside the closure, and will error if you try.
+// (If you're familiar with React, you can imagine these to be a bit like using a hook
+// outside of a React function component).
+editor.update(() => {
+  // Get the RootNode from the EditorState
+  const root = $getRoot();
+
+  // Get the selection from the EditorState
+  const selection = $getSelection();
+
+  // Create a new ParagraphNode
+  const paragraphNode = $createParagraphNode();
+
+  // Create a new TextNode
+  const textNode = $createTextNode('Hello world');
+
+  // Append the text node to the paragraph
+  paragraphNode.append(textNode);
+
+  // Finally, append the paragraph to the root
+  root.append(paragraphNode);
+});
+
+If you want to know when the editor updates so you can react to the changes, you can add an update listener to the editor, as shown below:
+
+editor.registerUpdateListener(({editorState}) => {
+  // The latest EditorState can be found as `editorState`.
+  // To read the contents of the EditorState, use the following API:
+
+  editorState.read(() => {
+    // Just like editor.update(), .read() expects a closure where you can use
+    // the $ prefixed helper functions.
+  });
+});
+
+Getting started
+Install lexical and @lexical/react:
+
+npm install --save lexical @lexical/react
+
+Below is an example of a basic plain text editor using lexical and @lexical/react (try it yourself).
+
+import {$getRoot, $getSelection} from 'lexical';
+import {useEffect} from 'react';
+
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+
+const theme = {
+  // Theme styling goes here
+  ...
+}
+
+// When the editor changes, you can get notified via the
+// LexicalOnChangePlugin!
+function onChange(editorState) {
+  editorState.read(() => {
+    // Read the contents of the EditorState here.
+    const root = $getRoot();
+    const selection = $getSelection();
+
+    console.log(root, selection);
+  });
+}
+
+// Lexical React plugins are React components, which makes them
+// highly composable. Furthermore, you can lazy load plugins if
+// desired, so you don't pay the cost for plugins until you
+// actually use them.
+function MyCustomAutoFocusPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  
+
+useEffect(() => {
+    // Focus the editor when the effect fires!
+    editor.focus();
+  }, [editor]);
+
+  return null;
+}
+
+// Catch any errors that occur during Lexical updates and log them
+// or throw them as needed. If you don't throw them, Lexical will
+// try to recover gracefully without losing user data.
+function onError(error) {
+  throw error;
+}
+
+function Editor() {
+  const initialConfig = {
+    namespace: 'MyEditor',
+    theme,
+    onError,
+  };
+
+return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <PlainTextPlugin
+        contentEditable={
+          <ContentEditable
+            aria-placeholder={'Enter some text...'}
+            placeholder={<div>Enter some text...</div>}
+          />
+        }
+      />
+      <OnChangePlugin onChange={onChange} />
+      <HistoryPlugin />
+      <MyCustomAutoFocusPlugin />
+    </LexicalComposer>
+  );
+}
+
+Lexical Plugins
+React-based plugins are using Lexical editor instance from <LexicalComposer> context:
+
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
+
+const initialConfig = {
+  namespace: 'MyEditor',
+  theme,
+  onError,
+};
+
+<LexicalComposer initialConfig={initialConfig}>
+  <PlainTextPlugin
+    contentEditable={<ContentEditable />}
+    placeholder={<div>Enter some text...</div>}
+  />
+  <HistoryPlugin />
+  <OnChangePlugin onChange={onChange} />
+  ...
+</LexicalComposer>;
+
+Note: Many plugins might require you to register the one or many Lexical nodes in order for the plugin to work. You can do this by passing a reference to the node to the nodes array in your initial editor configuration.
+
+const initialConfig = {
+  namespace: 'MyEditor',
+  theme,
+  nodes: [ListNode, ListItemNode], // Pass the references to the nodes here
+  onError,
+};
+
+LexicalPlainTextPlugin
+React wrapper for @lexical/plain-text that adds major features for plain text editing, including typing, deletion and copy/pasting.
+
+<PlainTextPlugin
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
+  ErrorBoundary={LexicalErrorBoundary}
+/>
+
+LexicalRichTextPlugin
+React wrapper for @lexical/rich-text that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting.
+
+<RichTextPlugin
+  contentEditable={
+    <ContentEditable
+      aria-placeholder={'Enter some text...'}
+      placeholder={<div>Enter some text...</div>}
+    />
+  }
+  ErrorBoundary={LexicalErrorBoundary}
+/>
+
+LexicalOnChangePlugin
+Plugin that calls onChange whenever Lexical state is updated. Using ignoreHistoryMergeTagChange (true by default) and ignoreSelectionChange (false by default) can give more granular control over changes that are causing onChange call.
+
+<OnChangePlugin onChange={onChange} />
+
+LexicalHistoryPlugin
+React wrapper for @lexical/history that adds support for history stack management and undo / redo commands.
+
+<HistoryPlugin />
+
+LexicalLinkPlugin
+React wrapper for @lexical/link that adds support for links, including $toggleLink command support that toggles link for selected text.
+
+<LinkPlugin />
+
+LexicalListPlugin
+React wrapper for @lexical/list that adds support for lists (ordered and unordered)
+
+<ListPlugin />
+
+LexicalCheckListPlugin
+React wrapper for @lexical/list that adds support for check lists. Note that it requires some css to render check/uncheck marks. See PlaygroundEditorTheme.css for details.
+
+<CheckListPlugin />
+
+LexicalTablePlugin
+See API Documentation
+
+React wrapper for @lexical/table that adds support for tables.
+
+<TablePlugin />
+
+LexicalTabIndentationPlugin
+Plugin that allows tab indentation in combination with @lexical/rich-text.
+
+<TabIndentationPlugin />
+
+LexicalAutoLinkPlugin
+Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automaticaly convert it into a link node
+
+const URL_MATCHER =
+  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
+
+const MATCHERS = [
+  (text) => {
+    const match = URL_MATCHER.exec(text);
+    if (match === null) {
+      return null;
+    }
+    const fullMatch = match[0];
+    return {
+      index: match.index,
+      length: fullMatch.length,
+      text: fullMatch,
+      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+      // attributes: { rel: 'noreferrer', target: '_blank' }, // Optional link attributes
+    };
+  },
+];
+
+...
+
+<AutoLinkPlugin matchers={MATCHERS} />
+
+
+LexicalClearEditorPlugin
+Adds clearEditor command support to clear editor's content.
+
+<ClearEditorPlugin />
+
+LexicalMarkdownShortcutPlugin
+Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough).
+
+<MarkdownShortcutPlugin />
+
+LexicalTableOfContentsPlugin
+This plugin allows you to render a table of contents for a page from the headings from the editor. It listens to any deletions or modifications to those headings and updates the table of contents. Additionally, it's able to track any newly added headings and inserts them in the table of contents once they are created. This plugin also supports lazy loading - so you can defer adding the plugin until when the user needs it.
+
+In order to use TableOfContentsPlugin, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays [[headingKey, headingTextContent, headingTag], [], [], ...]
+
+headingKey: Unique key that identifies the heading. headingTextContent: A string of the exact text of the heading. headingTag: A string that reads either 'h1', 'h2', or 'h3'.
+
+<TableOfContentsPlugin>
+  {(tableOfContentsArray) => {
+    return (
+      <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />
+    );
+  }}
+</TableOfContentsPlugin>
+
+LexicalEditorRefPlugin
+Allows you to get a ref to the underlying editor instance outside of LexicalComposer, which is convenient when you want to interact with the editor from a separate part of your application.
+
+const editorRef = useRef(null);
+<EditorRefPlugin editorRef={editorRef} />;
+
+LexicalSelectionAlwaysOnDisplay
+By default, browser text selection becomes invisible when clicking away from the editor. This plugin ensures the selection remains visible.
+
+<SelectionAlwaysOnDisplay />Creating a React Plugin
+In addition to using the Lexical React plugins offered by the core library, you can make your own plugins to extend or alter Lexical's functionality to suit your own use cases.
+
+Lexical's React plugin interface is simple - just create a React component and add it as a child of your LexicalComposer component:
+
+ <LexicalComposer>
+    <MyLexicalPlugin>
+ </LexicalComposer>
+
+If the Plugin introduces new nodes, they have to be registered in initialConfig.nodes:
+
+const initialConfig = {
+  namespace: 'MyEditor',
+  nodes: [MyLexicalNode],
+};
+
+ <LexicalComposer initialConfig={initialConfig}>
+    <MyLexicalPlugin>
+ </LexicalComposer>
+
+LexicalComposer provides access to the underlying LexicalEditor instance via React Context:
+
+//MyLexicalPlugin.js
+
+export function MyLexicalPlugin(props) {
+    const [editor] = useLexicalComposerContext();
+    ...
+}
+
+With access to the Editor, your plugin can extend Lexical via Commands, Transforms, or other APIs. For example, the TwitterPlugin embeds a tweet into the editor, fetching the data asynchronously from Twitter based on the provided Tweet ID:
+
+export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
+
+export default function TwitterPlugin(): JSX.Element | null {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!editor.hasNodes([TweetNode])) {
+      throw new Error('TwitterPlugin: TweetNode not registered on editor (initialConfig.nodes)');
+    }
+
+    return editor.registerCommand<string>(
+      INSERT_TWEET_COMMAND,
+      (payload) => {
+        const tweetNode = $createTweetNode(payload);
+        $insertNodeToNearestRoot(tweetNode);
+
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+  }, [editor]);
+
+  return null;
+}
+
+
+TwitterPlugin is just a React component that accesses the Lexical editor via React Context (useLexicalComposerContext). Using the LexicalEditor instance, this plugin does two things:
+
+Verifies that there is a TweetNode registered on the editor (if you forget to register the node, you can't do #2)
+registers a "command", passing a callback that will run when that command is dispatched. The command callback creates and inserts a TweetNode in the editor.
+You can see how TwitterPlugin is used in the playground. It's added as a child of a LexicalComposer component, which does the job of providing the Context necessary for access to the editor instance. To actually trigger this command callback and insert a TweetNode, we have a button that "dispatches" the Tweet command we registered in the plugin.
+
+While the TwitterPlugin registers a command that inserts a custom node, this is only one example of what can be done with a plugin. To get a better idea of what's possible, take a look at the plugins defined in the playground.
+
+EReact
+Lexical provides LexicalCollaborationPlugin and useCollaborationContext hook within @lexical/react to accelerate creation of the collaborative React backed editors. This is on top of the Yjs bindings provided by @lexical/yjs.
+
+tip
+Clone Lexical GitHub repo, run npm i && npm run start and open http://localhost:3000/split/?isCollab=true to launch playground in collaborative mode.
+
+Getting started
+This guide is based on examples/react-rich example.
+
+Install minimal set of the required dependencies:
+
+$ npm i -S @lexical/react @lexical/yjs lexical react react-dom y-websocket yjs
+
+note
+y-websocket is the only officially supported Yjs connection provider at this point. Although other providers may work just fine.
+
+Get WebSocket server running:
+
+This allows different browser windows and different browsers to find each other and sync Lexical state. On top of this YPERSISTENCE allows you to save Yjs documents in between server restarts so clients can simply reconnect and keep editing.
+
+$ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
+
+Get basic collaborative Lexical setup:
+
+import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import * as Y from 'yjs';
+import {$initialEditorState} from './initialEditorState';
+import {WebsocketProvider} from 'y-websocket';
+
+function Editor() {
+  const initialConfig = {
+    // NOTE: This is critical for collaboration plugin to set editor state to null. It
+    // would indicate that the editor should not try to set any default state
+    // (not even empty one), and let collaboration plugin do it instead
+    editorState: null,
+    namespace: 'Demo',
+    nodes: [],
+    onError: (error: Error) => {
+      throw error;
+    },
+    theme: {},
+  };
+
+  const providerFactory = useCallback(
+    (id: string, yjsDocMap: Map<string, Y.Doc>) => {
+      const doc = getDocFromMap(id, yjsDocMap);
+
+      return new WebsocketProvider('ws://localhost:1234', id, doc, {
+        connect: false,
+      });
+    }, [],
+  );
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <RichTextPlugin
+        contentEditable={<ContentEditable className="editor-input" />}
+        placeholder={<div className="editor-placeholder">Enter some rich text...</div>}
+        ErrorBoundary={LexicalErrorBoundary}
+      />
+      <CollaborationPlugin
+        id="lexical/react-rich-collab"
+        providerFactory={providerFactory}
+        // Optional initial editor state in case collaborative Y.Doc won't
+        // have any existing data on server. Then it'll use this value to populate editor.
+        // It accepts same type of values as LexicalComposer editorState
+        // prop (json string, state object, or a function)
+        initialEditorState={$initialEditorState}
+        shouldBootstrap={true}
+      />
+    </LexicalComposer>
+  );
+}
+
+
+See it in action
+Source code: examples/react-rich-collab
+
+
+Building collaborative plugins
+Lexical Playground features set of the collaboration enabled plugins that integrate with primary document via useCollaborationContext() hook. Notable mentions:
+
+CommentPlugin - features use of the separate provider and Yjs room to sync comments.
+ImageComponent - features use of the LexicalNestedComposer paired with CollaborationPlugin.
+PollOptionComponent - showcases poll implementation using clientID from Yjs context.
+StickyPlugin - features use of the LexicalNestedComposer paired with CollaborationPlugin as well as sticky note position real-time sync.
+note
+While these "playground" plugins aren't production ready - they serve as a great example of collaborative Lexical capabilities as well as provide a good starting point.
+
+Yjs providers
+Setting up the communication between clients, managing awareness information, and storing shared data for offline usage is quite a hassle. Providers manage all that for you and are the perfect starting point for your collaborative app.
+
+See Yjs Website for the list of the officially endorsed providers. Although it's not an exhaustive one.
+
