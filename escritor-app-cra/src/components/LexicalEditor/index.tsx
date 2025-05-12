@@ -23,6 +23,7 @@ import { AutocompletePlugin } from './plugins/AutocompletePlugin';
 import { AIToolsSelectionPlugin } from './plugins/AIToolsSelectionPlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
+import { SpellCheckPlugin } from './plugins/SpellCheckPlugin';
 
 const EditorContainer = styled.div`
   position: relative;
@@ -66,6 +67,23 @@ const ContentEditableWrapper = styled.div`
     [style] {
       font-family: var(--lexical-font-family, inherit);
     }
+    
+    /* Estilo para palavras com erro ortográfico */
+    .spelling-error {
+      text-decoration: underline wavy red;
+      text-decoration-thickness: 2px;
+      cursor: pointer;
+      display: inline-block; /* Para garantir que o elemento não se estenda */
+      padding: 0;
+      margin: 0;
+      border: none;
+      background: transparent;
+    }
+  }
+
+  /* Desativar sublinhado vermelho para elementos pai */
+  [data-spell-checked="true"] {
+    text-decoration: none !important;
   }
 
   .editor-placeholder {
@@ -218,6 +236,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <LinkPlugin />
         <ImagePlugin />
         <AutocompletePlugin />
+        <SpellCheckPlugin />
         <AIToolsSelectionPlugin />
         {/* AutoSavePlugin com callback de contagem de palavras */}
         {bookId && chapterId && (

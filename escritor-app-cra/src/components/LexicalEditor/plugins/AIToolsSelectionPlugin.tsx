@@ -87,33 +87,55 @@ export const AIToolsSelectionPlugin = () => {
           if ($isRangeSelection(selection) && !selection.isCollapsed()) {
             const text = selection.getTextContent();
             
-            // Mostrar ferramentas com seleção menor (2 caracteres ao invés de 3)
+            // Mostrar ferramentas apenas para seleções maiores (mínimo 3 palavras)
             if (text && text.trim().length > 2) {
-              // Obter posição da seleção
+              // Verificar se é a seleção contém uma palavra com erro ortográfico
+              // Obtém os elementos DOM da seleção atual
               const domSelection = window.getSelection();
-              if (domSelection && domSelection.rangeCount > 0) {
-                const range = domSelection.getRangeAt(0);
-                const rect = range.getBoundingClientRect();
-                
-                // Encontrar o elemento do editor correto
-                const editorEl = document.querySelector('.editor-input');
-                if (!editorEl) return false;
-                
-                const editorRect = editorEl.getBoundingClientRect();
-                
-                // Calculamos a posição relativa ao centro da seleção, na parte inferior
-                const relativeTop = rect.bottom - editorRect.top + 5; // Um pouco abaixo da seleção
-                const relativeLeft = rect.left + (rect.width / 2) - editorRect.left;
-                
-                setPosition({
-                  top: relativeTop + window.scrollY,
-                  left: relativeLeft + window.scrollX
-                });
-                
-                setSelectedText(text);
-                setIsVisible(true);
+              if (!domSelection || domSelection.rangeCount === 0) return false;
+              
+              // Verificar se o pai ou algum elemento na seleção tem a classe spelling-error
+              const range = domSelection.getRangeAt(0);
+              const selectionParent = range.commonAncestorContainer as Element;
+              
+              // Se o elemento selecionado ou seu pai for uma palavra com erro ortográfico,
+              // não mostramos as ferramentas de IA
+              if (selectionParent.classList?.contains('spelling-error') || 
+                  selectionParent.parentElement?.classList?.contains('spelling-error')) {
+                setIsVisible(false);
                 return false;
               }
+              
+              // Contar o número de palavras na seleção
+              const wordCount = text.trim().split(/\s+/).length;
+              
+              // Só mostrar para seleções de pelo menos 3 palavras
+              if (wordCount < 3) {
+                setIsVisible(false);
+                return false;
+              }
+              
+              // Obter posição da seleção
+              const rect = range.getBoundingClientRect();
+              
+              // Encontrar o elemento do editor correto
+              const editorEl = document.querySelector('.editor-input');
+              if (!editorEl) return false;
+              
+              const editorRect = editorEl.getBoundingClientRect();
+              
+              // Calculamos a posição relativa ao centro da seleção, na parte inferior
+              const relativeTop = rect.bottom - editorRect.top + 5; // Um pouco abaixo da seleção
+              const relativeLeft = rect.left + (rect.width / 2) - editorRect.left;
+              
+              setPosition({
+                top: relativeTop + window.scrollY,
+                left: relativeLeft + window.scrollX
+              });
+              
+              setSelectedText(text);
+              setIsVisible(true);
+              return false;
             }
           }
           
