@@ -7,7 +7,8 @@ import {
   SELECTION_CHANGE_COMMAND,
   COMMAND_PRIORITY_LOW,
   TextNode,
-  $createTextNode
+  $createTextNode,
+  $isTextNode
 } from 'lexical';
 import styled from 'styled-components';
 
@@ -23,6 +24,7 @@ const AutocompleteContainer = styled.div<{ $visible: boolean }>`
   padding: 0.5rem;
   display: ${({ $visible }) => ($visible ? 'block' : 'none')};
   transform: translateY(-5px); /* Deslocar ligeiramente para cima para ficar mais próximo da palavra */
+  class-name: 'autocomplete-container';
 `;
 
 const SuggestionList = styled.ul`
@@ -39,6 +41,7 @@ const SuggestionItem = styled.li<{ $active: boolean }>`
     $active ? theme.colors.primary + '20' : 'transparent'};
   color: ${({ $active, theme }) => 
     $active ? theme.colors.primary : theme.colors.text.primary};
+  class-name: 'suggestion-item';
 
   &:hover {
     background: ${({ theme }) => theme.colors.primary + '10'};
@@ -50,8 +53,9 @@ interface WritingSuggestions {
   [key: string]: string[];
 }
 
-// Mock autocomplete suggestions
+// Dicionário mais abrangente de sugestões em português
 export const WRITING_SUGGESTIONS: WritingSuggestions = {
+  // Sugestões básicas para escrita em português
   'personag': ['personagem', 'personagens', 'personagem principal', 'personagens secundários'],
   'histor': ['história', 'histórico', 'histórias', 'histórica'],
   'cap': ['capítulo', 'capitulo', 'capítulos', 'capital'],
@@ -72,12 +76,26 @@ export const WRITING_SUGGESTIONS: WritingSuggestions = {
   'met': ['metáfora', 'método', 'metal', 'metabolismo'],
   'sim': ['símbolo', 'simples', 'similar', 'similaridade'],
   'fig': ['figura', 'figurativo', 'figurino', 'figuração'],
+  
+  // Palavras básicas frequentemente mal escritas em português
+  'tbm': ['também', 'tampouco', 'todavia', 'timbó'],
+  'pq': ['porque', 'porquê', 'por que', 'porventura'],
+  'vc': ['você', 'vocês', 'vice', 'vácuo'],
+  'msm': ['mesmo', 'mesma', 'mesmos', 'mesmas'],
+  'qdo': ['quando', 'quanto', 'querendo', 'quedando'],
+  'oq': ['o que', 'o quê', 'ou que', 'okay'],
+  'nd': ['nada', 'nodo', 'nádega', 'nédio'],
+  'qm': ['quem', 'quão', 'quiasmo', 'queima'],
+  'cmg': ['comigo', 'consigo', 'comungo', 'comando'],
+  'fds': ['fim de semana', 'fundo', 'fundos', 'fundação'],
+  
   // Adicionando sugestões para as palavras com erro na imagem
-  'gabina': ['gabinete', 'gabinha', 'cabina', 'gabrina', 'Sabina'],
+  'gabina': ['gabinete', 'cabine', 'cabina', 'gabinete de escrita', 'Sabina'],
   'histori': ['história', 'histórico', 'histórica', 'historiador'],
-  'muiot': ['muito', 'muitos', 'mito', 'músico'],
+  'muiot': ['muito', 'muitos', 'mito', 'mútuo'],
   'divertid': ['divertido', 'divertida', 'divertidos', 'divertidas'],
-  // Novas sugestões para palavras com erro
+  
+  // Palavras problemáticas mencionadas pelo usuário
   'msotrar': ['mostrar', 'mostra', 'demonstrar', 'exibir'],
   'copreta': ['correta', 'completa', 'concreta', 'compacta'],
   'aslecionar': ['selecionar', 'acionar', 'assinalar', 'eleger'],
@@ -86,7 +104,96 @@ export const WRITING_SUGGESTIONS: WritingSuggestions = {
   'invex': ['invés', 'inverso', 'inveja', 'inves'],
   'unica': ['única', 'unica', 'unicidade', 'unidade'],
   'interi': ['inteira', 'inteiro', 'interior', 'interim'],
-  'linah': ['linha', 'linear', 'linhagem', 'linhas']
+  'linah': ['linha', 'linear', 'linhagem', 'linhas'],
+  'resndo': ['refazer', 'resolvendo', 'rescaldo', 'resíduo'],
+  'undo': ['desfazer', 'undoso', 'unidade', 'unificado'],
+  'refazer': ['refazer', 'refaça', 'repetir', 'recomeçar'],
+  'desfazer': ['desfazer', 'desfeito', 'desfaz', 'desfeita'],
+  
+  // Palavras comumente digitadas erradas em português
+  'concerteza': ['com certeza', 'concerto', 'certeza', 'conserto'],
+  'agente': ['a gente', 'agente', 'agência', 'agenciar'],
+  'derrepente': ['de repente', 'repentino', 'rapidamente', 'subitamente'],
+  'envez': ['em vez', 'invés', 'em verso', 'em vês'],
+  'maisculo': ['maiúsculo', 'músculo', 'minúsculo', 'máximo'],
+  'obiter': ['obter', 'objetivo', 'obliterar', 'habituar'],
+  'asim': ['assim', 'asneira', 'assinar', 'assinalar'],
+  'seje': ['seja', 'seje', 'segue', 'sege'],
+  'cabeçario': ['cabeçalho', 'cabeceira', 'cabeção', 'cabeceiro'],
+  'excessao': ['exceção', 'excesso', 'excepcional', 'excessivo'],
+  'previlegio': ['privilégio', 'previsto', 'previsível', 'previamente'],
+  'compania': ['companhia', 'campanha', 'campina', 'campânula'],
+  'exato': ['exato', 'exata', 'extrato', 'êxtase'],
+  'apartir': ['a partir', 'apartar', 'aparecer', 'apanhar'],
+  'dezde': ['desde', 'dez de', 'deste', 'donde'],
+  'iorgute': ['iogurte', 'ioruba', 'iota', 'iodo'],
+  'nao': ['não', 'nove', 'novo', 'nau'],
+  'qualqer': ['qualquer', 'qualidade', 'qual', 'quebrar'],
+  'necesario': ['necessário', 'necessária', 'necessitar', 'necrósico'],
+};
+
+// Adiciona palavras novas ao dicionário de WRITING_SUGGESTIONS
+const addToSuggestions = (word: string, suggestions: string[]) => {
+  if (!WRITING_SUGGESTIONS[word]) {
+    WRITING_SUGGESTIONS[word] = suggestions;
+  } else {
+    // Adicionar novas sugestões sem duplicar
+    suggestions.forEach(suggestion => {
+      if (!WRITING_SUGGESTIONS[word].includes(suggestion)) {
+        WRITING_SUGGESTIONS[word].push(suggestion);
+      }
+    });
+  }
+};
+
+// Função para verificar se uma palavra está mal escrita
+const checkSpellingError = (word: string): boolean => {
+  if (word.length <= 2) return false;
+  
+  // Remover pontuação para verificação mais precisa
+  const cleanWord = word.toLowerCase().replace(/[.,;:!?"'()\-]/g, '');
+  
+  // Lista simplificada de verificação - mesma do SpellCheckPlugin
+  const commonWords = [
+    'a', 'e', 'i', 'o', 'u', 'de', 'da', 'do', 'em', 'no', 'na', 'para', 
+    'com', 'por', 'que', 'se', 'um', 'uma', 'os', 'as', 'era', 'vez', 
+    'muito', 'pouco', 'quase', 'sempre', 'nunca', 'história', 'cidade',
+    'texto', 'palavra', 'exemplo', 'capítulo', 'livro', 'personagem', 'foi', 'tem'
+  ];
+  
+  // Se a palavra estiver na lista de palavras comuns, está correta
+  if (commonWords.includes(cleanWord)) {
+    return false;
+  }
+  
+  // Verificar correspondência exata primeiro
+  if (WRITING_SUGGESTIONS[cleanWord]) {
+    return true;
+  }
+  
+  // Depois verificar se contém algum prefixo conhecido
+  const hasPrefix = Object.keys(WRITING_SUGGESTIONS).some(prefix => 
+    cleanWord.includes(prefix.toLowerCase())
+  );
+  
+  // Se não encontrou um prefixo, mas a palavra não é comum,
+  // vamos considerá-la como potencial erro e criar sugestões
+  if (!hasPrefix && !commonWords.includes(cleanWord) && cleanWord.length >= 3) {
+    // Criar sugestões básicas removendo ou modificando letras
+    const suggestions = [
+      cleanWord.slice(0, -1), // Remover última letra
+      cleanWord + 's', // Adicionar s (plural)
+      cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1), // Capitalizar
+      cleanWord + 'mente' // Adicionar sufixo comum
+    ];
+    
+    // Adicionar ao dicionário para uso futuro
+    addToSuggestions(cleanWord, suggestions);
+    
+    return true;
+  }
+  
+  return hasPrefix;
 };
 
 export const AutocompletePlugin = () => {
@@ -247,31 +354,57 @@ export const AutocompletePlugin = () => {
         const word = errorWord || spellingErrorElement.textContent?.trim() || '';
         
         if (word) {
-          // Encontrar sugestões para esta palavra - usar correspondência mais precisa
+          // Usar sugestões pré-computadas do atributo data-suggestions, se disponível
           let foundSuggestions: string[] = [];
           
-          // Primeiro, tentar encontrar uma correspondência exata na chave
-          const wordLower = word.toLowerCase();
-          if (WRITING_SUGGESTIONS[wordLower]) {
-            foundSuggestions = WRITING_SUGGESTIONS[wordLower];
-          } else {
-            // Caso contrário, procurar por prefixos contidos na palavra
-            Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
-              if (wordLower.includes(prefix.toLowerCase())) {
-                foundSuggestions = [...foundSuggestions, ...words];
-              }
-            });
+          try {
+            // Tentar obter sugestões do atributo data-suggestions
+            const suggestionsAttr = (spellingErrorElement as HTMLElement).getAttribute('data-suggestions');
+            if (suggestionsAttr) {
+              foundSuggestions = JSON.parse(suggestionsAttr);
+            } 
+          } catch (error) {
+            console.log('Erro ao obter sugestões do atributo:', error);
           }
           
-          // Remover duplicatas e limitar a 5 sugestões para não sobrecarregar
+          // Se não existirem sugestões no atributo, buscar no dicionário
+          if (foundSuggestions.length === 0) {
+            const wordLower = word.toLowerCase();
+            
+            // Primeiro verificar correspondência exata
+            if (WRITING_SUGGESTIONS[wordLower]) {
+              foundSuggestions = WRITING_SUGGESTIONS[wordLower];
+            } else {
+              // Caso contrário, verificar prefixos
+              Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
+                if (wordLower.includes(prefix.toLowerCase())) {
+                  foundSuggestions = [...foundSuggestions, ...words];
+                }
+              });
+              
+              // Se ainda não encontrou sugestões, criar algumas genéricas
+              if (foundSuggestions.length === 0 && wordLower.length >= 3) {
+                foundSuggestions = [
+                  wordLower.slice(0, -1),
+                  wordLower + 's',
+                  wordLower.charAt(0).toUpperCase() + wordLower.slice(1),
+                  wordLower + 'mente'
+                ];
+                
+                // Adicionar ao dicionário para uso futuro
+                addToSuggestions(wordLower, foundSuggestions);
+              }
+            }
+          }
+          
           if (foundSuggestions.length > 0) {
-            // Eliminar duplicatas e limitar a 5 sugestões - usando Array.from com Set
+            // Eliminar duplicatas e limitar a 5 sugestões
             const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
             setSuggestions(uniqueSuggestions);
             setActiveIndex(0);
             
             // Posicionar o menu próximo da palavra clicada
-            const rect = spellingErrorElement.getBoundingClientRect();
+            const rect = (spellingErrorElement as HTMLElement).getBoundingClientRect();
             
             // Encontrar o elemento do editor
             const editorEl = document.querySelector('.editor-input');
@@ -279,30 +412,24 @@ export const AutocompletePlugin = () => {
             
             const editorRect = editorEl.getBoundingClientRect();
             
-            // Posicionar abaixo da palavra
+            // Posicionar diretamente abaixo da palavra
             setPosition({
-              top: rect.bottom - editorRect.top + window.scrollY,
+              top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para descer um pouco
               left: rect.left - editorRect.left + window.scrollX
             });
             
             setIsVisible(true);
-            mouseEvent.preventDefault(); // Evitar que a seleção seja perdida
-            mouseEvent.stopPropagation(); // Parar propagação do evento
           }
         }
       }
     };
     
-    // Adicionar listener ao editor
-    const editorElement = document.querySelector('.editor-input');
-    if (editorElement) {
-      editorElement.addEventListener('click', handleSpellingErrorClick);
-    }
+    // Anexar o listener ao documento
+    document.addEventListener('click', handleSpellingErrorClick);
     
+    // Limpar ao desmontar
     return () => {
-      if (editorElement) {
-        editorElement.removeEventListener('click', handleSpellingErrorClick);
-      }
+      document.removeEventListener('click', handleSpellingErrorClick);
     };
   }, []);
 
@@ -317,107 +444,60 @@ export const AutocompletePlugin = () => {
     );
   }, [editor, handleSelectionChange]);
 
+  // Função para lidar com cliques em sugestões
   const handleSuggestionClick = (suggestion: string) => {
-    // Primeiro, vamos tentar obter o elemento com erro que foi clicado
+    // Se tiver um elemento com erro, substituímos o texto diretamente nele
     if (currentMisspelledElementRef.current) {
       const misspelledElement = currentMisspelledElementRef.current;
+      const word = misspelledElement.getAttribute('data-word') || misspelledElement.textContent || '';
       
-      // Abordagem direta: substitua o conteúdo do elemento
-      editor.update(() => {
-        try {
-          // 1. Se estamos lidando com um span específico com classe spelling-error
-          if (misspelledElement.classList.contains('spelling-error')) {
-            // Criar uma seleção para esta palavra
-            const selection = window.getSelection();
-            if (selection) {
-              // Limpar qualquer seleção existente
-              selection.removeAllRanges();
-              
-              // Criar um range que seleciona exatamente a palavra com erro
-              const range = document.createRange();
-              range.selectNode(misspelledElement);
-              selection.addRange(range);
-              
-              // Agora que a palavra com erro está selecionada, podemos substituí-la
-              const editorSelection = $getSelection();
-              if ($isRangeSelection(editorSelection)) {
-                // Substituir a palavra selecionada com a sugestão
-                editorSelection.insertText(suggestion);
-                
-                // Remover a marca de erro do elemento pai
-                const parentNode = misspelledElement.parentElement;
-                if (parentNode) {
-                  parentNode.setAttribute('data-spell-checked', 'false');
-                }
-              }
-            }
-          } 
-          // 2. Fallback: se estamos lidando com um nó de texto completo
-          else {
-            const nodeKey = misspelledElement.getAttribute('data-lexical-node-key');
-            if (nodeKey) {
-              // Tentar encontrar a palavra incorreta no texto
-              const oldText = misspelledElement.textContent || '';
-              
-              // Modificar diretamente o DOM, depois deixar o Lexical sincronizar
-              // Isso é mais direto para o usuário
-              const badWordPattern = new RegExp(Object.keys(WRITING_SUGGESTIONS).join('|'), 'i');
-              const match = oldText.match(badWordPattern);
-              
-              if (match) {
-                const badWord = match[0];
-                const correctedText = oldText.replace(badWord, suggestion);
-                
-                // Criar uma seleção para esta palavra
-                const selection = window.getSelection();
-                if (selection) {
-                  // Limpar qualquer seleção existente
-                  selection.removeAllRanges();
-                  
-                  // Criar um range que seleciona todo o texto (depois vamos refinar)
-                  const range = document.createRange();
-                  range.selectNodeContents(misspelledElement);
-                  
-                  // Ajustar os limites para selecionar apenas a palavra com erro
-                  const startOffset = oldText.indexOf(badWord);
-                  if (startOffset >= 0) {
-                    range.setStart(misspelledElement.firstChild!, startOffset);
-                    range.setEnd(misspelledElement.firstChild!, startOffset + badWord.length);
-                  }
-                  
-                  selection.addRange(range);
-                  
-                  // Agora que a palavra está selecionada, podemos substituí-la
-                  document.execCommand('insertText', false, suggestion);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Erro ao substituir palavra:', error);
-          
-          // Fallback: usar a abordagem simples
+      if (word) {
+        // Métodos de manipulação do editor
+        editor.update(() => {
+          // Em vez de tentar usar o nó diretamente, vamos usar a seleção atual ou criar uma
           const selection = $getSelection();
+          
           if ($isRangeSelection(selection)) {
+            // Se já tem seleção, usar diretamente
             selection.insertText(suggestion);
+          } else {
+            // Se não tem seleção, tentar selecionar a palavra com erro e substituir
+            // Usando DOM para criar uma seleção
+            const domSelection = window.getSelection();
+            if (domSelection) {
+              // Limpar seleção existente
+              domSelection.removeAllRanges();
+              
+              // Criar range para a palavra com erro
+              const range = document.createRange();
+              range.selectNodeContents(misspelledElement);
+              domSelection.addRange(range);
+              
+              // Aplicar a substituição no editor
+              editor.update(() => {
+                const selection = $getSelection();
+                if ($isRangeSelection(selection)) {
+                  selection.insertText(suggestion);
+                }
+              });
+            }
           }
+        });
+      }
+    } else {
+      // Caso não tenha um elemento específico, inserir no cursor
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          // Se há uma seleção, substituir pelo texto sugerido
+          selection.insertText(suggestion);
         }
       });
-      
-      // Limpar a referência e esconder as sugestões
-      currentMisspelledElementRef.current = null;
-      setIsVisible(false);
-      return;
     }
-
-    // Caso padrão: usar a seleção atual para substituir o texto
-    editor.update(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        selection.insertText(suggestion);
-        setIsVisible(false);
-      }
-    });
+    
+    // Limpar e esconder o menu
+    setIsVisible(false);
+    currentMisspelledElementRef.current = null;
   };
 
   // Navegação pelo teclado

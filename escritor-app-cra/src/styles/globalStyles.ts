@@ -87,6 +87,37 @@ const GlobalStyles = createGlobalStyle`
     background-color: ${({ theme }) => theme.colors.primaryLight};
     color: ${({ theme }) => theme.colors.white};
   }
+  
+  /* Estilo para palavras com erro ortográfico */
+  .spelling-error {
+    text-decoration: wavy underline #f44336;
+    text-decoration-skip-ink: none;
+    cursor: pointer;
+    padding: 0 1px;
+    border-radius: 2px;
+    transition: background-color 0.15s ease;
+  }
+  
+  .spelling-error:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+  
+  /* Estilo para o menu de sugestões de correção */
+  .autocomplete-container {
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  
+  .autocomplete-container .suggestion-item {
+    transition: all 0.15s ease;
+    padding: 6px 12px;
+  }
+  
+  .autocomplete-container .suggestion-item:active {
+    transform: scale(0.98);
+  }
 `;
 
 export default GlobalStyles;

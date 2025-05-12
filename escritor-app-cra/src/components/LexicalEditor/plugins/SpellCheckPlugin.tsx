@@ -24,11 +24,16 @@ const COMMON_WORDS = [
   'texto', 'palavra', 'exemplo', 'capítulo', 'livro', 'personagem', 'foi', 'tem'
 ];
 
-// Garantir que as palavras com erro tenham correspondência exata com as sugestões
-// Importando do AutocompletePlugin
-
 // Palavras com erro ortográfico conhecidas - derivadas das chaves de WRITING_SUGGESTIONS
 const MISSPELLED_WORDS = Object.keys(WRITING_SUGGESTIONS);
+
+// Adicionando dinamicamente novas palavras ao dicionário
+const addWordToDictionary = (word: string, suggestions: string[]) => {
+  if (!WRITING_SUGGESTIONS[word]) {
+    // @ts-ignore - Isso é seguro pois estamos apenas adicionando novas entradas
+    WRITING_SUGGESTIONS[word] = suggestions;
+  }
+};
 
 // Função para verificar se uma palavra é potencialmente incorreta
 function hasPotentialSpellingError(word: string): boolean {
@@ -42,11 +47,35 @@ function hasPotentialSpellingError(word: string): boolean {
     return false;
   }
   
+  // Verificação direta contra o dicionário expandido
+  if (WRITING_SUGGESTIONS[cleanWord]) {
+    return true;
+  }
+  
   // Verificar se a palavra está na lista de palavras incorretas
   // ou se contém algum prefixo conhecido de erro
-  return MISSPELLED_WORDS.some(badWord => 
+  const hasKnownError = MISSPELLED_WORDS.some(badWord => 
     cleanWord === badWord || cleanWord.includes(badWord)
   );
+  
+  // Se não está no dicionário, mas tem pelo menos 4 caracteres,
+  // vamos considerá-la como potencial erro e criar sugestões genéricas
+  if (!hasKnownError && cleanWord.length >= 4 && !COMMON_WORDS.includes(cleanWord)) {
+    // Criar sugestões básicas
+    const suggestions = [
+      cleanWord.slice(0, -1), // Remover última letra 
+      cleanWord + 's', // Plural
+      cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1), // Capitalizar
+      cleanWord + 'mente' // Adicionar sufixo comum
+    ];
+    
+    // Adicionar ao dicionário
+    addWordToDictionary(cleanWord, suggestions);
+    
+    return true;
+  }
+  
+  return hasKnownError;
 }
 
 // Comando personalizado para marcar palavras com erro
@@ -76,17 +105,40 @@ export const SpellCheckPlugin = () => {
       let newHTML = '';
       let currentIndex = 0;
       
-      // Usamos uma expressão regular para identificar a palavra com limites de palavra
-      const wordRegex = new RegExp(`\\b${word}\\b`, 'g');
+      // Usamos uma expressão regular mais robusta para identificar a palavra com limites de palavra
+      // Isso evita que prefixos ou partes da palavra sejam marcados incorretamente
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape RegExp special chars
+      const wordRegex = new RegExp(`\\b${escapedWord}\\b`, 'g');
       let match;
       
       while ((match = wordRegex.exec(textContent)) !== null) {
         // Texto antes da palavra com erro
         newHTML += textContent.substring(currentIndex, match.index);
         
+        // Encontrar sugestões para esta palavra
+        let suggestions: string[] = [];
+        const wordLower = word.toLowerCase();
+        
+        if (WRITING_SUGGESTIONS[wordLower]) {
+          suggestions = WRITING_SUGGESTIONS[wordLower];
+        } else {
+          // Criar sugestões genéricas se não existirem
+          suggestions = [
+            wordLower.slice(0, -1),
+            wordLower + 's',
+            wordLower.charAt(0).toUpperCase() + wordLower.slice(1),
+            wordLower + 'mente'
+          ];
+          addWordToDictionary(wordLower, suggestions);
+        }
+        
         // A palavra com erro, envolvida em um span com a classe de erro
         // Adicionar atributo data-word para ajudar na identificação posterior
-        newHTML += `<span class="spelling-error" data-lexical-node-key="${domElement.getAttribute('data-lexical-node-key')}" data-word="${word}">${word}</span>`;
+        // E atributo data-suggestions com as sugestões em JSON
+        newHTML += `<span class="spelling-error" 
+          data-lexical-node-key="${domElement.getAttribute('data-lexical-node-key')}" 
+          data-word="${word}" 
+          data-suggestions='${JSON.stringify(suggestions)}'>${word}</span>`;
         
         // Atualizar o índice atual
         currentIndex = match.index + word.length;
@@ -129,9 +181,6 @@ export const SpellCheckPlugin = () => {
               console.error('Erro ao marcar palavra com erro ortográfico:', e);
             }
           }, 0);
-          
-          // Não sair após encontrar o primeiro erro para marcar múltiplos erros
-          // Remova o break para marcar todas as palavras com erro
         }
       }
     };

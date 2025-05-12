@@ -82,6 +82,33 @@ const ToolButton = styled.button<{ $active?: boolean }>`
   }
 `;
 
+// Adicionar um wrapper para agrupar botões de histórico
+const HistoryButtonsWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  gap: 6px;
+`;
+
+// Estilo específico para botões de undo/redo
+const HistoryButton = styled(ToolButton)`
+  min-width: 28px;
+  height: 28px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+    background: transparent;
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 const Divider = styled.div`
   width: 1px;
   height: 24px;
@@ -111,6 +138,21 @@ const BibliotecaIcon = () => (
     <path d="M10 4H14V20H10V4Z" fill="currentColor" />
     <path d="M20 4H16V20H20V4Z" fill="currentColor" />
     <path d="M2 2H22V4H21V22H3V4H2V2Z" fill="currentColor" />
+  </svg>
+);
+
+// Ícones simples para Undo e Redo
+const UndoIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 11L3 15L7 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M3 15H16C18.7614 15 21 12.7614 21 10V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const RedoIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17 11L21 15L17 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M21 15H8C5.23858 15 3 12.7614 3 10V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -379,19 +421,22 @@ export const ToolbarPlugin = () => {
 
   return (
     <Toolbar>
-      <ToolbarSection>
-        <ToolButton
+      <HistoryButtonsWrapper>
+        <HistoryButton
           onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
-          title="Minha Biblioteca"
+          title="Desfazer (Ctrl+Z)"
         >
-          <BibliotecaIcon />
-        </ToolButton>
-        <ToolButton
+          <UndoIcon />
+        </HistoryButton>
+        <HistoryButton
           onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
-          title="Refazer"
+          title="Refazer (Ctrl+Shift+Z)"
         >
-          ↪️
-        </ToolButton>
+          <RedoIcon />
+        </HistoryButton>
+      </HistoryButtonsWrapper>
+
+      <ToolbarSection>
         <ToolButton
           $active={isBold}
           onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
