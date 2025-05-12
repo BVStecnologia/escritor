@@ -99,7 +99,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       
       <ChapterInfo $active={isActive}>
         <ChapterNumber $active={isActive}>
-          Capítulo {index + 1}
+          Parte {index + 1}
         </ChapterNumber>
         <ChapterTitle>
           {chapter.titulo || 'Sem título'}

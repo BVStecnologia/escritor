@@ -219,10 +219,10 @@ const DeleteConfirmationModal = ({
     <PopupOverlay onClick={onCancel}>
       <DeletePopupContainer onClick={e => e.stopPropagation()}>
         <PopupTitle style={{ color: "#f87171" }}>
-          Excluir Capítulo
+          Excluir Parte
         </PopupTitle>
         <DeleteMessage>
-          Tem certeza que deseja excluir o capítulo "{chapter.titulo || 'Sem título'}"?
+          Tem certeza que deseja excluir a parte "{chapter.titulo || 'Sem título'}"?
         </DeleteMessage>
         <DeleteWarning>
           Esta ação não pode ser desfeita e todo o conteúdo será perdido.
@@ -276,14 +276,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleDeleteClick = (chapter: Capitulo, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Capítulo selecionado para exclusão:', chapter.titulo);
+    console.log('Parte selecionada para exclusão:', chapter.titulo);
     setChapterToDelete(chapter);
     setShowDeletePopup(true);
   };
 
   const confirmDelete = () => {
     if (chapterToDelete && onDeleteChapter) {
-      console.log('Excluindo capítulo:', chapterToDelete.titulo);
+      console.log('Excluindo parte:', chapterToDelete.titulo);
       onDeleteChapter(chapterToDelete.id);
       setShowDeletePopup(false);
       setChapterToDelete(null);
@@ -298,7 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <SidebarContainer $isOpen={isOpen}>
       <SidebarHeader $isOpen={isOpen}>
-        {isOpen && <SidebarTitle $isOpen={isOpen}>Capítulos</SidebarTitle>}
+        {isOpen && <SidebarTitle $isOpen={isOpen}>Partes</SidebarTitle>}
         <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
           <MenuIcon />
         </ToggleSidebarButton>
@@ -307,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isOpen && (
         <ChapterSearch $isOpen={isOpen}>
           <SearchInput
-            placeholder="Buscar capítulos..."
+            placeholder="Buscar partes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -331,7 +331,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <NewChapterButton onClick={() => setShowPopup(true)}>
               <PlusIcon />
-              Novo Capítulo
+              Nova Parte
             </NewChapterButton>
           </>
         ) : (
@@ -346,22 +346,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {index + 1}
               </CollapsedChapter>
             ))}
-            
-            <CollapsedNewButton onClick={() => setShowPopup(true)}>
-              <PlusIcon />
-            </CollapsedNewButton>
           </>
         )}
       </ChaptersContainer>
 
-      {/* Popup de novo capítulo */}
+      {/* Popup de nova parte */}
       {showPopup && (
         <PopupOverlay onClick={() => setShowPopup(false)}>
           <PopupContainer onClick={e => e.stopPropagation()}>
-            <PopupTitle>Novo Capítulo</PopupTitle>
+            <PopupTitle>Nova Parte</PopupTitle>
             <PopupInput
               autoFocus
-              placeholder="Título do novo capítulo"
+              placeholder="Título da nova parte"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               onKeyDown={e => {
