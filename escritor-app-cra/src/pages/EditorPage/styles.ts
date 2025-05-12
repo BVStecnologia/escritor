@@ -160,39 +160,12 @@ export const StatusIndicator = styled.div<{ $status: 'online' | 'offline' | 'sav
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  background: ${({ theme, $status }) => 
-    $status === 'online' ? `${theme.colors.success}15` :
-    $status === 'saving' ? `${theme.colors.warning}15` :
-    $status === 'saved' ? `${theme.colors.success}15` :
-    `${theme.colors.error}15`
-  };
-  color: ${({ theme, $status }) => 
-    $status === 'online' ? theme.colors.success :
-    $status === 'saving' ? theme.colors.warning :
-    $status === 'saved' ? theme.colors.success :
-    theme.colors.error
-  };
-  border: 1px solid ${({ theme, $status }) => 
-    $status === 'online' ? `${theme.colors.success}30` :
-    $status === 'saving' ? `${theme.colors.warning}30` :
-    $status === 'saved' ? `${theme.colors.success}30` :
-    `${theme.colors.error}30`
-  };
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.secondary};
   transition: all 0.3s ease;
-
-  &::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-    ${({ $status }) => $status === 'saving' && css`
-      animation: ${pulse} 1.5s ease-in-out infinite;
-    `}
-  }
 `;
 
 export const ThemeToggleButton = styled.button`
