@@ -33,9 +33,9 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
-  position: sticky;
-  top: 100px;
-  height: calc(100vh - 120px);
+  flex-shrink: 0;
+  height: calc(100vh - 126px); /* Ajustado para alinhar com o editor */
+  margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);
@@ -48,6 +48,8 @@ export const SidebarHeader = styled.div<{ $isOpen: boolean }>`
   display: flex;
   align-items: center;
   justify-content: ${({ $isOpen }) => $isOpen ? 'space-between' : 'center'};
+  height: 89px; /* Mesma altura do cabeçalho da sessão AI */
+  box-sizing: border-box;
 `;
 
 export const SidebarTitle = styled.h2<{ $isOpen: boolean }>`

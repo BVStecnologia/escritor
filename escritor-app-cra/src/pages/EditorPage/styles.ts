@@ -51,9 +51,9 @@ export const MainLayout = styled.div`
   width: 100%;
   position: relative;
   z-index: 1;
-  height: calc(100vh - 89px); /* Altura da viewport menos altura do cabeçalho (agora 89px) */
+  height: calc(100vh - 89px); /* Altura da viewport menos altura do cabeçalho (89px) */
   overflow: hidden; /* Evitar que a página inteira role */
-  padding-top: 1rem; /* Adicionar espaço entre o cabeçalho e o conteúdo */
+  padding-top: 1.25rem; /* Ajustado para melhor espaçamento entre o cabeçalho e os componentes */
 `;
 
 // Header components
@@ -458,7 +458,7 @@ export const EditorWrapper = styled.div`
   background: ${({ theme }) => theme.colors.background.paper};
   display: flex;
   flex-direction: column;
-  margin-top: 2px; /* Adicionar um pequeno espaço para alinhar com os painéis laterais */
+  margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito com os painéis laterais */
 `;
 
 export const EditorContainer = styled.div`
@@ -726,8 +726,7 @@ export const AIContainer = styled.aside<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
-  position: sticky;
-  top: 100px;
+  flex-shrink: 0;
   height: calc(100vh - 126px); /* Ajustado para alinhar com o editor e sidebar */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */

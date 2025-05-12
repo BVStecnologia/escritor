@@ -9,7 +9,7 @@ const AIHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 89px;
+  height: 89px; /* Mesma altura do cabeçalho da Sidebar */
   box-sizing: border-box;
 `;
 
