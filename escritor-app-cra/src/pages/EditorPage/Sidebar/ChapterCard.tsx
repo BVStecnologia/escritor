@@ -73,11 +73,11 @@ const DragHandleIcon = styled.div`
     border-radius: 2px;
   }
   
-  ${ChapterCardContainer}:hover &:not([data-disabled=true]) {
+  ${ChapterCardContainer}:hover & {
     opacity: 0.6;
   }
   
-  ${ChapterCardContainer}:hover &:hover:not([data-disabled=true]) {
+  ${ChapterCardContainer}:hover &:hover {
     opacity: 1;
     cursor: grab;
   }
@@ -223,7 +223,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       onClick={onClick}
       style={{ cursor: isActive ? 'default' : 'pointer', position: 'relative' }}
     >
-      <DragHandleIcon data-disabled={isActive ? "true" : "false"} />
+      <DragHandleIcon />
       
       {onDelete && (
         <DeleteButton onClick={handleDeleteClick}>
