@@ -1,0 +1,14 @@
+{
+  "Desativar extensão Docker": {
+    "scope": "dockerfile,dockercompose",
+    "prefix": "disable-docker-extension",
+    "body": [
+      "// Para ocultar avisos de vulnerabilidade, desative a extensão Docker no VS Code:",
+      "// 1. Clique no ícone de extensões na barra lateral",
+      "// 2. Pesquise por 'Docker'",
+      "// 3. Clique com o botão direito na extensão 'Docker'",
+      "// 4. Selecione 'Desabilitar' ou 'Desabilitar (Workspace)'"
+    ],
+    "description": "Instruções para desabilitar a extensão Docker no VS Code"
+  }
+} 

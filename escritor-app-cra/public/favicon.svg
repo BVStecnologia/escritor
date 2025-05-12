@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Fundo circular (opcional) -->
+  <circle cx="50" cy="50" r="46" fill="#f0f4ff" stroke="#3082f6" stroke-width="3"/>
+
+  <!-- Pena super simples e reconhecível -->
+  <g transform="translate(50, 50) scale(0.7) translate(-50, -50)">
+    <!-- Corpo da pena -->
+    <path d="M85,15 L60,40 L40,85 L20,70 L35,35 Z" fill="#3082f6" stroke="#1a73e8" stroke-width="3"/>
+    
+    <!-- Ponta da pena -->
+    <path d="M20,70 L10,85 L25,75 Z" fill="#1a73e8" stroke="#1a73e8" stroke-width="2"/>
+    
+    <!-- Detalhes da ponta -->
+    <path d="M10,85 L5,95" stroke="#1a73e8" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Cortes da pena (detalhes simples) -->
+    <path d="M65,35 L75,25 M55,45 L70,35 M45,55 L65,43" 
+          stroke="#1a73e8" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg> 

@@ -17,5 +17,11 @@
   "docker.languageserver.diagnostics.directiveCasing": "ignore",
   "docker.languageserver.diagnostics.instructionCasing": "ignore",
   "docker.languageserver.diagnostics.recommendedTag": "ignore",
-  "docker.languageserver.diagnostics.critical_high_vulnerabilities": "ignore"
+  "docker.languageserver.diagnostics.critical_high_vulnerabilities": "ignore",
+  
+  // Desativar completamente os diagnósticos do Docker
+  "docker.diagnostics.validateVersion": false,
+  "docker.languageserver.enabled": false,
+  "docker.languageserver.diagnostics.enabled": false,
+  "editor.semanticHighlighting.enabled": false
 } 

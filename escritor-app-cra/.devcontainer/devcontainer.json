@@ -1,0 +1,19 @@
+{
+  "name": "Escritor App Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-20",
+  "settings": {
+    "docker.diagnostics.validateVersion": false,
+    "docker.languageserver.enabled": false,
+    "docker.languageserver.diagnostics.enabled": false,
+    "docker.languageserver.diagnostics.vulnerabilities": "ignore",
+    "docker.languageserver.diagnostics.recommendedTag": "ignore",
+    "docker.languageserver.diagnostics.critical_high_vulnerabilities": "ignore"
+  },
+  "extensions": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ],
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm install",
+  "remoteUser": "node"
+} 

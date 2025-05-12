@@ -1,7 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaCloud, FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-import { IconBaseProps } from 'react-icons';
 
 const FloatingStatus = styled.div`
   position: absolute;
@@ -19,34 +17,48 @@ const FloatingStatus = styled.div`
   z-index: 100;
 `;
 
+const SpinnerIcon = styled.div`
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const StatusIcon = styled.div<{ color: string }>`
+  width: 16px;
+  height: 16px;
+  background-color: ${props => props.color};
+  border-radius: 50%;
+`;
+
 export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: string, isOnline: boolean }) => {
-  let statusIcon = null;
+  let statusIcon: JSX.Element;
   let statusText = '';
   let tooltipText = '';
+  
   if (saveStatus === 'saving') {
-    statusIcon = (
-      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <FaSpinner size={16} />
-        <style>{`
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          .floating-spinner svg { animation: spin 1s linear infinite; }
-        `}</style>
-      </span>
-    );
+    statusIcon = <SpinnerIcon />;
     statusText = 'Salvando...';
   } else if (saveStatus === 'saved') {
-    statusIcon = <FaCheckCircle color="#10b981" size={16} />;
+    statusIcon = <StatusIcon color="#10b981" />;
     statusText = 'Salvo';
     tooltipText = 'O salvamento é automático após 5 segundos sem digitar.';
   } else if (isOnline) {
-    statusIcon = <FaCloud color="#3b82f6" size={16} />;
+    statusIcon = <StatusIcon color="#3b82f6" />;
     statusText = 'Online';
   } else {
-    statusIcon = <FaExclamationTriangle color="#ef4444" size={16} />;
+    statusIcon = <StatusIcon color="#ef4444" />;
     statusText = 'Offline';
   }
+  
   return (
-    <FloatingStatus className="floating-spinner">
+    <FloatingStatus>
       {statusIcon}
       {saveStatus === 'saved' ? (
         <span style={{ cursor: 'pointer' }} title={tooltipText}>{statusText}</span>
