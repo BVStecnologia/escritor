@@ -120,6 +120,7 @@ const EditorPage: React.FC = () => {
     chapterTitle,
     chapterContent,
     handleChapterTitleChange,
+    handleChapterTitleUpdate,
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,
@@ -197,6 +198,7 @@ const EditorPage: React.FC = () => {
             onNewChapter={handleNewChapter}
             onDeleteChapter={handleDeleteChapter}
             onChaptersReorder={handleChaptersReorder}
+            onChapterTitleChange={handleChapterTitleUpdate}
           />
 
           <EditorContent

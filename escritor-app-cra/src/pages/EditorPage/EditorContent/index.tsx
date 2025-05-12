@@ -5,7 +5,6 @@ import {
   Content,
   Toolbar,
   ToolbarLeft,
-  ChapterTitleInput,
   ToolbarRight,
   WordCountBadge,
   EditorWrapper,
@@ -55,11 +54,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     <Content>
       <Toolbar>
         <ToolbarLeft>
-          <ChapterTitleInput
-            placeholder="Título do capítulo"
-            value={chapterTitle}
-            onChange={(e) => onChapterTitleChange(e.target.value)}
-          />
+          {/* Título do capítulo removido conforme solicitado */}
         </ToolbarLeft>
         <ToolbarRight>
           <WordCountBadge>

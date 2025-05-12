@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbService, Capitulo, CapituloData } from '../services/dbService';
 import debounce from 'lodash/debounce';
+import { supabase } from '../services/supabaseClient';
 
 export interface UseEditorPageReturn {
   livro: any | null;
@@ -21,6 +22,7 @@ export interface UseEditorPageReturn {
   handleDeleteChapter: (chapterId: string) => void;
   handleBookTitleChange: (value: string) => void;
   handleChaptersReorder: (reorderedChapters: Capitulo[]) => void;
+  handleChapterTitleUpdate: (chapterId: string, newTitle: string) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
   setCapitulos: React.Dispatch<React.SetStateAction<Capitulo[]>>;
   setWordCount: React.Dispatch<React.SetStateAction<number>>;
@@ -68,7 +70,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
             const conteudoCapitulo = capituloAtual.texto || capituloAtual.conteudo || '';
             console.log('Carregando conteúdo:', conteudoCapitulo ? `${conteudoCapitulo.substring(0, 50)}...` : 'vazio');
 
-            setChapterTitle(capituloAtual.titulo || '');
+            // Garantir que o título seja uma string válida
+            setChapterTitle(typeof capituloAtual.titulo === 'string' ? capituloAtual.titulo : 'Sem título');
             setChapterContent(conteudoCapitulo);
 
             if (conteudoCapitulo) {
@@ -86,7 +89,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           if (ultimoCapituloEditado) {
             const conteudoCapitulo = ultimoCapituloEditado.texto || ultimoCapituloEditado.conteudo || '';
             
-            setChapterTitle(ultimoCapituloEditado.titulo || '');
+            // Garantir que o título seja uma string válida
+            setChapterTitle(typeof ultimoCapituloEditado.titulo === 'string' ? ultimoCapituloEditado.titulo : 'Sem título');
             setChapterContent(conteudoCapitulo);
 
             if (conteudoCapitulo) {
@@ -98,7 +102,8 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           } else {
             // Caso não encontre o último editado, usa o primeiro da lista
             const primeiroCapitulo = capitulosData[0];
-            setChapterTitle(primeiroCapitulo.titulo || '');
+            // Garantir que o título seja uma string válida
+            setChapterTitle(typeof primeiroCapitulo.titulo === 'string' ? primeiroCapitulo.titulo : 'Sem título');
             setChapterContent(primeiroCapitulo.texto || primeiroCapitulo.conteudo || '');
             navigate(`/editor/${bookId}/${primeiroCapitulo.id}`);
           }
@@ -115,7 +120,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     };
 
     carregarLivro();
-  }, [bookId, chapterId]);
+  }, [bookId, chapterId, navigate]);
 
   // Monitora status online/offline
   useEffect(() => {
@@ -132,20 +137,79 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     };
   }, []);
 
-  // Salvar título do capítulo com debounce
-  const saveChapterTitleDebounced = useRef(
-    debounce((id, title) => {
-      const capituloData: CapituloData = { titulo: title };
-      dbService.atualizarCapitulo(id, capituloData);
+  // Função dedicada para salvar o título com debounce
+  const saveTitleDebounced = useRef(
+    debounce(async (id: string, title: string) => {
+      try {
+        console.log('===== INÍCIO DO SALVAMENTO DE TÍTULO =====');
+        console.log('Salvando título:', { id, title });
+        
+        setTitleSaveStatus('saving');
+        
+        // Usar a nova função dedicada para atualizar apenas o título
+        await dbService.atualizarTituloCapitulo(id, title);
+        
+        setTitleSaveStatus('saved');
+        
+        // Reset do status após alguns segundos
+        setTimeout(() => {
+          setTitleSaveStatus('idle');
+        }, 2000);
+        
+        console.log('Título salvo com sucesso');
+        console.log('===== FIM DO SALVAMENTO DE TÍTULO =====');
+      } catch (error) {
+        console.error('Erro ao salvar título:', error);
+        setTitleSaveStatus('idle');
+        setErro('Erro ao salvar o título do capítulo');
+      }
     }, 500)
   ).current;
 
   const handleChapterTitleChange = useCallback((value: string) => {
+    console.log('===== INÍCIO DE handleChapterTitleChange =====');
+    console.log('Novo título:', value);
+    
+    // Atualizar o título no estado local
     setChapterTitle(value);
+    
     if (chapterId) {
-      saveChapterTitleDebounced(chapterId, value);
+      // Chamar a função para salvar o título
+      saveTitleDebounced(String(chapterId), value);
+      
+      // Atualizar o título no estado local de capítulos para feedback imediato
+      setCapitulos(caps => 
+        caps.map(cap => 
+          String(cap.id) === String(chapterId) ? { ...cap, titulo: value } : cap
+        )
+      );
     }
-  }, [chapterId, saveChapterTitleDebounced]);
+    
+    console.log('===== FIM DE handleChapterTitleChange =====');
+  }, [chapterId, saveTitleDebounced, setCapitulos]);
+
+  // Função com assinatura diferente para suportar a atualização de título a partir da barra lateral
+  const handleChapterTitleUpdate = useCallback((targetChapterId: string, newTitle: string) => {
+    console.log('===== INÍCIO DE handleChapterTitleUpdate =====');
+    console.log('ID:', targetChapterId, 'Novo título:', newTitle);
+    
+    // Se o ID for do capítulo atualmente aberto, também atualiza o título no estado local
+    if (String(targetChapterId) === String(chapterId)) {
+      setChapterTitle(newTitle);
+    }
+    
+    // Chamar a função para salvar o título com debounce
+    saveTitleDebounced(targetChapterId, newTitle);
+    
+    // Atualizar o título no estado local de capítulos para feedback imediato
+    setCapitulos(caps => 
+      caps.map(cap => 
+        String(cap.id) === String(targetChapterId) ? { ...cap, titulo: newTitle } : cap
+      )
+    );
+    
+    console.log('===== FIM DE handleChapterTitleUpdate =====');
+  }, [chapterId, saveTitleDebounced, setCapitulos]);
 
   // Função com debounce para mudança no editor
   const updateContent = useCallback((content: string) => {
@@ -249,9 +313,19 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
           handleNewChapter('Capítulo 1');
         }
       }
-    } catch (error) {
-      console.error('Erro ao excluir capítulo:', error);
-      setErro('Não foi possível excluir o capítulo.');
+    } catch (error: any) {
+      console.error('Erro detalhado ao excluir capítulo:', error);
+      let msg = 'Erro ao excluir capítulo.';
+      if (typeof error === 'object') {
+        msg = JSON.stringify(error, null, 2);
+      } else if (error?.message) {
+        msg = error.message;
+      } else if (error?.error_description) {
+        msg = error.error_description;
+      } else if (error?.toString) {
+        msg = error.toString();
+      }
+      setErro(msg);
     }
   }, [bookId, chapterId, navigate, handleNewChapter]);
 
@@ -316,6 +390,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     chapterTitle,
     chapterContent,
     handleChapterTitleChange,
+    handleChapterTitleUpdate,
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,

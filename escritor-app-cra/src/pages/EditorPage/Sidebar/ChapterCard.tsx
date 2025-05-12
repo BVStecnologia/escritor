@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Capitulo } from '../../../services/dbService';
 import { WordCountIcon, DeleteIcon } from '../../../components/icons';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -83,12 +83,33 @@ const DragHandleIcon = styled.div`
   }
 `;
 
+// Input para edição do título do capítulo
+const ChapterTitleInput = styled.input`
+  font-size: 1rem;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.text.primary};
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.primary};
+  padding: 0.1rem 0;
+  margin: 0;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    border-bottom-color: ${({ theme }) => theme.colors.primaryLight};
+  }
+`;
+
 interface ChapterCardProps {
   chapter: Capitulo;
   index: number;
   isActive: boolean;
   onClick: () => void;
   onDelete?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onTitleChange?: (id: string, newTitle: string) => void;
 }
 
 export const ChapterCard: React.FC<ChapterCardProps> = ({
@@ -96,9 +117,13 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
   index,
   isActive,
   onClick,
-  onDelete
+  onDelete,
+  onTitleChange
 }) => {
   const { isDarkMode } = useTheme();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(chapter.titulo || 'Sem título');
+  const inputRef = useRef<HTMLInputElement>(null);
   
   // Use o campo 'palavras' do capítulo quando disponível, senão calcule a partir do conteúdo
   const wordCount = typeof chapter.palavras === 'number' 
@@ -120,6 +145,76 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
   
   // Sempre usar o índice + 1 como número da parte, independentemente do campo ordem
   const displayIndex = index + 1;
+  
+  // Lidar com clique no título para edição
+  const handleTitleClick = (e: React.MouseEvent) => {
+    if (isActive && onTitleChange) {
+      e.stopPropagation();
+      setIsEditing(true);
+    }
+  };
+  
+  // Lidar com alteração do título
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    console.log('Título sendo alterado:', newTitle);
+    setEditedTitle(newTitle);
+  };
+  
+  // Lidar com o fim da edição do título
+  const handleTitleBlur = () => {
+    console.log('===== INÍCIO DO PROCESSO DE ATUALIZAÇÃO DO TÍTULO =====');
+    setIsEditing(false);
+    
+    // Verificar se o título foi alterado
+    const novoTitulo = editedTitle.trim() || 'Sem título';
+    const tituloAtual = chapter.titulo || 'Sem título';
+    
+    console.log('Comparando títulos:', {
+      novoTitulo,
+      tituloAtual,
+      diferentes: novoTitulo !== tituloAtual
+    });
+    
+    // Salvar o título somente se foi alterado
+    if (onTitleChange) {
+      try {
+        console.log('Enviando título para salvar:', {
+          id: chapter.id,
+          titulo: novoTitulo
+        });
+        
+        // Passar o ID e o novo título para a função de atualização
+        onTitleChange(String(chapter.id), novoTitulo);
+        
+        console.log('Função onTitleChange executada com sucesso');
+      } catch (error) {
+        console.error('ERRO ao atualizar título:', error);
+      }
+    } else {
+      console.log('Função onTitleChange não disponível');
+    }
+    
+    console.log('===== FIM DO PROCESSO DE ATUALIZAÇÃO DO TÍTULO =====');
+  };
+  
+  // Lidar com teclas durante a edição do título
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur();
+    } else if (e.key === 'Escape') {
+      setEditedTitle(chapter.titulo || 'Sem título');
+      setIsEditing(false);
+    }
+  };
+
+  // Focar no input quando começa a edição
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
   return (
     <ChapterCardContainer 
@@ -140,9 +235,32 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
         <ChapterNumber $active={isActive}>
           Parte {displayIndex}
         </ChapterNumber>
-        <ChapterTitle>
-          {chapter.titulo || 'Sem título'}
-        </ChapterTitle>
+        
+        {isActive && isEditing ? (
+          <ChapterTitleInput
+            ref={inputRef}
+            value={editedTitle}
+            onChange={handleTitleChange}
+            onBlur={handleTitleBlur}
+            onKeyDown={handleTitleKeyDown}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <ChapterTitle onClick={isActive ? handleTitleClick : undefined}>
+            {chapter.titulo || 'Sem título'}
+            {isActive && onTitleChange && (
+              <span style={{ 
+                fontSize: '0.7rem', 
+                opacity: 0.6, 
+                marginLeft: '0.4rem', 
+                verticalAlign: 'middle' 
+              }}>
+                (clique para editar)
+              </span>
+            )}
+          </ChapterTitle>
+        )}
+        
         <ChapterStats $active={isActive}>
           <ChapterStat>
             <WordCountIcon />

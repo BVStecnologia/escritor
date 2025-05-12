@@ -55,7 +55,7 @@ export interface Usuario {
 }
 
 export interface CapituloData {
-  titulo: string;
+  titulo?: string;
   conteudo?: string;
   customData?: {
     palavras?: number;
@@ -353,20 +353,31 @@ export const dbService = {
    */
  async atualizarCapitulo(id: string | number, capituloData: CapituloData) {
   try {
-    // Garante que o id é number
-    const numericId = typeof id === 'string' ? Number(id) : id;
-    console.log('Atualizando capítulo:', numericId, capituloData);
+    // Não convertemos o ID para número, mantemos o formato original
+    console.log('===== FUNÇÃO atualizarCapitulo CHAMADA =====');
+    console.log('Parâmetros recebidos:', {
+      id,
+      idType: typeof id,
+      capituloData,
+      titulo: capituloData.titulo,
+      tituloType: typeof capituloData.titulo
+    });
 
     // Cria objeto de atualização
     const updateData: any = {};
 
     // Se tiver título, inclui no objeto de atualização
     if (capituloData.titulo !== undefined) {
+      console.log('Atualizando título para:', {
+        titulo: capituloData.titulo,
+        tipo: typeof capituloData.titulo
+      });
       updateData.titulo = capituloData.titulo;
     }
 
     // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
     if (capituloData.conteudo !== undefined) {
+      console.log('Atualizando conteúdo');
       updateData.texto = capituloData.conteudo;
       
       // Se não tiver customData.palavras, calcula a partir do conteúdo
@@ -386,10 +397,15 @@ export const dbService = {
     const now = new Date();
     updateData.last_edit = now.toTimeString().split(' ')[0];
 
+    console.log('Dados a serem enviados para atualização:', {
+      id,
+      updateData: JSON.stringify(updateData)
+    });
+
     const { data, error } = await supabase
       .from('Capitulo')
       .update(updateData)
-      .eq('id', numericId)
+      .eq('id', id)
       .select();
 
     if (error) {
@@ -405,6 +421,7 @@ export const dbService = {
       result.conteudo = result.texto;
     }
     
+    console.log('===== FUNÇÃO atualizarCapitulo CONCLUÍDA =====');
     return result as Capitulo;
   } catch (error) {
     console.error(`Erro ao atualizar capítulo ${id}:`, error);
@@ -649,6 +666,36 @@ export const dbService = {
       return true;
     } catch (error) {
       console.error('Erro ao atualizar ordem dos capítulos:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar apenas o título de um capítulo
+   */
+  async atualizarTituloCapitulo(id: string, novoTitulo: string) {
+    try {
+      console.log('===== FUNÇÃO atualizarTituloCapitulo CHAMADA =====');
+      console.log(`Atualizando título do capítulo ${id} para: "${novoTitulo}"`);
+      
+      // Chamada direta ao Supabase para atualizar apenas o título
+      const { data, error } = await supabase
+        .from('Capitulo')
+        .update({ titulo: novoTitulo })
+        .eq('id', id)
+        .select();
+      
+      if (error) {
+        console.error('Erro ao atualizar título no Supabase:', error);
+        throw error;
+      }
+      
+      console.log('Resultado da atualização:', data);
+      console.log('===== FUNÇÃO atualizarTituloCapitulo CONCLUÍDA =====');
+      
+      return data[0] as Capitulo;
+    } catch (error) {
+      console.error(`Erro ao atualizar título do capítulo ${id}:`, error);
       throw error;
     }
   }

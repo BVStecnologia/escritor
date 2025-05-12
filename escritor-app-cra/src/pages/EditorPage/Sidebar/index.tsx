@@ -255,6 +255,7 @@ interface SidebarProps {
   onNewChapter: (title?: string) => void;
   onDeleteChapter?: (chapterId: string) => void;
   onChaptersReorder?: (reorderedChapters: Capitulo[]) => void;
+  onChapterTitleChange?: (chapterId: string, newTitle: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -263,7 +264,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onChapterSelect,
   onNewChapter,
   onDeleteChapter,
-  onChaptersReorder
+  onChaptersReorder,
+  onChapterTitleChange
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -328,6 +330,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [filteredChapters, onChaptersReorder]);
 
+  const renderChapters = () => {
+    return filteredChapters.map((chapter, index) => (
+      <Draggable 
+        key={String(chapter.id)} 
+        draggableId={String(chapter.id)} 
+        index={index}
+        isDragDisabled={!isOpen || String(chapter.id) === activeChapterId}
+      >
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            style={{
+              ...provided.draggableProps.style,
+              opacity: snapshot.isDragging ? 0.6 : 1
+            }}
+          >
+            <ChapterCard
+              chapter={chapter}
+              index={index}
+              isActive={String(chapter.id) === activeChapterId}
+              onClick={() => onChapterSelect(String(chapter.id))}
+              onDelete={onDeleteChapter && !isOpen ? (e) => handleDeleteClick(chapter, e) : undefined}
+              onTitleChange={onChapterTitleChange}
+            />
+          </div>
+        )}
+      </Draggable>
+    ));
+  };
+
   return (
     <SidebarContainer $isOpen={isOpen}>
       <SidebarHeader $isOpen={isOpen}>
@@ -358,40 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {...provided.droppableProps}
                   style={{ width: '100%' }}
                 >
-                  {filteredChapters.map((chapter, index) => (
-                    <Draggable 
-                      key={chapter.id} 
-                      draggableId={String(chapter.id)} 
-                      index={index}
-                    >
-                      {(provided, snapshot) => {
-                        return (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={{
-                              ...provided.draggableProps.style,
-                              opacity: snapshot.isDragging ? 0.8 : 1,
-                              border: snapshot.isDragging ? '2px dashed #4f46e5' : 'none',
-                              borderRadius: '8px',
-                              userSelect: 'none',
-                              touchAction: 'manipulation'
-                            }}
-                            data-is-dragging={snapshot.isDragging}
-                          >
-                            <ChapterCard
-                              chapter={chapter}
-                              index={index}
-                              isActive={String(chapter.id) === String(activeChapterId)}
-                              onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
-                              onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
-                            />
-                          </div>
-                        );
-                      }}
-                    </Draggable>
-                  ))}
+                  {renderChapters()}
                   {provided.placeholder}
                 </div>
               )}

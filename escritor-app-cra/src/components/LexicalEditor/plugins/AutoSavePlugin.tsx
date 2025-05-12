@@ -22,25 +22,6 @@ export function AutoSavePlugin({
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   const [isEditorActive, setIsEditorActive] = useState(false);
-  const [chapterTitle, setChapterTitle] = useState('');
-
-  // Carregar título do capítulo quando o componente for montado
-  useEffect(() => {
-    const fetchChapterTitle = async () => {
-      if (!chapterId) return;
-      
-      try {
-        const capitulo = await dbService.getCapituloPorId(chapterId);
-        if (capitulo && capitulo.titulo) {
-          setChapterTitle(capitulo.titulo);
-        }
-      } catch (error) {
-        console.error('Erro ao obter título do capítulo:', error);
-      }
-    };
-    
-    fetchChapterTitle();
-  }, [chapterId]);
 
   useEffect(() => {
     // Adiciona listeners globais para saber se o último clique foi dentro do editor
@@ -83,13 +64,19 @@ export function AutoSavePlugin({
         }
         
         // Atualizar o capítulo com o conteúdo e a contagem de palavras explicitamente
+        // IMPORTANTE: Não incluímos o título aqui para evitar sobrescrever o título durante o salvamento automático
         const updateData = {
-          titulo: chapterTitle, // Usar o título atual do capítulo
           conteudo: content, 
           customData: {
             palavras
           }
         };
+        
+        console.log('Salvando capítulo com dados:', {
+          id: chapterId,
+          palavras,
+          conteudo: 'texto do editor (não exibido para economia de espaço)'
+        });
         
         await dbService.atualizarCapitulo(chapterId, updateData);
         
@@ -125,7 +112,7 @@ export function AutoSavePlugin({
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, chapterTitle, onWordCountChanged]);
+  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, onWordCountChanged]);
 
   return null;
 }
