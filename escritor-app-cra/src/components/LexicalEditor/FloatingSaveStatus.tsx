@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaCloud, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
-import { ImSpinner2 } from 'react-icons/im';
+import { FaCloud, FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { IconBaseProps } from 'react-icons';
 
 const FloatingStatus = styled.div`
   position: absolute;
@@ -26,7 +26,7 @@ export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: strin
   if (saveStatus === 'saving') {
     statusIcon = (
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <ImSpinner2 />
+        <FaSpinner />
         <style>{`
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
           .floating-spinner svg { animation: spin 1s linear infinite; }
