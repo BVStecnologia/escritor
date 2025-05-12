@@ -37,6 +37,12 @@ const EditorInner = styled.div`
   flex: 1;
   position: relative;
   overflow: auto;
+  height: 100%;
+  /* Importante para posicionamento dos componentes flutuantes */
+  .editor-container {
+    position: relative;
+    height: 100%;
+  }
 `;
 
 const ContentEditableWrapper = styled.div`
@@ -183,7 +189,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
       <EditorContainer>
         <ToolbarPlugin />
         <EditorInner>
-          <ContentEditableWrapper>
+          <ContentEditableWrapper className="editor-container">
             <RichTextPlugin
               contentEditable={<ContentEditable className="editor-input" />}
               placeholder={<div className="editor-placeholder">Comece a escrever seu capítulo aqui...</div>}

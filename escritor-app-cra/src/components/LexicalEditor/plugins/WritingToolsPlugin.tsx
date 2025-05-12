@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { 
   $getSelection, 
@@ -131,6 +131,7 @@ export const WritingToolsPlugin = () => {
   const [showTools, setShowTools] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Monitor selection changes to determine if the lamp should be active
   useEffect(() => {
@@ -147,24 +148,30 @@ export const WritingToolsPlugin = () => {
               const range = domSelection.getRangeAt(0);
               const rect = range.getBoundingClientRect();
 
-              // Encontrar o editor-container para verificar margens
+              // Encontrar o elemento do editor
               const editorContainer = document.querySelector('.editor-input');
-              let editorLeft = 0;
-
-              if (editorContainer) {
-                const editorRect = editorContainer.getBoundingClientRect();
-                editorLeft = editorRect.left + window.scrollX;
-              }
-
-              // Calcular posição à esquerda do cursor, mas dentro do editor
+              if (!editorContainer) return false;
+              
+              const editorRect = editorContainer.getBoundingClientRect();
+              
+              // Calcular posição relativa ao editor
+              const relativeTop = rect.top - editorRect.top;
+              const relativeLeft = rect.left - editorRect.left;
+              
+              // Lâmpada deve ficar à esquerda do texto selecionado
               const lampWidth = 45; // Lâmpada + espaço
-              const desiredLeft = rect.left + window.scrollX - lampWidth;
-              // Garantir que a lâmpada não fique fora da margem esquerda do editor
-              const safeLeft = Math.max(editorLeft + 10, desiredLeft);
+              const desiredLeft = relativeLeft - lampWidth;
+              
+              // Garantir que a lâmpada fique dentro dos limites do editor
+              let safeLeft = Math.max(10, desiredLeft); // Pelo menos 10px da borda esquerda
+              
+              // Não ultrapassar a borda direita do editor
+              const maxRight = editorRect.width - 10; // 10px da borda direita
+              safeLeft = Math.min(safeLeft, maxRight - lampWidth);
 
-              // Definir a posição baseada na seleção
+              // Definir a posição, garantindo margens de segurança
               setPosition({
-                top: rect.top + window.scrollY,
+                top: Math.max(relativeTop - 5, 10), // Ligeiramente acima do texto
                 left: safeLeft,
               });
             }
@@ -219,8 +226,38 @@ export const WritingToolsPlugin = () => {
     };
   }, []);
 
+  // Ajustar posição do popover para evitar que fique fora da tela
+  useEffect(() => {
+    if (showTools && containerRef.current) {
+      const popover = containerRef.current.querySelector('[class*="ToolsPopover"]') as HTMLElement;
+      if (popover) {
+        // Obter o contêiner do editor para limites de restrição
+        const editorContainer = document.querySelector('.editor-input');
+        if (!editorContainer) return;
+        
+        const editorRect = editorContainer.getBoundingClientRect();
+        const popoverRect = popover.getBoundingClientRect();
+        
+        // Verificar se o popover está saindo pelo lado direito do editor
+        const popoverRight = position.left + popoverRect.width;
+        if (popoverRight > editorRect.width - 20) {
+          popover.style.left = 'auto';
+          popover.style.right = '0';
+        }
+        
+        // Verificar se o popover está saindo pela parte inferior do editor
+        const editorHeight = editorRect.height;
+        if (position.top + popoverRect.height > editorHeight - 20) {
+          popover.style.top = 'auto';
+          popover.style.bottom = '45px'; // Posicionar acima da lâmpada
+        }
+      }
+    }
+  }, [showTools, position]);
+
   return (
     <WritingToolsContainer
+      ref={containerRef}
       className="writing-tools-container"
       style={{ top: position.top, left: position.left }}
     >

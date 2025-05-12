@@ -82,10 +82,22 @@ export const AIToolsSelectionPlugin = () => {
                 const range = domSelection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
                 
-                // Posicionar acima da seleção
+                // Encontrar o elemento do editor correto
+                // Primeiro tentamos encontrar o contêiner do editor específico
+                const editorEl = document.querySelector('.editor-input');
+                if (!editorEl) return false;
+                
+                const editorRect = editorEl.getBoundingClientRect();
+                
+                // Calculamos a posição relativa ao editor
+                const relativeTop = rect.top - editorRect.top;
+                const relativeLeft = rect.left - editorRect.left;
+                
+                // Posicionamos dentro dos limites do editor
+                // Deixar espaço da ferramenta no topo da seleção
                 setPosition({
-                  top: rect.top + window.scrollY - 45, // 45px acima
-                  left: rect.left + window.scrollX + (rect.width / 2) // Centralizado
+                  top: Math.max(relativeTop + window.scrollY - 50, 10),
+                  left: relativeLeft + (rect.width / 2) + window.scrollX
                 });
                 
                 setSelectedText(text);
@@ -120,6 +132,53 @@ export const AIToolsSelectionPlugin = () => {
     };
   }, []);
   
+  // Ajustar posição para garantir que não fique cortada nas bordas
+  useEffect(() => {
+    if (containerRef.current && isVisible) {
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      
+      // Encontrar o elemento pai mais próximo com posição relativa
+      // Isso pode ser o ContentEditableWrapper ou EditorInner
+      const editorEl = document.querySelector('.editor-input');
+      if (!editorEl) return;
+      
+      const editorRect = editorEl.getBoundingClientRect();
+      
+      // Ajustar posição horizontal para ficar dentro do editor
+      let adjustedLeft = position.left - (containerRect.width / 2);
+      
+      // Garantir que não saia pela direita
+      if (adjustedLeft + containerRect.width > editorRect.width - 20) {
+        adjustedLeft = editorRect.width - containerRect.width - 20;
+      }
+      
+      // Garantir que não saia pela esquerda
+      if (adjustedLeft < 20) {
+        adjustedLeft = 20;
+      }
+      
+      // Ajustar posição vertical
+      let adjustedTop = position.top;
+      
+      // Se estiver muito no topo
+      if (adjustedTop < 10) {
+        // Tentar posicionar abaixo da seleção
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          const relativeBottom = rect.bottom - editorRect.top;
+          adjustedTop = relativeBottom + window.scrollY + 10;
+        }
+      }
+      
+      // Aplicar ajustes
+      container.style.left = `${adjustedLeft}px`;
+      container.style.top = `${adjustedTop}px`;
+    }
+  }, [isVisible, position, containerRef]);
+  
   const handleToolAction = (toolId: string) => {
     // Implementar ações de IA aqui
     alert(`Ferramenta de IA "${toolId}" aplicada ao texto: "${selectedText}"`);
@@ -130,17 +189,12 @@ export const AIToolsSelectionPlugin = () => {
     return null;
   }
   
-  // Ajustar posição para centralizar no elemento pai
-  const adjustedLeft = containerRef.current 
-    ? position.left - (containerRef.current.offsetWidth / 2) 
-    : position.left;
-  
   return (
     <AIToolsContainer 
       ref={containerRef}
       style={{ 
         top: position.top, 
-        left: adjustedLeft
+        left: position.left
       }}
     >
       {AI_TOOLS.map(tool => (
