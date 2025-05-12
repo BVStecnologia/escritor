@@ -32,6 +32,14 @@ const EditorContainer = styled.div`
   flex-direction: column;
   background: ${({ theme }) => theme.colors.background.paper};
   border-radius: 12px;
+  
+  /* Garantir altura fixa para a barra de ferramentas */
+  .toolbar {
+    height: 98px; /* Mesma altura dos outros cabeçalhos */
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  }
 `;
 
 const EditorInner = styled.div`

@@ -1,79 +1,80 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { Logo, BookTitle, BookTitleInput, HeaderContent, HeaderControls, ThemeToggleButton, StatusIndicator, ActionButton, Header, LogoSection } from './styles';
 import { PenIcon, ArrowBackIcon } from '../../components/icons';
-import {
-  Header,
-  HeaderContent,
-  LogoSection,
-  Logo,
-  BookTitle,
-  BookTitleInput,
-  HeaderControls,
-  StatusIndicator,
-  ThemeToggleButton,
-  ActionButton
-} from './styles';
 
 interface EditorHeaderProps {
   bookTitle: string;
-  saveStatus: 'idle' | 'saving' | 'saved';
-  titleSaveStatus?: 'idle' | 'saving' | 'saved';
+  saveStatus: string;
+  titleSaveStatus: string;
   isOnline: boolean;
   isDarkMode: boolean;
   onToggleTheme: () => void;
   onBackToDashboard: () => void;
-  onBookTitleChange?: (newTitle: string) => void;
+  onBookTitleChange: (title: string) => void;
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
   bookTitle,
   saveStatus,
-  titleSaveStatus = 'idle',
+  titleSaveStatus,
   isOnline,
   isDarkMode,
   onToggleTheme,
   onBackToDashboard,
   onBookTitleChange
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(bookTitle);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [localTitle, setLocalTitle] = useState(bookTitle);
 
-  // Atualiza o título editável quando o prop bookTitle muda
-  useEffect(() => {
-    setEditedTitle(bookTitle);
-  }, [bookTitle]);
-
-  // Foca no input quando entra no modo de edição
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
+  const handleToggleTitleEdit = () => {
+    if (isEditingTitle) {
+      onBookTitleChange(localTitle);
+    } else {
+      setLocalTitle(bookTitle);
     }
-  }, [isEditing]);
-
-  const handleTitleClick = () => {
-    if (onBookTitleChange) {
-      setIsEditing(true);
-    }
+    setIsEditingTitle(!isEditingTitle);
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedTitle(e.target.value);
-  };
-
-  const handleTitleBlur = () => {
-    setIsEditing(false);
-    if (editedTitle.trim() !== bookTitle && onBookTitleChange) {
-      onBookTitleChange(editedTitle.trim() || "Sem título");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      inputRef.current?.blur();
+      onBookTitleChange(localTitle);
+      setIsEditingTitle(false);
     } else if (e.key === 'Escape') {
-      setEditedTitle(bookTitle);
-      setIsEditing(false);
+      setLocalTitle(bookTitle);
+      setIsEditingTitle(false);
     }
+  };
+
+  const renderStatus = () => {
+    if (!isOnline) {
+      return (
+        <StatusIndicator $status="offline">
+          Offline
+        </StatusIndicator>
+      );
+    }
+
+    if (saveStatus === 'saving') {
+      return (
+        <StatusIndicator $status="saving">
+          Salvando...
+        </StatusIndicator>
+      );
+    }
+
+    if (saveStatus === 'saved') {
+      return (
+        <StatusIndicator $status="saved">
+          Salvo
+        </StatusIndicator>
+      );
+    }
+
+    return (
+      <StatusIndicator $status="online">
+        Online
+      </StatusIndicator>
+    );
   };
 
   return (
@@ -83,36 +84,31 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           <Logo>
             <PenIcon />
             Bookwriter
+            <svg width="0" height="0">
+              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </linearGradient>
+            </svg>
           </Logo>
-          {isEditing ? (
+
+          {isEditingTitle ? (
             <BookTitleInput
-              ref={inputRef}
-              value={editedTitle}
-              onChange={handleTitleChange}
-              onBlur={handleTitleBlur}
-              onKeyDown={handleKeyDown}
-              placeholder="Título do livro"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onBlur={handleToggleTitleEdit}
+              onKeyDown={handleTitleKeyDown}
+              autoFocus
             />
           ) : (
-            <BookTitle
-              onClick={handleTitleClick}
-              style={{ cursor: onBookTitleChange ? 'pointer' : 'default' }}
-              title={onBookTitleChange ? "Clique para editar o título" : ""}
-            >
-              {bookTitle}
-              {titleSaveStatus === 'saving' && ' (Salvando...)'}
+            <BookTitle onClick={handleToggleTitleEdit}>
+              {bookTitle || "Sem título"}
             </BookTitle>
           )}
         </LogoSection>
-        
+
         <HeaderControls>
-          <StatusIndicator 
-            $status={saveStatus === 'saving' ? 'saving' : saveStatus === 'saved' ? 'saved' : isOnline ? 'online' : 'offline'}
-          >
-            {saveStatus === 'saving' ? 'Salvando...' : 
-             saveStatus === 'saved' ? 'Salvo' :
-             isOnline ? 'Online' : 'Offline'}
-          </StatusIndicator>
+          {renderStatus()}
           
           <ThemeToggleButton onClick={onToggleTheme}>
             {isDarkMode ? '☀️' : '🌙'}
@@ -120,7 +116,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           
           <ActionButton onClick={onBackToDashboard}>
             <ArrowBackIcon />
-            Minha Biblioteca
+            Voltar
           </ActionButton>
         </HeaderControls>
       </HeaderContent>

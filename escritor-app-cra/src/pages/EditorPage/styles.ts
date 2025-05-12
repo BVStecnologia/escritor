@@ -51,8 +51,9 @@ export const MainLayout = styled.div`
   width: 100%;
   position: relative;
   z-index: 1;
-  height: calc(100vh - 98px); /* Altura da viewport menos altura do cabeçalho (98px) */
+  height: calc(100vh - 89px); /* Altura da viewport menos altura do cabeçalho (agora 89px) */
   overflow: hidden; /* Evitar que a página inteira role */
+  padding-top: 1rem; /* Adicionar espaço entre o cabeçalho e o conteúdo */
 `;
 
 // Header components
@@ -64,7 +65,7 @@ export const Header = styled.header`
   backdrop-filter: blur(20px);
   border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
   padding: 1rem 2rem;
-  height: 98px; /* Altura fixa para o cabeçalho */
+  height: 89px; /* Altura fixa para o cabeçalho, 9px menor que antes */
   display: flex;
   align-items: center;
   
@@ -75,6 +76,7 @@ export const Header = styled.header`
 
 export const HeaderContent = styled.div`
   max-width: 1600px;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -99,6 +101,7 @@ export const Logo = styled.h1`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
 
   svg {
     width: 28px;
@@ -117,6 +120,7 @@ export const BookTitle = styled.span`
   text-overflow: ellipsis;
   position: relative;
   padding-left: 1rem;
+  cursor: pointer;
 
   &::before {
     content: '';
@@ -239,8 +243,9 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
-  height: calc(100vh - 120px);
+  height: calc(100vh - 126px); /* Ajustado para alinhar com o editor */
   flex-shrink: 0;
+  margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);
@@ -253,6 +258,8 @@ export const SidebarHeader = styled.div<{ $isOpen: boolean }>`
   display: flex;
   align-items: center;
   justify-content: ${({ $isOpen }) => $isOpen ? 'space-between' : 'center'};
+  height: 89px; /* Mesma altura do cabeçalho principal, agora com 9px a menos */
+  box-sizing: border-box;
 `;
 
 export const SidebarTitle = styled.h2<{ $isOpen: boolean }>`
@@ -451,6 +458,7 @@ export const EditorWrapper = styled.div`
   background: ${({ theme }) => theme.colors.background.paper};
   display: flex;
   flex-direction: column;
+  margin-top: 2px; /* Adicionar um pequeno espaço para alinhar com os painéis laterais */
 `;
 
 export const EditorContainer = styled.div`
@@ -517,6 +525,7 @@ export const AIHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 98px; /* Mesma altura do cabeçalho principal */
 `;
 
 export const AITitle = styled.h3`
@@ -719,8 +728,9 @@ export const AIContainer = styled.aside<{ $isOpen: boolean }>`
   box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
   position: sticky;
   top: 100px;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 126px); /* Ajustado para alinhar com o editor e sidebar */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);

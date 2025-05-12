@@ -9,6 +9,8 @@ const AIHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 89px;
+  box-sizing: border-box;
 `;
 
 const AITitle = styled.h2<{ $isOpen: boolean }>`
@@ -219,6 +221,26 @@ const CollapsedAIAction = styled.button`
     width: 20px;
     height: 20px;
   }
+`;
+
+const AIAssistantPanel = styled.div<{ $active: boolean }>`
+  position: fixed;
+  top: 101px; /* Ajustado para alinhar com o editor e outros componentes */
+  right: ${({ $active }) => $active ? '2rem' : '-420px'};
+  width: 350px;
+  height: calc(100vh - 126px); /* Ajustado para mesma altura dos outros componentes */
+  border-radius: 24px;
+  background: ${({ theme }) => theme.colors.background.paper};
+  box-shadow: ${({ theme }) => theme.colors.shadow?.xl || "0 24px 64px rgba(0, 0, 0, 0.2)"};
+  display: flex;
+  flex-direction: column;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: ${({ $active }) => $active ? 1 : 0.5};
+  pointer-events: ${({ $active }) => $active ? 'all' : 'none'};
+  z-index: 40;
+  overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */
 `;
 
 interface AIAssistantFixedProps {
