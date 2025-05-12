@@ -193,7 +193,11 @@ export const ActionButton = styled.button`
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   border: none;
-  background: ${({ theme }) => theme.colors.primaryGradient};
+  background: linear-gradient(
+    to right,
+    ${({ theme }) => `${theme.colors.primary}CC`},
+    ${({ theme }) => `${theme.colors.secondary}CC`}
+  );
   color: white;
   font-weight: 600;
   cursor: pointer;
@@ -201,10 +205,14 @@ export const ActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.12)"};
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.colors.shadow?.lg || "0 16px 48px rgba(0, 0, 0, 0.15)"};
+    opacity: 0.95;
   }
 
   svg {
@@ -431,10 +439,10 @@ export const EditorContainer = styled.div`
 // AI Assistant components
 export const AIAssistantButton = styled.button<{ $active: boolean }>`
   position: fixed;
-  bottom: 5.5rem;
+  top: 130px;
   right: 2rem;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   border: none;
   background: ${({ theme, $active }) => 
@@ -448,32 +456,33 @@ export const AIAssistantButton = styled.button<{ $active: boolean }>`
   transition: all 0.3s ease;
   box-shadow: ${({ theme }) => theme.colors.shadow?.lg || "0 16px 48px rgba(0, 0, 0, 0.15)"};
   z-index: 50;
+  opacity: 0.9;
 
   &:hover {
-    transform: translateY(-5px);
+    transform: scale(1.05);
     box-shadow: ${({ theme }) => theme.colors.shadow?.xl || "0 24px 64px rgba(0, 0, 0, 0.2)"};
+    opacity: 1;
   }
 
   svg {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
   }
 `;
 
 export const AIAssistantPanel = styled.div<{ $active: boolean }>`
   position: fixed;
-  bottom: ${({ $active }) => $active ? '2rem' : '-100vh'};
-  right: 2rem;
-  width: 400px;
-  max-height: 70vh;
+  top: 190px;
+  right: ${({ $active }) => $active ? '2rem' : '-420px'};
+  width: 350px;
+  max-height: calc(100vh - 220px);
   border-radius: 24px;
   background: ${({ theme }) => theme.colors.background.paper};
   box-shadow: ${({ theme }) => theme.colors.shadow?.xl || "0 24px 64px rgba(0, 0, 0, 0.2)"};
   display: flex;
   flex-direction: column;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: ${({ $active }) => $active ? 1 : 0};
-  transform: translateY(${({ $active }) => $active ? 0 : '20px'});
+  opacity: ${({ $active }) => $active ? 1 : 0.5};
   pointer-events: ${({ $active }) => $active ? 'all' : 'none'};
   z-index: 40;
   overflow: hidden;
@@ -657,5 +666,25 @@ export const AISubmitButton = styled.button<{ disabled: boolean }>`
   svg {
     width: 20px;
     height: 20px;
+  }
+`;
+
+// AI Container (coluna direita fixa)
+export const AIContainer = styled.aside`
+  width: 320px;
+  background: ${({ theme }) => theme.colors.background.glass};
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+
+  @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
+    -webkit-backdrop-filter: blur(20px);
   }
 `;

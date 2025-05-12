@@ -4,7 +4,7 @@ import { ThemeProvider } from 'styled-components';
 import { EditorHeader } from './EditorHeader';
 import { Sidebar } from './Sidebar';
 import { EditorContent } from './EditorContent';
-import { AIAssistant } from './AIAssistant';
+import { AIAssistantFixed } from './AIAssistantFixed';
 import { LoadingGlobal } from './LoadingGlobal';
 import { ErrorState } from './ErrorState';
 import { useEditorPage } from '../../hooks/useEditorPage';
@@ -106,7 +106,6 @@ const EditorPage: React.FC = () => {
   const { bookId, chapterId } = useParams<{ bookId: string; chapterId?: string }>();
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
-  const [aiAssistantActive, setAiAssistantActive] = useState(false);
 
   const {
     livro,
@@ -215,12 +214,12 @@ const EditorPage: React.FC = () => {
             setSaveStatus={setSaveStatus}
             loadingChapter={loadingChapter}
           />
+          
+          <AIAssistantFixed
+            bookId={bookId}
+            chapterId={chapterId}
+          />
         </MainLayout>
-
-        <AIAssistant
-          active={aiAssistantActive}
-          onToggle={() => setAiAssistantActive(!aiAssistantActive)}
-        />
       </EditorPageContainer>
     </ThemeProvider>
   );
