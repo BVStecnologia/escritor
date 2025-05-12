@@ -118,8 +118,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
     }
   };
   
-  // Número da ordem do capítulo se disponível, senão usa o índice + 1
-  const displayIndex = chapter.ordem || index + 1;
+  // Sempre usar o índice + 1 como número da parte, independentemente do campo ordem
+  const displayIndex = index + 1;
 
   return (
     <ChapterCardContainer 
