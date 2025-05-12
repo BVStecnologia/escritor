@@ -38,6 +38,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       $active={isActive} 
       $index={index}
       onClick={onClick}
+      style={{ cursor: isActive ? 'default' : 'pointer' }}
     >
       <ChapterInfo $active={isActive}>
         <ChapterNumber $active={isActive}>

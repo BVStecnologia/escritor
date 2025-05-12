@@ -133,8 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={chapter.id}
                 chapter={chapter}
                 index={index}
-                isActive={chapter.id === activeChapterId}
-                onClick={() => onChapterSelect(chapter.id)}
+                isActive={String(chapter.id) === String(activeChapterId)}
+                onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
               />
             ))}
 
@@ -156,14 +156,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: chapter.id === activeChapterId ? 'var(--primary-color, #3b82f6)' : 'var(--background-paper, #fff)',
-                  color: chapter.id === activeChapterId ? '#fff' : 'inherit',
+                  background: String(chapter.id) === String(activeChapterId) ? 
+                    '#f3f4f6' : 'var(--background-paper, #fff)',
+                  color: String(chapter.id) === String(activeChapterId) ? 'inherit' : 'inherit',
                   margin: '0 auto',
-                  cursor: 'pointer',
+                  cursor: String(chapter.id) === String(activeChapterId) ? 'default' : 'pointer',
                   fontWeight: 'bold',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                  boxShadow: String(chapter.id) === String(activeChapterId) ? 
+                    'inset 0 0 0 1px rgba(0, 0, 0, 0.1)' : '0 2px 8px rgba(0, 0, 0, 0.05)'
                 }}
-                onClick={() => onChapterSelect(chapter.id)}
+                onClick={() => String(chapter.id) !== String(activeChapterId) && onChapterSelect(chapter.id)}
               >
                 {index + 1}
               </div>

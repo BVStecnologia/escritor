@@ -27,7 +27,7 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   background: ${({ theme }) => theme.colors.background.glass};
   backdrop-filter: blur(20px);
   border-radius: 24px;
-  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(255,255,255,0.1)"};
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -44,7 +44,7 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
 
 export const SidebarHeader = styled.div<{ $isOpen: boolean }>`
   padding: 1.5rem;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(255,255,255,0.1)"};
   display: flex;
   align-items: center;
   justify-content: ${({ $isOpen }) => $isOpen ? 'space-between' : 'center'};
@@ -74,7 +74,7 @@ export const ToggleSidebarButton = styled.button`
 
   &:hover {
     background: ${({ theme }) => theme.colors.primaryGradient};
-    color: white;
+    color: ${({ theme }) => theme.colors.white || "#ffffff"};
   }
 
   svg {
@@ -86,7 +86,7 @@ export const ToggleSidebarButton = styled.button`
 
 export const ChapterSearch = styled.div<{ $isOpen: boolean }>`
   padding: ${({ $isOpen }) => $isOpen ? '1rem 1.5rem' : '1rem 0.5rem'};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(255,255,255,0.1)"};
   display: ${({ $isOpen }) => $isOpen ? 'block' : 'none'};
   animation: ${fadeInUp} 0.3s ease;
 `;
@@ -95,7 +95,7 @@ export const SearchInput = styled.input`
   width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || "rgba(255,255,255,0.1)"};
   background: ${({ theme }) => theme.colors.background.paper};
   color: ${({ theme }) => theme.colors.text.primary};
   font-size: 0.875rem;
@@ -123,16 +123,55 @@ export const ChaptersContainer = styled.div`
   /* Garantir que ainda permaneça visível quando o sidebar estiver recolhido */
   overflow-x: hidden;
   max-width: 100%;
+
+  /* Estilização da scrollbar para ambos os temas */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => 
+      theme.isDarkMode 
+        ? 'rgba(15, 23, 42, 0.3)' 
+        : 'rgba(241, 245, 249, 0.6)'
+    };
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => 
+      theme.isDarkMode 
+        ? 'rgba(100, 116, 139, 0.5)' 
+        : 'rgba(148, 163, 184, 0.5)'
+    };
+    border-radius: 3px;
+    
+    &:hover {
+      background: ${({ theme }) => 
+        theme.isDarkMode 
+          ? 'rgba(100, 116, 139, 0.7)' 
+          : 'rgba(148, 163, 184, 0.7)'
+      };
+    }
+  }
 `;
 
 export const ChapterCardContainer = styled.div<{ $active: boolean; $index: number }>`
   padding: 1rem;
   border-radius: 16px;
   background: ${({ theme, $active }) => 
-    $active ? theme.colors.primaryGradient : theme.colors.background.paper
+    $active 
+      ? theme.isDarkMode 
+        ? 'rgba(79, 70, 229, 0.15)' 
+        : 'rgba(137, 155, 255, 0.15)'
+      : theme.colors.background.paper
   };
   border: 1px solid ${({ theme, $active }) => 
-    $active ? 'transparent' : theme.colors.border?.light || "rgba(0,0,0,0.1)"
+    $active 
+      ? theme.isDarkMode 
+        ? 'rgba(79, 70, 229, 0.3)' 
+        : 'rgba(137, 155, 255, 0.3)'
+      : theme.colors.border?.light || "rgba(255,255,255,0.1)"
   };
   cursor: pointer;
   transition: all 0.3s ease;
@@ -140,14 +179,22 @@ export const ChapterCardContainer = styled.div<{ $active: boolean; $index: numbe
   animation-delay: ${({ $index }) => $index * 0.05}s;
   animation-fill-mode: both;
   box-shadow: ${({ theme, $active }) => 
-    $active ? theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)" : 'none'
+    $active 
+      ? theme.isDarkMode
+        ? '0 4px 12px rgba(79, 70, 229, 0.1)'
+        : '0 4px 12px rgba(59, 130, 246, 0.1)'
+      : 'none'
   };
 
   &:hover {
     transform: translateY(-3px);
     box-shadow: ${({ theme }) => theme.colors.shadow?.md || "0 8px 24px rgba(0, 0, 0, 0.1)"};
     background: ${({ theme, $active }) => 
-      $active ? theme.colors.primaryGradient : theme.colors.background.glass
+      $active 
+        ? theme.isDarkMode
+          ? 'rgba(79, 70, 229, 0.2)'
+          : 'rgba(137, 155, 255, 0.2)'
+        : theme.colors.background.glass
     };
   }
 `;
@@ -157,7 +204,7 @@ export const ChapterInfo = styled.div<{ $active: boolean }>`
   flex-direction: column;
   gap: 0.5rem;
   color: ${({ theme, $active }) => 
-    $active ? theme.colors.text.inverse : theme.colors.text.primary
+    $active ? theme.colors.primary : theme.colors.text.primary
   };
 `;
 
@@ -165,7 +212,9 @@ export const ChapterNumber = styled.div<{ $active: boolean }>`
   font-size: 0.75rem;
   font-weight: 600;
   color: ${({ theme, $active }) => 
-    $active ? theme.colors.text.inverse + '80' : theme.colors.text.tertiary
+    $active 
+      ? `${theme.colors.primary}` + (theme.isDarkMode ? 'dd' : '80')
+      : theme.colors.text.tertiary
   };
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -183,7 +232,11 @@ export const ChapterStats = styled.div<{ $active: boolean }>`
   gap: 1rem;
   font-size: 0.75rem;
   color: ${({ theme, $active }) => 
-    $active ? theme.colors.text.inverse + '80' : theme.colors.text.tertiary
+    $active 
+      ? theme.isDarkMode
+        ? `${theme.colors.text.secondary}`
+        : `${theme.colors.text.tertiary}`
+      : theme.colors.text.tertiary
   };
 `;
 
@@ -203,7 +256,13 @@ export const ChapterProgress = styled.div<{ $active: boolean }>`
   margin-top: 0.75rem;
   height: 4px;
   background: ${({ theme, $active }) => 
-    $active ? 'rgba(255, 255, 255, 0.2)' : theme.colors.gray[200]
+    $active 
+      ? theme.isDarkMode
+        ? 'rgba(30, 41, 59, 0.5)'
+        : 'rgba(255, 255, 255, 0.2)'
+      : theme.isDarkMode 
+        ? theme.colors.gray[200] 
+        : theme.colors.gray[200]
   };
   border-radius: 2px;
   overflow: hidden;
@@ -213,7 +272,11 @@ export const ChapterProgressBar = styled.div<{ $progress: number; $active: boole
   height: 100%;
   width: ${({ $progress }) => $progress}%;
   background: ${({ theme, $active }) => 
-    $active ? 'white' : theme.colors.primary
+    $active 
+      ? theme.isDarkMode
+        ? theme.colors.primary
+        : theme.colors.primary
+      : theme.colors.primary
   };
   border-radius: 2px;
   transition: width 0.5s ease;
@@ -223,8 +286,8 @@ export const NewChapterButton = styled.button`
   margin-top: auto;
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  border: 1px dashed ${({ theme }) => theme.colors.primary + '50'};
-  background: ${({ theme }) => theme.colors.primary + '10'};
+  border: 1px dashed ${({ theme }) => theme.colors.primary + (theme.isDarkMode ? '40' : '50')};
+  background: ${({ theme }) => theme.colors.primary + (theme.isDarkMode ? '15' : '10')};
   color: ${({ theme }) => theme.colors.primary};
   font-weight: 600;
   cursor: pointer;
@@ -236,7 +299,7 @@ export const NewChapterButton = styled.button`
   margin-top: 1rem;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.primary + '20'};
+    background: ${({ theme }) => theme.colors.primary + (theme.isDarkMode ? '25' : '20')};
     transform: translateY(-2px);
   }
 
