@@ -23,7 +23,9 @@ const AutocompleteContainer = styled.div<{ $visible: boolean }>`
   z-index: 100;
   padding: 0.5rem;
   display: ${({ $visible }) => ($visible ? 'block' : 'none')};
-  margin-top: 5px; /* Sempre colocar abaixo da palavra selecionada */
+  margin-top: 20px !important; /* Margem maior para garantir que fique bem abaixo */
+  transform: translateY(0) !important; /* Impedir qualquer deslocamento para cima */
+  opacity: 0.95; /* Leve transparência para melhorar a visualização */
   class-name: 'autocomplete-container';
 `;
 
@@ -300,6 +302,38 @@ export const AutocompletePlugin = () => {
   const autocompleteRef = useRef<HTMLDivElement>(null);
   const throttledUpdateRef = useRef<any>(null);
   const currentMisspelledElementRef = useRef<HTMLElement | null>(null);
+  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Referência para o timeout de exibição
+
+  // Função para atrasar a exibição do autocomplete
+  const showWithDelay = (positionData: {top: number, left: number}, newSuggestions: string[]) => {
+    // Cancelar qualquer timeout existente
+    if (showTimeoutRef.current) {
+      clearTimeout(showTimeoutRef.current);
+    }
+    
+    // Esconder imediatamente para garantir que não apareça em posição errada
+    setIsVisible(false);
+    
+    // Configurar posição e sugestões
+    setPosition(positionData);
+    setSuggestions(newSuggestions);
+    setActiveIndex(0);
+    
+    // Atrasar a exibição em 1 segundo
+    showTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      showTimeoutRef.current = null;
+    }, 1000);
+  };
+
+  // Limpar timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (showTimeoutRef.current) {
+        clearTimeout(showTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Função para verificar se uma palavra está mal escrita
   const checkSpellingError = (word: string): boolean => {
@@ -367,11 +401,6 @@ export const AutocompletePlugin = () => {
         if (foundSuggestions.length > 0) {
           // Eliminar duplicatas e limitar a 5 sugestões
           const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
-          setSuggestions(uniqueSuggestions);
-          setActiveIndex(0);
-          
-          // Limpar a referência do elemento atual com erro
-          currentMisspelledElementRef.current = null;
           
           // Posicionar o menu próximo da palavra selecionada
           requestAnimationFrame(() => {
@@ -386,13 +415,15 @@ export const AutocompletePlugin = () => {
               
               const editorRect = editorEl.getBoundingClientRect();
               
-              // Posicionar SEMPRE abaixo da palavra
-              setPosition({
-                top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para espaçamento
+              // Posicionar SEMPRE bem abaixo da palavra para não tapar
+              const positionData = {
+                // +30px para garantir que fique MUITO abaixo da palavra
+                top: rect.bottom - editorRect.top + window.scrollY + 30,
                 left: rect.left - editorRect.left + window.scrollX
-              });
+              };
               
-              setIsVisible(true);
+              // Usar a função de delay para mostrar
+              showWithDelay(positionData, uniqueSuggestions);
             }
           });
         } else {
@@ -461,8 +492,6 @@ export const AutocompletePlugin = () => {
           if (foundSuggestions.length > 0) {
             // Eliminar duplicatas e limitar a 5 sugestões
             const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
-            setSuggestions(uniqueSuggestions);
-            setActiveIndex(0);
             
             // Posicionar o menu próximo da palavra clicada
             const rect = (spellingErrorElement as HTMLElement).getBoundingClientRect();
@@ -473,13 +502,15 @@ export const AutocompletePlugin = () => {
             
             const editorRect = editorEl.getBoundingClientRect();
             
-            // Posicionar SEMPRE abaixo da palavra
-            setPosition({
-              top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para espaçamento
+            // Posicionar SEMPRE bem abaixo da palavra para não tapar
+            const positionData = {
+              // +30px para garantir que fique MUITO abaixo da palavra
+              top: rect.bottom - editorRect.top + window.scrollY + 30,
               left: rect.left - editorRect.left + window.scrollX
-            });
+            };
             
-            setIsVisible(true);
+            // Usar a função de delay para mostrar
+            showWithDelay(positionData, uniqueSuggestions);
           }
         }
       }
@@ -630,6 +661,32 @@ export const AutocompletePlugin = () => {
           popover.style.left = `${newLeft}px`;
         }
       }
+    }
+  }, [isVisible, position]);
+
+  // Adicionar este useEffect antes do return do componente
+  // Garantir que o componente seja renderizado sempre abaixo da palavra
+  useEffect(() => {
+    if (isVisible && autocompleteRef.current) {
+      // Forçar posicionamento abaixo ao renderizar
+      const popover = autocompleteRef.current;
+      
+      // Adicionar estilo inline para garantir que fique abaixo
+      popover.style.marginTop = '20px';
+      
+      // Verificar se o componente não está visível na tela e ajustar se necessário
+      setTimeout(() => {
+        if (!popover) return;
+        
+        const rect = popover.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        
+        // Se estiver saindo da tela pela parte inferior, ajustar
+        if (rect.bottom > viewportHeight) {
+          const newTop = Math.max(20, position.top - (rect.bottom - viewportHeight) - 20);
+          popover.style.top = `${newTop}px`;
+        }
+      }, 0);
     }
   }, [isVisible, position]);
 
