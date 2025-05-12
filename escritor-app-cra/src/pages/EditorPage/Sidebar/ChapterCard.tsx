@@ -1,6 +1,7 @@
 import React from 'react';
 import { Capitulo } from '../../../services/dbService';
 import { WordCountIcon } from '../../../components/icons';
+import { useTheme } from '../../../contexts/ThemeContext';
 import {
   ChapterCardContainer,
   ChapterInfo,
@@ -25,6 +26,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
   isActive,
   onClick
 }) => {
+  const { isDarkMode } = useTheme();
+  
   // Calculate word count
   const wordCount = chapter.conteudo 
     ? chapter.conteudo.split(/\s+/).filter(Boolean).length 
