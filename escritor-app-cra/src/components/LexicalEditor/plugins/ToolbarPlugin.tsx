@@ -34,6 +34,9 @@ import {
   $isLinkNode
 } from '@lexical/link';
 import styled from 'styled-components';
+import {
+  $patchStyleText
+} from '@lexical/selection';
 
 const Toolbar = styled.div`
   display: flex;
@@ -86,6 +89,22 @@ const Divider = styled.div`
   margin: 0 4px;
 `;
 
+const FontSelect = styled.select`
+  height: 36px;
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
+  border-radius: 8px;
+  background: ${({ theme }) => theme.colors.background.paper};
+  color: ${({ theme }) => theme.colors.text.primary};
+  padding: 0 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover, &:focus {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
 export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
@@ -95,6 +114,7 @@ export const ToolbarPlugin = () => {
   const [isLink, setIsLink] = useState(false);
   const [isBulletList, setIsBulletList] = useState(false);
   const [isNumberedList, setIsNumberedList] = useState(false);
+  const [fontFamily, setFontFamily] = useState<string>('inherit');
   const debouncedUpdateRef = useRef<any>(null);
 
   const updateToolbar = useCallback(() => {
@@ -103,6 +123,48 @@ export const ToolbarPlugin = () => {
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
+
+      // Detectar a fonte atual
+      try {
+        // Tenta obter o style do elemento atual
+        const nodes = selection.getNodes();
+        if (nodes.length > 0) {
+          const node = nodes[0];
+          const element = editor.getElementByKey(node.getKey());
+          
+          if (element) {
+            // Veja se há um estilo de font-family definido
+            const style = window.getComputedStyle(element);
+            const font = style.getPropertyValue('font-family');
+            if (font) {
+              // Verificar se a fonte corresponde a alguma das nossas opções
+              const options = [
+                'inherit',
+                "'Times New Roman', serif",
+                "Arial, sans-serif",
+                "Georgia, serif",
+                "'Courier New', monospace",
+                "'Trebuchet MS', sans-serif",
+                "Verdana, sans-serif",
+                "'Palatino Linotype', serif"
+              ];
+              
+              // Procurar por uma correspondência aproximada
+              const matchedFont = options.find(opt => 
+                font.includes(opt.replace(/[']/g, '').split(',')[0])
+              );
+              
+              if (matchedFont) {
+                setFontFamily(matchedFont);
+              } else {
+                setFontFamily('inherit');
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Erro ao detectar fonte:', error);
+      }
 
       const anchorNode = selection.anchor.getNode();
       let element = anchorNode;
@@ -295,6 +357,17 @@ export const ToolbarPlugin = () => {
     }
   };
 
+  const updateFontFamily = (fontFamily: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $patchStyleText(selection, {
+          'font-family': fontFamily,
+        });
+      }
+    });
+  };
+
   return (
     <Toolbar>
       <ToolbarSection>
@@ -334,6 +407,23 @@ export const ToolbarPlugin = () => {
       </ToolbarSection>
 
       <ToolbarSection>
+        <FontSelect 
+          value={fontFamily} 
+          onChange={(e) => {
+            const newFont = e.target.value;
+            setFontFamily(newFont);
+            updateFontFamily(newFont);
+          }}
+        >
+          <option value="inherit">Fonte padrão</option>
+          <option value="'Times New Roman', serif">Times New Roman</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Palatino Linotype', serif">Palatino</option>
+        </FontSelect>
         <ToolButton
           $active={blockType === 'h1'}
           onClick={() => formatHeading('h1')}

@@ -56,6 +56,16 @@ const ContentEditableWrapper = styled.div`
     font-size: 1.125rem;
     line-height: 1.75;
     color: ${({ theme }) => theme.colors.text.primary};
+
+    /* Suporte a estilos inline para fontes */
+    [style*="font-family"] {
+      font-family: inherit; /* Reseta para o valor padrão */
+    }
+    
+    /* Preserve estilos inline definidos pelo editor */
+    [style] {
+      font-family: var(--lexical-font-family, inherit);
+    }
   }
 
   .editor-placeholder {
