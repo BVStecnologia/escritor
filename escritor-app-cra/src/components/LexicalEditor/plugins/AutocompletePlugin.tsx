@@ -23,7 +23,7 @@ const AutocompleteContainer = styled.div<{ $visible: boolean }>`
   z-index: 100;
   padding: 0.5rem;
   display: ${({ $visible }) => ($visible ? 'block' : 'none')};
-  transform: translateY(-5px); /* Deslocar ligeiramente para cima para ficar mais próximo da palavra */
+  margin-top: 5px; /* Sempre colocar abaixo da palavra selecionada */
   class-name: 'autocomplete-container';
 `;
 
@@ -347,56 +347,54 @@ export const AutocompletePlugin = () => {
         // Obter o texto selecionado
         const selectedText = selection.getTextContent().trim();
         
-        // Verificar seleção única e específica com mínimo de 2 caracteres
-        if (selectedText && selectedText.length >= 2) {
-          // Verificar se é uma única palavra (sem espaços)
-          const isWord = !selectedText.includes(' ');
-          const wordToCheck = isWord ? selectedText : selectedText.split(/\s+/)[0];
-          
-          if (wordToCheck.length >= 2) {
-            // Verificar se a palavra selecionada tem erro ortográfico
-            const hasError = checkSpellingError(wordToCheck);
+        // Verificar se é uma única palavra (sem espaços)
+        // Só mostrar se não contiver espaços, ou seja, uma única palavra
+        const isWord = !selectedText.includes(' ');
+        
+        // Se não for uma única palavra ou for muito curta, não mostrar sugestões
+        if (!isWord || selectedText.length < 2) {
+          setIsVisible(false);
+          return;
+        }
+        
+        // A partir daqui, temos certeza que é uma única palavra
+        // Verificar se a palavra selecionada tem erro ortográfico
+        const hasError = checkSpellingError(selectedText);
 
-            // Encontrar sugestões usando o algoritmo aprimorado
-            let foundSuggestions = findRelevantSuggestions(wordToCheck);
-            
-            if (foundSuggestions.length > 0) {
-              // Eliminar duplicatas e limitar a 5 sugestões
-              const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
-              setSuggestions(uniqueSuggestions);
-              setActiveIndex(0);
+        // Encontrar sugestões usando o algoritmo aprimorado
+        let foundSuggestions = findRelevantSuggestions(selectedText);
+        
+        if (foundSuggestions.length > 0) {
+          // Eliminar duplicatas e limitar a 5 sugestões
+          const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
+          setSuggestions(uniqueSuggestions);
+          setActiveIndex(0);
+          
+          // Limpar a referência do elemento atual com erro
+          currentMisspelledElementRef.current = null;
+          
+          // Posicionar o menu próximo da palavra selecionada
+          requestAnimationFrame(() => {
+            const domSelection = window.getSelection();
+            if (domSelection && domSelection.rangeCount > 0) {
+              const range = domSelection.getRangeAt(0);
+              const rect = range.getBoundingClientRect();
               
-              // Limpar a referência do elemento atual com erro
-              currentMisspelledElementRef.current = null;
+              // Encontrar o elemento do editor
+              const editorEl = document.querySelector('.editor-input');
+              if (!editorEl) return;
               
-              // Posicionar o menu próximo da palavra selecionada
-              requestAnimationFrame(() => {
-                const domSelection = window.getSelection();
-                if (domSelection && domSelection.rangeCount > 0) {
-                  const range = domSelection.getRangeAt(0);
-                  const rect = range.getBoundingClientRect();
-                  
-                  // Encontrar o elemento do editor
-                  const editorEl = document.querySelector('.editor-input');
-                  if (!editorEl) return;
-                  
-                  const editorRect = editorEl.getBoundingClientRect();
-                  
-                  // Posicionar diretamente abaixo da palavra
-                  setPosition({
-                    top: rect.bottom - editorRect.top + window.scrollY,
-                    left: rect.left - editorRect.left + window.scrollX
-                  });
-                  
-                  setIsVisible(true);
-                }
+              const editorRect = editorEl.getBoundingClientRect();
+              
+              // Posicionar SEMPRE abaixo da palavra
+              setPosition({
+                top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para espaçamento
+                left: rect.left - editorRect.left + window.scrollX
               });
-            } else {
-              setIsVisible(false);
+              
+              setIsVisible(true);
             }
-          } else {
-            setIsVisible(false);
-          }
+          });
         } else {
           setIsVisible(false);
         }
@@ -428,12 +426,18 @@ export const AutocompletePlugin = () => {
         : target.closest('.spelling-error');
       
       if (spellingErrorElement) {
+        // Verificar se é uma palavra única (sem espaços)
+        const word = spellingErrorElement.textContent?.trim() || '';
+        if (!word || word.includes(' ')) {
+          setIsVisible(false);
+          return;
+        }
+        
         // Salvar referência ao elemento com erro
         currentMisspelledElementRef.current = spellingErrorElement as HTMLElement;
         
         // Obter o texto da palavra com erro - usar o atributo data-word se disponível
         const errorWord = (spellingErrorElement as HTMLElement).getAttribute('data-word');
-        const word = errorWord || spellingErrorElement.textContent?.trim() || '';
         
         if (word) {
           // Usar sugestões pré-computadas do atributo data-suggestions, se disponível
@@ -469,9 +473,9 @@ export const AutocompletePlugin = () => {
             
             const editorRect = editorEl.getBoundingClientRect();
             
-            // Posicionar diretamente abaixo da palavra
+            // Posicionar SEMPRE abaixo da palavra
             setPosition({
-              top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para descer um pouco
+              top: rect.bottom - editorRect.top + window.scrollY + 5, // +5px para espaçamento
               left: rect.left - editorRect.left + window.scrollX
             });
             
