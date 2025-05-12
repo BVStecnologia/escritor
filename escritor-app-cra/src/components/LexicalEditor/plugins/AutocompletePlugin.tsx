@@ -77,6 +77,12 @@ export const WRITING_SUGGESTIONS: WritingSuggestions = {
   'sim': ['símbolo', 'simples', 'similar', 'similaridade'],
   'fig': ['figura', 'figurativo', 'figurino', 'figuração'],
   
+  // Palavras específicas que foram destacadas na imagem
+  'gabinha': ['menina', 'garota', 'garotinha', 'menininha', 'criança'],
+  'indigena': ['indígena', 'índia', 'nativa', 'aborígene', 'autóctone'],
+  'linda': ['linda', 'bela', 'bonita', 'formosa', 'bela'],
+  'historia': ['história', 'conto', 'estória', 'narrativa', 'relato'],
+  
   // Palavras básicas frequentemente mal escritas em português
   'tbm': ['também', 'tampouco', 'todavia', 'timbó'],
   'pq': ['porque', 'porquê', 'por que', 'porventura'],
@@ -90,7 +96,7 @@ export const WRITING_SUGGESTIONS: WritingSuggestions = {
   'fds': ['fim de semana', 'fundo', 'fundos', 'fundação'],
   
   // Adicionando sugestões para as palavras com erro na imagem
-  'gabina': ['gabinete', 'cabine', 'cabina', 'gabinete de escrita', 'Sabina'],
+  'gabina': ['gabinete', 'cabine', 'cabina', 'garota', 'menina'],
   'histori': ['história', 'histórico', 'histórica', 'historiador'],
   'muiot': ['muito', 'muitos', 'mito', 'mútuo'],
   'divertid': ['divertido', 'divertida', 'divertidos', 'divertidas'],
@@ -196,6 +202,95 @@ const checkSpellingError = (word: string): boolean => {
   return hasPrefix;
 };
 
+// Função para encontrar sugestões relevantes para uma palavra
+const findRelevantSuggestions = (word: string): string[] => {
+  if (!word || word.length < 2) return [];
+  
+  const wordLower = word.toLowerCase().trim();
+  let suggestions: string[] = [];
+  
+  // 1. Verificar correspondência exata no dicionário
+  if (WRITING_SUGGESTIONS[wordLower]) {
+    return WRITING_SUGGESTIONS[wordLower];
+  }
+  
+  // 2. Verificar palavras similares - começando pelo começo da palavra
+  // Primeiro verificamos prefixos mais longos (mais relevante)
+  const prefixMatches: {prefix: string, score: number}[] = [];
+  
+  Object.keys(WRITING_SUGGESTIONS).forEach(key => {
+    // Verificar se a palavra começa com esse prefixo
+    if (wordLower.startsWith(key)) {
+      prefixMatches.push({
+        prefix: key,
+        score: key.length // quanto mais longo o prefixo, maior a relevância
+      });
+    }
+    // Ou se o prefixo começa com essa palavra
+    else if (key.startsWith(wordLower)) {
+      prefixMatches.push({
+        prefix: key,
+        score: wordLower.length * 0.8 // um pouco menos relevante
+      });
+    }
+  });
+  
+  // Ordenar por score de relevância e usar o melhor
+  if (prefixMatches.length > 0) {
+    prefixMatches.sort((a, b) => b.score - a.score);
+    // Usar as sugestões do prefixo mais relevante
+    suggestions = [...WRITING_SUGGESTIONS[prefixMatches[0].prefix]];
+  }
+  
+  // 3. Se ainda não encontrou, verificar cada palavra para similaridade
+  if (suggestions.length === 0) {
+    // Encontrar a melhor correspondência por similaridade
+    let bestMatch = '';
+    let highestSimilarity = 0;
+    
+    Object.keys(WRITING_SUGGESTIONS).forEach(key => {
+      // Calcula um score de similaridade simples
+      let similarity = 0;
+      const minLength = Math.min(key.length, wordLower.length);
+      
+      // Contar caracteres em comum na mesma posição
+      for (let i = 0; i < minLength; i++) {
+        if (key[i] === wordLower[i]) {
+          similarity++;
+        }
+      }
+      
+      // Normalizar score
+      similarity = similarity / Math.max(key.length, wordLower.length);
+      
+      if (similarity > highestSimilarity) {
+        highestSimilarity = similarity;
+        bestMatch = key;
+      }
+    });
+    
+    // Se encontrou uma correspondência com pelo menos 40% de similaridade
+    if (highestSimilarity >= 0.4 && bestMatch) {
+      suggestions = [...WRITING_SUGGESTIONS[bestMatch]];
+    }
+  }
+  
+  // 4. Se ainda não tem sugestões, gerar algumas básicas
+  if (suggestions.length === 0) {
+    suggestions = [
+      wordLower.slice(0, -1), // Remover última letra
+      wordLower + 's', // Plural
+      wordLower.charAt(0).toUpperCase() + wordLower.slice(1), // Capitalizar
+      wordLower + 'mente' // Adicionar sufixo comum
+    ];
+    
+    // Adicionar ao dicionário para uso futuro
+    addToSuggestions(wordLower, suggestions);
+  }
+  
+  return suggestions;
+};
+
 export const AutocompletePlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -262,21 +357,8 @@ export const AutocompletePlugin = () => {
             // Verificar se a palavra selecionada tem erro ortográfico
             const hasError = checkSpellingError(wordToCheck);
 
-            // Procurar sugestões para a palavra usando a mesma lógica melhorada
-            let foundSuggestions: string[] = [];
-            const wordLower = wordToCheck.toLowerCase();
-            
-            // Primeiro verificar correspondência exata
-            if (WRITING_SUGGESTIONS[wordLower]) {
-              foundSuggestions = WRITING_SUGGESTIONS[wordLower];
-            } else {
-              // Caso contrário, verificar prefixos
-              Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
-                if (wordLower.includes(prefix.toLowerCase())) {
-                  foundSuggestions = [...foundSuggestions, ...words];
-                }
-              });
-            }
+            // Encontrar sugestões usando o algoritmo aprimorado
+            let foundSuggestions = findRelevantSuggestions(wordToCheck);
             
             if (foundSuggestions.length > 0) {
               // Eliminar duplicatas e limitar a 5 sugestões
@@ -367,34 +449,9 @@ export const AutocompletePlugin = () => {
             console.log('Erro ao obter sugestões do atributo:', error);
           }
           
-          // Se não existirem sugestões no atributo, buscar no dicionário
+          // Se não existirem sugestões no atributo, usar nosso algoritmo aprimorado
           if (foundSuggestions.length === 0) {
-            const wordLower = word.toLowerCase();
-            
-            // Primeiro verificar correspondência exata
-            if (WRITING_SUGGESTIONS[wordLower]) {
-              foundSuggestions = WRITING_SUGGESTIONS[wordLower];
-            } else {
-              // Caso contrário, verificar prefixos
-              Object.entries(WRITING_SUGGESTIONS).forEach(([prefix, words]) => {
-                if (wordLower.includes(prefix.toLowerCase())) {
-                  foundSuggestions = [...foundSuggestions, ...words];
-                }
-              });
-              
-              // Se ainda não encontrou sugestões, criar algumas genéricas
-              if (foundSuggestions.length === 0 && wordLower.length >= 3) {
-                foundSuggestions = [
-                  wordLower.slice(0, -1),
-                  wordLower + 's',
-                  wordLower.charAt(0).toUpperCase() + wordLower.slice(1),
-                  wordLower + 'mente'
-                ];
-                
-                // Adicionar ao dicionário para uso futuro
-                addToSuggestions(wordLower, foundSuggestions);
-              }
-            }
+            foundSuggestions = findRelevantSuggestions(word);
           }
           
           if (foundSuggestions.length > 0) {

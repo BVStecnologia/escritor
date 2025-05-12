@@ -1098,7 +1098,7 @@ const DashboardPage: React.FC = () => {
       <GlobalStyle />
       <DashboardContainer>
         <Header>
-          <Logo>Bookwriter</Logo>
+          <Logo>Minha Biblioteca</Logo>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <UserCard onClick={() => navigate('/profile')}>
               <UserAvatar>{getUserInitial()}</UserAvatar>

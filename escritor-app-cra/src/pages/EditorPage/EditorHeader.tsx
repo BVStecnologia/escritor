@@ -120,7 +120,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           
           <ActionButton onClick={onBackToDashboard}>
             <ArrowBackIcon />
-            Dashboard
+            Minha Biblioteca
           </ActionButton>
         </HeaderControls>
       </HeaderContent>

@@ -35,6 +35,92 @@ const addWordToDictionary = (word: string, suggestions: string[]) => {
   }
 };
 
+// Função para encontrar sugestões mais relevantes para uma palavra
+const findRelevantSuggestions = (word: string): string[] => {
+  if (!word || word.length < 2) return [];
+  
+  const wordLower = word.toLowerCase().trim();
+  let suggestions: string[] = [];
+  
+  // 1. Verificar correspondência exata no dicionário
+  if (WRITING_SUGGESTIONS[wordLower]) {
+    return WRITING_SUGGESTIONS[wordLower];
+  }
+  
+  // 2. Verificar palavras similares - começando pelo começo da palavra
+  // Primeiro verificamos prefixos mais longos (mais relevante)
+  const prefixMatches: {prefix: string, score: number}[] = [];
+  
+  Object.keys(WRITING_SUGGESTIONS).forEach(key => {
+    // Verificar se a palavra começa com esse prefixo
+    if (wordLower.startsWith(key)) {
+      prefixMatches.push({
+        prefix: key,
+        score: key.length // quanto mais longo o prefixo, maior a relevância
+      });
+    }
+    // Ou se o prefixo começa com essa palavra
+    else if (key.startsWith(wordLower)) {
+      prefixMatches.push({
+        prefix: key,
+        score: wordLower.length * 0.8 // um pouco menos relevante
+      });
+    }
+  });
+  
+  // Ordenar por score de relevância e usar o melhor
+  if (prefixMatches.length > 0) {
+    prefixMatches.sort((a, b) => b.score - a.score);
+    // Usar as sugestões do prefixo mais relevante
+    suggestions = [...WRITING_SUGGESTIONS[prefixMatches[0].prefix]];
+  }
+  
+  // 3. Se ainda não encontrou, verificar cada palavra para similaridade
+  if (suggestions.length === 0) {
+    // Encontrar a melhor correspondência por similaridade
+    let bestMatch = '';
+    let highestSimilarity = 0;
+    
+    Object.keys(WRITING_SUGGESTIONS).forEach(key => {
+      // Calcula um score de similaridade simples
+      let similarity = 0;
+      const minLength = Math.min(key.length, wordLower.length);
+      
+      // Contar caracteres em comum na mesma posição
+      for (let i = 0; i < minLength; i++) {
+        if (key[i] === wordLower[i]) {
+          similarity++;
+        }
+      }
+      
+      // Normalizar score
+      similarity = similarity / Math.max(key.length, wordLower.length);
+      
+      if (similarity > highestSimilarity) {
+        highestSimilarity = similarity;
+        bestMatch = key;
+      }
+    });
+    
+    // Se encontrou uma correspondência com pelo menos 50% de similaridade
+    if (highestSimilarity >= 0.5 && bestMatch) {
+      suggestions = [...WRITING_SUGGESTIONS[bestMatch]];
+    }
+  }
+  
+  // 4. Se ainda não tem sugestões, gerar algumas básicas
+  if (suggestions.length === 0) {
+    suggestions = [
+      wordLower.slice(0, -1), // Remover última letra
+      wordLower + 's', // Plural
+      wordLower.charAt(0).toUpperCase() + wordLower.slice(1), // Capitalizar
+      'palavra' // Uma palavra genérica
+    ];
+  }
+  
+  return suggestions;
+};
+
 // Função para verificar se uma palavra é potencialmente incorreta
 function hasPotentialSpellingError(word: string): boolean {
   if (word.length <= 2) return false;
@@ -115,22 +201,8 @@ export const SpellCheckPlugin = () => {
         // Texto antes da palavra com erro
         newHTML += textContent.substring(currentIndex, match.index);
         
-        // Encontrar sugestões para esta palavra
-        let suggestions: string[] = [];
-        const wordLower = word.toLowerCase();
-        
-        if (WRITING_SUGGESTIONS[wordLower]) {
-          suggestions = WRITING_SUGGESTIONS[wordLower];
-        } else {
-          // Criar sugestões genéricas se não existirem
-          suggestions = [
-            wordLower.slice(0, -1),
-            wordLower + 's',
-            wordLower.charAt(0).toUpperCase() + wordLower.slice(1),
-            wordLower + 'mente'
-          ];
-          addWordToDictionary(wordLower, suggestions);
-        }
+        // Encontrar sugestões relevantes para esta palavra
+        const suggestions = findRelevantSuggestions(word);
         
         // A palavra com erro, envolvida em um span com a classe de erro
         // Adicionar atributo data-word para ajudar na identificação posterior

@@ -181,7 +181,7 @@ const Navigation: React.FC = () => {
         {!loading && (
           user ? (
             <>
-              <NavLink to="/dashboard">Dashboard</NavLink>
+              <NavLink to="/dashboard">Minha Biblioteca</NavLink>
               <ProfileButton 
                 ref={buttonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -200,7 +200,7 @@ const Navigation: React.FC = () => {
                 </ProfileMenuHeader>
                 
                 <ProfileMenuItem as={Link} to="/dashboard">
-                  Dashboard
+                  Minha Biblioteca
                 </ProfileMenuItem>
                 
                 <ProfileMenuItem as={Link} to="/profile">
