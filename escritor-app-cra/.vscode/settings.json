@@ -1,0 +1,21 @@
+{
+  "docker.commands.build": [
+    {
+      "command": "build",
+      "args": [
+        "--pull",
+        "--security-opt",
+        "seccomp=unconfined",
+        "-t",
+        "${tag}",
+        "${dockerBuildContext}"
+      ]
+    }
+  ],
+  "docker.languageserver.diagnostics.vulnerabilities": "ignore",
+  "docker.languageserver.diagnostics.deprecatedMaintainer": "ignore",
+  "docker.languageserver.diagnostics.directiveCasing": "ignore",
+  "docker.languageserver.diagnostics.instructionCasing": "ignore",
+  "docker.languageserver.diagnostics.recommendedTag": "ignore",
+  "docker.languageserver.diagnostics.critical_high_vulnerabilities": "ignore"
+} 

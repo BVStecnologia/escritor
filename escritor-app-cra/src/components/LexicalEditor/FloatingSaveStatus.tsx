@@ -26,7 +26,7 @@ export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: strin
   if (saveStatus === 'saving') {
     statusIcon = (
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <FaSpinner />
+        <FaSpinner size={16} />
         <style>{`
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
           .floating-spinner svg { animation: spin 1s linear infinite; }
@@ -35,14 +35,14 @@ export const FloatingSaveStatus = ({ saveStatus, isOnline }: { saveStatus: strin
     );
     statusText = 'Salvando...';
   } else if (saveStatus === 'saved') {
-    statusIcon = <FaCheckCircle color="#10b981" />;
+    statusIcon = <FaCheckCircle color="#10b981" size={16} />;
     statusText = 'Salvo';
     tooltipText = 'O salvamento é automático após 5 segundos sem digitar.';
   } else if (isOnline) {
-    statusIcon = <FaCloud color="#3b82f6" />;
+    statusIcon = <FaCloud color="#3b82f6" size={16} />;
     statusText = 'Online';
   } else {
-    statusIcon = <FaExclamationTriangle color="#ef4444" />;
+    statusIcon = <FaExclamationTriangle color="#ef4444" size={16} />;
     statusText = 'Offline';
   }
   return (

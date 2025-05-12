@@ -1,4 +1,22 @@
+# Arquivos e diretórios desnecessários para o build
 node_modules
+npm-debug.log
 build
 .git
-.env
+.gitignore
+.vscode
+README.md
+.DS_Store
+*.md
+.env*
+*.log
+coverage/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Comentários para o Docker Language Server
+# dockerignore:vulnerabilities=ignore
+# dockerignore:recommended_tag=ignore
+# dockerignore:critical_high_vulnerabilities=ignore

@@ -1,0 +1,16 @@
+ignored:
+  - DL3003 # Use WORKDIR to switch to a directory
+  - DL3018 # Pin versions in apk/apt get install
+  - DL3025 # Use arguments JSON notation for CMD and ENTRYPOINT
+  - DL3027 # Do not use apt without update
+  - DL3059 # Multiple consecutive RUN instructions
+
+no-fail:
+  - DL3003
+  - DL3018
+  - DL3025
+  - DL3059
+  
+trustedRegistries:
+  - docker.io
+  - registry.hub.docker.com 
