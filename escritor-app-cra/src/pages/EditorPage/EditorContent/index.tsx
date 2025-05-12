@@ -45,9 +45,24 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   // do componente quando mudar de capítulo
   const editorKey = `editor-${bookId}-${chapterId || 'novo'}`;
 
-  console.log('Renderizando EditorContent com key:', editorKey);
-  console.log('chapterTitle:', chapterTitle);
-  console.log('initialContent:', initialContent ? `${initialContent.substring(0, 20)}...` : 'vazio');
+  // Verificar se o conteúdo é JSON válido
+  const isJsonContent = React.useMemo(() => {
+    if (!initialContent) return false;
+    try {
+      const parsed = JSON.parse(initialContent);
+      return parsed.root !== undefined;
+    } catch (e) {
+      return false;
+    }
+  }, [initialContent]);
+
+  console.log('Renderizando EditorContent:', {
+    key: editorKey,
+    chapterId,
+    chapterTitle,
+    contentLength: initialContent?.length || 0,
+    isJsonContent
+  });
 
   return (
     <Content>

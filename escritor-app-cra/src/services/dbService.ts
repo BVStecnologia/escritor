@@ -264,6 +264,8 @@ export const dbService = {
    */
   async getCapituloPorId(id: string) {
     try {
+      console.log('Obtendo capítulo por ID:', id);
+      
       const { data, error } = await supabase
         .from('Capitulo')
         .select('*')
@@ -271,6 +273,21 @@ export const dbService = {
         .single();
       
       if (error) throw error;
+
+      // Garantir que o conteúdo seja preservado exatamente como está no banco
+      if (data) {
+        console.log('Capítulo encontrado:', {
+          id: data.id,
+          titulo: data.titulo,
+          conteudoInicial: data.texto ? `${data.texto.substring(0, 50)}...` : 'vazio'
+        });
+        
+        // Manter o texto original como conteúdo para compatibilidade
+        if (data.texto) {
+          data.conteudo = data.texto;
+        }
+      }
+      
       return data as Capitulo;
     } catch (error) {
       console.error(`Erro ao obter capítulo ${id}:`, error);

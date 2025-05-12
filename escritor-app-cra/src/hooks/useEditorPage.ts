@@ -60,23 +60,55 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
         console.log('Capítulos carregados:', capitulosData ? capitulosData.length : 0);
         console.log('chapterId da URL:', chapterId);
 
-        if (chapterId) {
-          const capituloAtual = capitulosData?.find(cap => String(cap.id) === String(chapterId));
-          console.log('Capítulo encontrado:', capituloAtual ? capituloAtual.titulo : 'Nenhum');
-
-          if (capituloAtual) {
-            console.log('Carregando título:', capituloAtual.titulo);
-
-            const conteudoCapitulo = capituloAtual.texto || capituloAtual.conteudo || '';
-            console.log('Carregando conteúdo:', conteudoCapitulo ? `${conteudoCapitulo.substring(0, 50)}...` : 'vazio');
-
+        // Carregar o capítulo selecionado
+        if (livroId && chapterId) {
+          console.log('Carregando capítulo com ID:', chapterId);
+          const capituloData = await dbService.getCapituloPorId(chapterId);
+          
+          if (capituloData) {
+            console.log('Capítulo carregado:', {
+              id: capituloData.id,
+              titulo: capituloData.titulo,
+              conteudoTamanho: capituloData.texto?.length || 0
+            });
+            
             // Garantir que o título seja uma string válida
-            setChapterTitle(typeof capituloAtual.titulo === 'string' ? capituloAtual.titulo : 'Sem título');
+            setChapterTitle(typeof capituloData.titulo === 'string' ? capituloData.titulo : 'Sem título');
+            
+            // Usar o conteúdo exatamente como está no banco, sem processamento
+            const conteudoCapitulo = capituloData.texto || capituloData.conteudo || '';
             setChapterContent(conteudoCapitulo);
-
+            
+            // Calcular contagem de palavras 
             if (conteudoCapitulo) {
-              const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
-              setWordCount(words);
+              try {
+                // Se for JSON válido, extrair texto para contagem
+                const jsonData = JSON.parse(conteudoCapitulo);
+                if (jsonData.root && jsonData.root.children) {
+                  // Extrair texto para contagem de palavras
+                  const extractText = (nodes: any[]): string => {
+                    return nodes.map(node => {
+                      if (node.text) return node.text;
+                      if (node.children) return extractText(node.children);
+                      return '';
+                    }).join(' ');
+                  };
+                  
+                  const texto = extractText(jsonData.root.children);
+                  const words = texto.split(/\s+/).filter(Boolean).length;
+                  setWordCount(words);
+                } else {
+                  // Fallback para contagem básica
+                  const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
+                  setWordCount(words);
+                }
+              } catch (e) {
+                // Se não for JSON válido, usar contagem básica
+                const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
+                setWordCount(words);
+              }
+            } else {
+              setWordCount(0);
             }
           } else {
             console.warn('Capítulo não encontrado com ID:', chapterId);

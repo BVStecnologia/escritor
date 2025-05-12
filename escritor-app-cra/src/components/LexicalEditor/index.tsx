@@ -157,30 +157,70 @@ const initialConfig: InitialConfigType = {
 function InitialContentPlugin({ initialContent, chapterId }: { initialContent?: string, chapterId?: string }) {
   const [editor] = useLexicalComposerContext();
   const lastChapterId = useRef<string | undefined>(undefined);
+  const contentLoaded = useRef<boolean>(false);
 
   useEffect(() => {
     if (!initialContent) return;
-    if (lastChapterId.current === chapterId) return; // Só atualiza se mudou de capítulo
+    
+    // Resetar o estado ao mudar de capítulo
+    if (lastChapterId.current !== chapterId) {
+      contentLoaded.current = false;
+    }
+    
+    // Não carregar novamente se já foi carregado para este capítulo
+    if (contentLoaded.current) return;
 
+    console.log('Carregando conteúdo no editor. Tamanho:', initialContent.length);
+    
     editor.update(() => {
       try {
-        // Tenta importar o conteúdo formatado (JSON)
-        const json = JSON.parse(initialContent);
-        editor.setEditorState(editor.parseEditorState(json));
+        // Verificar se o conteúdo parece ser JSON
+        if (initialContent.startsWith('{') && initialContent.includes('"root"')) {
+          console.log('Carregando conteúdo como JSON formatado');
+          const json = JSON.parse(initialContent);
+          
+          if (json.root) {
+            // Garante que estilos como font-family sejam preservados
+            const editorState = editor.parseEditorState(json);
+            editor.setEditorState(editorState);
+            console.log('Conteúdo formatado carregado com sucesso');
+          } else {
+            throw new Error('JSON inválido para o Lexical');
+          }
+        } else {
+          // Fallback para texto puro se não for JSON válido do Lexical
+          console.log('Carregando como texto puro (fallback)');
+          const root = $getRoot();
+          root.clear();
+          const paragraphs = initialContent.split('\n').filter(Boolean);
+          
+          if (paragraphs.length === 0) {
+            const paragraph = $createParagraphNode();
+            root.append(paragraph);
+          } else {
+            paragraphs.forEach(text => {
+              const paragraph = $createParagraphNode();
+              paragraph.append($createTextNode(text));
+              root.append(paragraph);
+            });
+          }
+        }
+        
+        // Marcar como carregado para este capítulo
+        contentLoaded.current = true;
       } catch (e) {
-        // Se não for JSON válido, cai no fallback de texto puro
+        console.error('Erro ao carregar conteúdo no editor:', e);
+        
+        // Tentar recuperar carregando como texto puro
         const root = $getRoot();
         root.clear();
-        const paragraphs = initialContent.split('\n').filter(Boolean);
-        if (paragraphs.length === 0) {
+        
+        try {
           const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('Erro ao carregar formatação. Tente editar e salvar novamente.'));
           root.append(paragraph);
-        } else {
-          paragraphs.forEach(text => {
-            const paragraph = $createParagraphNode();
-            paragraph.append($createTextNode(text));
-            root.append(paragraph);
-          });
+        } catch (e2) {
+          console.error('Erro fatal ao carregar editor:', e2);
         }
       }
     });
