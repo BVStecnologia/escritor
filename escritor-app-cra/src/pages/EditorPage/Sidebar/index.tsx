@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import { Capitulo } from '../../../services/dbService';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { Capitulo, dbService } from '../../../services/dbService';
 import { ChapterCard } from './ChapterCard';
 import { MenuIcon, PlusIcon, DeleteIcon, CloseIcon } from '../../../components/icons';
 import {
@@ -253,6 +254,7 @@ interface SidebarProps {
   onChapterSelect: (chapterId: string) => void;
   onNewChapter: (title?: string) => void;
   onDeleteChapter?: (chapterId: string) => void;
+  onChaptersReorder?: (reorderedChapters: Capitulo[]) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -260,7 +262,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeChapterId,
   onChapterSelect,
   onNewChapter,
-  onDeleteChapter
+  onDeleteChapter,
+  onChaptersReorder
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -294,6 +297,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setShowDeletePopup(false);
     setChapterToDelete(null);
   };
+  
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    
+    // Verificar se o item foi solto dentro da lista
+    if (!destination || 
+        (source.index === destination.index && source.droppableId === destination.droppableId)) {
+      return;
+    }
+    
+    // Fazer uma cópia dos capítulos
+    const reorderedChapters = Array.from(filteredChapters);
+    
+    // Remover da posição original
+    const [movedChapter] = reorderedChapters.splice(source.index, 1);
+    
+    // Inserir na nova posição
+    reorderedChapters.splice(destination.index, 0, movedChapter);
+    
+    // Atualizar as ordens
+    const updatedChapters = reorderedChapters.map((chapter, index) => ({
+      ...chapter,
+      ordem: index + 1
+    }));
+    
+    // Notificar componente pai que irá atualizar no banco de dados
+    if (onChaptersReorder) {
+      onChaptersReorder(updatedChapters);
+    }
+  }, [filteredChapters, onChaptersReorder]);
 
   return (
     <SidebarContainer $isOpen={isOpen}>
@@ -317,23 +350,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <ChaptersContainer>
         {isOpen ? (
           // Versão completa quando aberto
-          <>
-            {filteredChapters.map((chapter, index) => (
-              <ChapterCard
-                key={chapter.id}
-                chapter={chapter}
-                index={index}
-                isActive={String(chapter.id) === String(activeChapterId)}
-                onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
-                onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
-              />
-            ))}
-
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="chapters-list">
+              {(provided) => (
+                <div 
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  style={{ width: '100%' }}
+                >
+                  {filteredChapters.map((chapter, index) => (
+                    <Draggable 
+                      key={chapter.id} 
+                      draggableId={String(chapter.id)} 
+                      index={index}
+                      isDragDisabled={String(chapter.id) === String(activeChapterId)}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={{
+                            ...provided.draggableProps.style,
+                            opacity: snapshot.isDragging ? 0.8 : 1
+                          }}
+                        >
+                          <ChapterCard
+                            chapter={chapter}
+                            index={index}
+                            isActive={String(chapter.id) === String(activeChapterId)}
+                            onClick={String(chapter.id) !== String(activeChapterId) ? () => onChapterSelect(chapter.id) : () => {}}
+                            onDelete={onDeleteChapter ? (e) => handleDeleteClick(chapter, e) : undefined}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
             <NewChapterButton onClick={() => setShowPopup(true)}>
               <PlusIcon />
               Nova Parte
             </NewChapterButton>
-          </>
+          </DragDropContext>
         ) : (
           // Versão recolhida - apenas ícones ou versão simplificada
           <>

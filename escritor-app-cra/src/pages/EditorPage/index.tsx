@@ -125,6 +125,7 @@ const EditorPage: React.FC = () => {
     handleNewChapter,
     handleDeleteChapter,
     handleBookTitleChange,
+    handleChaptersReorder,
     setSaveStatus,
     loadingChapter,
     setCapitulos,
@@ -195,6 +196,7 @@ const EditorPage: React.FC = () => {
             onChapterSelect={handleChapterSelect}
             onNewChapter={handleNewChapter}
             onDeleteChapter={handleDeleteChapter}
+            onChaptersReorder={handleChaptersReorder}
           />
 
           <EditorContent

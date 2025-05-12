@@ -24,6 +24,7 @@
     "lexical": "^0.31.0",
     "lodash": "^4.17.21",
     "react": "^19.1.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
     "react-scripts": "5.0.1",
@@ -54,5 +55,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react-beautiful-dnd": "^13.1.8"
   }
 }

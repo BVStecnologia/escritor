@@ -20,6 +20,7 @@ export interface UseEditorPageReturn {
   handleNewChapter: (title?: string) => void;
   handleDeleteChapter: (chapterId: string) => void;
   handleBookTitleChange: (value: string) => void;
+  handleChaptersReorder: (reorderedChapters: Capitulo[]) => void;
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
   setCapitulos: React.Dispatch<React.SetStateAction<Capitulo[]>>;
   setWordCount: React.Dispatch<React.SetStateAction<number>>;
@@ -78,20 +79,29 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
             console.warn('Capítulo não encontrado com ID:', chapterId);
           }
         } else if (capitulosData && capitulosData.length > 0) {
-          const ultimoCapitulo = capitulosData[capitulosData.length - 1];
-          console.log('Selecionando último capítulo:', ultimoCapitulo.titulo);
+          // Buscar o último capítulo editado ao invés do último da lista
+          const ultimoCapituloEditado = await dbService.getUltimoCapituloEditado(livroId);
+          console.log('Selecionando último capítulo editado:', ultimoCapituloEditado?.titulo);
 
-          const conteudoUltimoCapitulo = ultimoCapitulo.texto || ultimoCapitulo.conteudo || '';
-          
-          setChapterTitle(ultimoCapitulo.titulo || '');
-          setChapterContent(conteudoUltimoCapitulo);
+          if (ultimoCapituloEditado) {
+            const conteudoCapitulo = ultimoCapituloEditado.texto || ultimoCapituloEditado.conteudo || '';
+            
+            setChapterTitle(ultimoCapituloEditado.titulo || '');
+            setChapterContent(conteudoCapitulo);
 
-          if (conteudoUltimoCapitulo) {
-            const words = conteudoUltimoCapitulo.split(/\s+/).filter(Boolean).length;
-            setWordCount(words);
+            if (conteudoCapitulo) {
+              const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
+              setWordCount(words);
+            }
+
+            navigate(`/editor/${bookId}/${ultimoCapituloEditado.id}`);
+          } else {
+            // Caso não encontre o último editado, usa o primeiro da lista
+            const primeiroCapitulo = capitulosData[0];
+            setChapterTitle(primeiroCapitulo.titulo || '');
+            setChapterContent(primeiroCapitulo.texto || primeiroCapitulo.conteudo || '');
+            navigate(`/editor/${bookId}/${primeiroCapitulo.id}`);
           }
-
-          navigate(`/editor/${bookId}/${ultimoCapitulo.id}`);
         }
       } catch (error) {
         console.error('Erro ao carregar livro:', error);
@@ -277,6 +287,23 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     saveBookTitleDebounced(bookId, value);
   }, [bookId, saveBookTitleDebounced]);
 
+  // Manipulador para reordenação de capítulos
+  const handleChaptersReorder = useCallback(async (reorderedChapters: Capitulo[]) => {
+    // Atualiza o estado local
+    setCapitulos(reorderedChapters);
+    
+    // Salvar no banco de dados
+    try {
+      await dbService.atualizarOrdemCapitulos(
+        reorderedChapters.map(c => ({ id: c.id, ordem: c.ordem || 0 }))
+      );
+      console.log('Ordem dos capítulos atualizada com sucesso no banco de dados');
+    } catch (error) {
+      console.error('Erro ao atualizar ordem dos capítulos no banco:', error);
+      setErro('Não foi possível salvar a nova ordem dos capítulos.');
+    }
+  }, []);
+
   return {
     livro,
     capitulos,
@@ -294,6 +321,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     handleNewChapter,
     handleDeleteChapter,
     handleBookTitleChange,
+    handleChaptersReorder,
     setSaveStatus,
     loadingChapter,
     setLoadingChapter,

@@ -486,12 +486,23 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
   const handleBookClick = async (livro: Livro) => {
     try {
       await dbService.atualizarUpdatedAtLivro(livro.id);
+      
+      if (onBookClick) {
+        onBookClick(livro);
+      } else {
+        // Busca o último capítulo editado desse livro
+        const ultimoCapitulo = await dbService.getUltimoCapituloEditado(livro.id);
+        
+        if (ultimoCapitulo) {
+          // Navega diretamente para o último capítulo editado
+          navigate(`/editor/${livro.id}/${ultimoCapitulo.id}`);
+        } else {
+          // Se não encontrar capítulo, navega apenas para o livro
+          navigate(`/editor/${livro.id}`);
+        }
+      }
     } catch (e) {
-      console.error('Erro ao atualizar updated_at:', e);
-    }
-    if (onBookClick) {
-      onBookClick(livro);
-    } else {
+      console.error('Erro ao processar clique no livro:', e);
       navigate(`/editor/${livro.id}`);
     }
   };
@@ -1061,7 +1072,19 @@ const DashboardPage: React.FC = () => {
     try {
       const livros = await dbService.getLivros();
       if (livros && livros.length > 0) {
-        navigate(`/editor/${livros[0].id}`);
+        // Pega o primeiro livro da lista (que já está ordenado por updated_at descendente)
+        const ultimoLivroEditado = livros[0];
+        
+        // Busca o último capítulo editado desse livro
+        const ultimoCapitulo = await dbService.getUltimoCapituloEditado(ultimoLivroEditado.id);
+        
+        if (ultimoCapitulo) {
+          // Navega diretamente para o último capítulo editado
+          navigate(`/editor/${ultimoLivroEditado.id}/${ultimoCapitulo.id}`);
+        } else {
+          // Se não encontrar capítulo, navega apenas para o livro
+          navigate(`/editor/${ultimoLivroEditado.id}`);
+        }
       } else {
         setIsCreateModalOpen(true);
       }

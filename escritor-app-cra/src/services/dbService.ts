@@ -14,6 +14,7 @@ export interface Capitulo {
   email_user?: string;
   last_edit?: string;    // Timestamp da última edição
   palavras?: number;
+  ordem?: number;        // Campo para controlar a ordem dos capítulos
 }
 
 export interface Personagem {
@@ -205,6 +206,7 @@ export const dbService = {
         .from('Capitulo')
         .select('*')
         .eq('livro_id', livroId)
+        .order('ordem', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -215,6 +217,41 @@ export const dbService = {
     }
   },
 
+  /**
+   * Obter o último capítulo editado de um livro
+   */
+  async getUltimoCapituloEditado(livroId: number) {
+    try {
+      const { data, error } = await supabase
+        .from('Capitulo')
+        .select('*')
+        .eq('livro_id', livroId)
+        .order('last_edit', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        return data[0] as Capitulo;
+      }
+      
+      // Se não encontrar por last_edit, tenta buscar o primeiro por ordem
+      const { data: dataByOrder, error: errorByOrder } = await supabase
+        .from('Capitulo')
+        .select('*')
+        .eq('livro_id', livroId)
+        .order('ordem', { ascending: true })
+        .limit(1);
+        
+      if (errorByOrder) throw errorByOrder;
+      
+      return dataByOrder && dataByOrder.length > 0 ? dataByOrder[0] as Capitulo : null;
+    } catch (error) {
+      console.error(`Erro ao obter último capítulo editado do livro ${livroId}:`, error);
+      throw error;
+    }
+  },
+  
   /**
    * Alias para getCapitulos para consistência de nomenclatura
    */
@@ -265,13 +302,32 @@ export const dbService = {
         console.log('Usando contagem de palavras do customData:', palavras);
       }
 
+      // Buscar a maior ordem atual
+      const { data: existingChapters, error: chaptersError } = await supabase
+        .from('Capitulo')
+        .select('ordem')
+        .eq('livro_id', livroId)
+        .order('ordem', { ascending: false })
+        .limit(1);
+
+      if (chaptersError) {
+        console.error('Erro ao buscar capítulos existentes:', chaptersError);
+        throw chaptersError;
+      }
+
+      // Definir a ordem como a maior existente + 1 ou 1 se for o primeiro capítulo
+      const nextOrder = existingChapters.length > 0 && existingChapters[0].ordem 
+        ? existingChapters[0].ordem + 1 
+        : 1;
+
       // Criar objeto de dados para inserção
       const newChapter = {
         titulo: capituloData.titulo,
         texto,
         livro_id: livroId,
         last_edit: new Date().toTimeString().split(' ')[0],
-        palavras
+        palavras,
+        ordem: nextOrder
       };
 
       const { data, error } = await supabase
@@ -572,6 +628,27 @@ export const dbService = {
       return true;
     } catch (error) {
       console.error(`Erro ao atualizar updated_at do livro ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualiza a ordem dos capítulos após reordenação
+   */
+  async atualizarOrdemCapitulos(capitulos: { id: string, ordem: number }[]) {
+    try {
+      // Atualizar cada capítulo com sua nova ordem
+      const promises = capitulos.map(({ id, ordem }) => 
+        supabase
+          .from('Capitulo')
+          .update({ ordem })
+          .eq('id', id)
+      );
+
+      await Promise.all(promises);
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar ordem dos capítulos:', error);
       throw error;
     }
   }

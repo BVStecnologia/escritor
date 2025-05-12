@@ -49,6 +49,40 @@ const DeleteButton = styled.button`
   }
 `;
 
+// Indicador de arrastar que aparece apenas quando o mouse está sobre o card
+const DragHandleIcon = styled.div`
+  position: absolute;
+  left: 0.75rem;
+  top: calc(50% - 12px);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transition: all 0.2s ease;
+  
+  &::before, &::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)'};
+    margin: 2px 0;
+    border-radius: 2px;
+  }
+  
+  ${ChapterCardContainer}:hover &:not([data-disabled=true]) {
+    opacity: 0.6;
+  }
+  
+  ${ChapterCardContainer}:hover &:hover:not([data-disabled=true]) {
+    opacity: 1;
+    cursor: grab;
+  }
+`;
+
 interface ChapterCardProps {
   chapter: Capitulo;
   index: number;
@@ -83,6 +117,9 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       onDelete(e);
     }
   };
+  
+  // Número da ordem do capítulo se disponível, senão usa o índice + 1
+  const displayIndex = chapter.ordem || index + 1;
 
   return (
     <ChapterCardContainer 
@@ -91,6 +128,8 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       onClick={onClick}
       style={{ cursor: isActive ? 'default' : 'pointer', position: 'relative' }}
     >
+      <DragHandleIcon data-disabled={isActive ? "true" : "false"} />
+      
       {onDelete && (
         <DeleteButton onClick={handleDeleteClick}>
           <DeleteIcon />
@@ -99,7 +138,7 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({
       
       <ChapterInfo $active={isActive}>
         <ChapterNumber $active={isActive}>
-          Parte {index + 1}
+          Parte {displayIndex}
         </ChapterNumber>
         <ChapterTitle>
           {chapter.titulo || 'Sem título'}
