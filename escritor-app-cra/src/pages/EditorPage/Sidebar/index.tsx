@@ -156,7 +156,7 @@ const CollapsedChapter = styled.div<{ $active: boolean }>`
     $active 
       ? theme.colors.primary 
       : theme.colors.text.primary};
-  margin: 0 auto;
+  margin: 0 auto 1rem auto;
   cursor: ${({ $active }) => $active ? 'default' : 'pointer'};
   font-weight: bold;
   box-shadow: ${({ theme, $active }) => 

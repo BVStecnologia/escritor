@@ -118,7 +118,7 @@ export const ChaptersContainer = styled.div`
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.5rem;
 
   /* Garantir que ainda permaneça visível quando o sidebar estiver recolhido */
   overflow-x: hidden;
@@ -185,6 +185,7 @@ export const ChapterCardContainer = styled.div<{ $active: boolean; $index: numbe
         : '0 4px 12px rgba(59, 130, 246, 0.1)'
       : 'none'
   };
+  margin-bottom: 0.5rem;
 
   &:hover {
     transform: translateY(-3px);
