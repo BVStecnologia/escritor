@@ -14,6 +14,7 @@ import defaultTheme from '../../styles/theme';
 import { LoadingChapter } from './LoadingChapter';
 import CreateBookModal from '../../components/CreateBookModal';
 import { dbService } from '../../services/dbService';
+import DarkThemeStyles from '../../styles/darkTheme';
 
 const lightTheme = {
   ...defaultTheme,
@@ -253,6 +254,7 @@ const EditorPage: React.FC = () => {
   if (loading) {
     return (
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
+        {isDarkMode && <DarkThemeStyles />}
         <LoadingGlobal />
       </ThemeProvider>
     );
@@ -261,6 +263,7 @@ const EditorPage: React.FC = () => {
   if (erro || !livro) {
     return (
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
+        {isDarkMode && <DarkThemeStyles />}
         <ErrorState error={erro} onBack={() => navigate('/dashboard')} />
       </ThemeProvider>
     );
@@ -268,6 +271,7 @@ const EditorPage: React.FC = () => {
 
   return (
     <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
+      {isDarkMode && <DarkThemeStyles />}
       <EditorPageContainer>
         <EditorHeader
           bookTitle={livro.titulo || livro["Nome do livro"] || "Sem título"}

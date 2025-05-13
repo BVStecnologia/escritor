@@ -45,7 +45,7 @@ const ContentEditableWrapper = styled.div`
     font-family: ${({ theme }) => theme.fonts.body};
     font-size: 1.125rem;
     line-height: 1.75;
-    color: ${({ theme }) => theme.colors.text.primary};
+    color: ${({ theme }) => theme.isDarkMode ? '#ffffff' : theme.colors.text.primary};
   }
 
   .editor-placeholder {
