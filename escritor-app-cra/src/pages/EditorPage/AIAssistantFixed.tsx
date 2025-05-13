@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { assistantService } from '../../services/assistantService';
 import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon, CollapseRightIcon } from '../../components/icons';
 import styled from 'styled-components';
 import { AIContainer } from './styles';
@@ -60,6 +61,48 @@ const AIContent = styled.div<{ $isOpen: boolean }>`
   display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
   flex-direction: column;
   gap: 1.25rem;
+`;
+
+const AIConversation = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const AIMessage = styled.div<{ $isUser?: boolean }>`
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  max-width: 90%;
+  align-self: ${({ $isUser }) => $isUser ? 'flex-end' : 'flex-start'};
+  background: ${({ $isUser, theme }) => 
+    $isUser ? theme.colors.primary + '15' : theme.colors.background.glass};
+  border: 1px solid ${({ $isUser, theme }) => 
+    $isUser ? theme.colors.primary + '30' : theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  color: ${({ theme }) => theme.colors.text.primary};
+  
+  /* Efeito de balão de diálogo */
+  position: relative;
+  
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: ${({ $isUser }) => $isUser ? '8px' : '8px'};
+    ${({ $isUser }) => $isUser ? 'right: -5px' : 'left: -5px'};
+    width: 10px;
+    height: 10px;
+    transform: rotate(45deg);
+    background: ${({ $isUser, theme }) => 
+      $isUser ? theme.colors.primary + '15' : theme.colors.background.glass};
+    border-${({ $isUser }) => $isUser ? 'right' : 'left'}: 1px solid 
+      ${({ $isUser, theme }) => 
+        $isUser ? theme.colors.primary + '30' : theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+    border-${({ $isUser }) => $isUser ? 'bottom' : 'bottom'}: 1px solid 
+      ${({ $isUser, theme }) => 
+        $isUser ? theme.colors.primary + '30' : theme.colors.border?.light || "rgba(0,0,0,0.1)"};
+  }
 `;
 
 const AISuggestionsGrid = styled.div`
@@ -248,12 +291,19 @@ interface AIAssistantFixedProps {
   chapterId?: string;
 }
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   bookId,
   chapterId
 }) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isOpen, setIsOpen] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const aiSuggestions = [
     { icon: <LightbulbIcon />, text: "Melhorar a descrição desta cena" },
@@ -272,11 +322,64 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
     { icon: <LightbulbIcon />, name: "Sugerir" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement AI prompt submission
-    console.log("Enviando prompt:", aiPrompt);
+    if (!aiPrompt.trim()) return;
+    
+    // Add user message to conversation
+    const userMessage: Message = { role: 'user', content: aiPrompt };
+    setMessages(prev => [...prev, userMessage]);
     setAiPrompt('');
+    setIsLoading(true);
+    
+    try {
+      console.log('Enviando prompt para o assistente:', {
+        input: aiPrompt,
+        bookId,
+        chapterId
+      });
+      
+      // Call the AI service
+      const response = await assistantService.custom({
+        input: aiPrompt,
+        systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
+Seja conciso, específico e útil. Você está ajudando com o livro ID: ${bookId || 'não especificado'}, capítulo ID: ${chapterId || 'não especificado'}.`,
+        includeEmbeddings: true,
+        embeddingFilter: bookId ? `livro_id=${bookId}` : undefined,
+        maxEmbeddings: 5
+      });
+      
+      console.log('Resposta recebida do assistente:', response);
+      
+      // Extrair a resposta do assistente
+      let assistantContent = '';
+      if (response && response.content && Array.isArray(response.content)) {
+        const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
+        if (textContent && textContent.text) {
+          assistantContent = textContent.text;
+        }
+      } else if (response && typeof response === 'string') {
+        assistantContent = response;
+      } else if (response && response.text) {
+        assistantContent = response.text;
+      }
+      
+      // Se não conseguir extrair o texto, usar mensagem genérica
+      if (!assistantContent) {
+        assistantContent = "Desculpe, não consegui processar sua solicitação. Tente novamente.";
+        console.error('Não foi possível extrair o conteúdo da resposta:', response);
+      }
+      
+      // Add AI response to conversation
+      const assistantMessage: Message = { role: 'assistant', content: assistantContent };
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Erro ao enviar prompt:', error);
+      const errorMessage: Message = { role: 'assistant', content: 'Desculpe, ocorreu um erro ao processar sua solicitação.' };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleAIPanel = () => {
@@ -308,23 +411,45 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
       {!isOpen ? renderCollapsed() : (
         <>
           <AIContent $isOpen={isOpen}>
-            <AISuggestionsGrid>
-              {aiSuggestions.map((suggestion, index) => (
-                <AISuggestion key={index}>
-                  {suggestion.icon}
-                  {suggestion.text}
-                </AISuggestion>
-              ))}
-            </AISuggestionsGrid>
+            {messages.length > 0 ? (
+              <AIConversation>
+                {messages.map((message, index) => (
+                  <AIMessage key={index} $isUser={message.role === 'user'}>
+                    {message.content}
+                  </AIMessage>
+                ))}
+                {isLoading && (
+                  <AIMessage>
+                    Pensando...
+                  </AIMessage>
+                )}
+              </AIConversation>
+            ) : (
+              <>
+                <AISuggestionsGrid>
+                  {aiSuggestions.map((suggestion, index) => (
+                    <AISuggestion 
+                      key={index} 
+                      onClick={() => {
+                        setAiPrompt(suggestion.text);
+                      }}
+                    >
+                      {suggestion.icon}
+                      {suggestion.text}
+                    </AISuggestion>
+                  ))}
+                </AISuggestionsGrid>
 
-            <AIActionsGrid>
-              {aiActions.map((action) => (
-                <AIActionButton key={action.name}>
-                  {action.icon}
-                  {action.name}
-                </AIActionButton>
-              ))}
-            </AIActionsGrid>
+                <AIActionsGrid>
+                  {aiActions.map((action) => (
+                    <AIActionButton key={action.name}>
+                      {action.icon}
+                      {action.name}
+                    </AIActionButton>
+                  ))}
+                </AIActionsGrid>
+              </>
+            )}
           </AIContent>
 
           <AIFooter $isOpen={isOpen}>
@@ -334,7 +459,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
-              <AISubmitButton type="submit" disabled={!aiPrompt.trim()}>
+              <AISubmitButton type="submit" disabled={!aiPrompt.trim() || isLoading}>
                 <SendIcon />
               </AISubmitButton>
             </AIInputForm>
