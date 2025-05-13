@@ -64,6 +64,41 @@ const CenterContent = styled.div`
   flex: 1;
 `;
 
+// Botão de painel mais sutil com melhor suporte para tema escuro
+const PainelButton = styled.button<{ $isDarkMode: boolean }>`
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
+  background: ${({ theme }) => theme.colors.background.paper};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.8;
+  box-shadow: ${({ theme }) => theme.shadows.sm};
+
+  &:hover {
+    transform: translateY(-2px);
+    opacity: 1;
+    background: ${({ $isDarkMode, theme }) => 
+      $isDarkMode 
+        ? 'rgba(60, 60, 70, 0.6)' // Fundo escuro sutil para o tema escuro
+        : theme.colors.background.light
+    };
+    color: ${({ theme }) => theme.colors.primary};
+    border-color: ${({ theme }) => theme.colors.primary}; 
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+`;
+
 // Frases motivacionais para escritores - lista expandida
 const motivationalPhrases = [
   // Frases originais
@@ -281,10 +316,10 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             {isDarkMode ? '☀️' : '🌙'}
           </ThemeToggleButton>
           
-          <ActionButton onClick={onBackToDashboard}>
+          <PainelButton $isDarkMode={isDarkMode} onClick={onBackToDashboard}>
             <ArrowBackIcon />
             Painel
-          </ActionButton>
+          </PainelButton>
         </RightSection>
       </HeaderContent>
     </Header>

@@ -57,7 +57,7 @@ export const assistantService = {
     livroId
   }: AutocompleteOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
         body: {
           mode: 'autocomplete',
           input,
@@ -96,7 +96,7 @@ export const assistantService = {
     pageLength = 'medium'
   }: GeneratePageOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
         body: {
           mode: 'generate_page',
           input,
@@ -128,7 +128,7 @@ export const assistantService = {
     capituloId
   }: WritingAssistantOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
         body: {
           mode: 'writing_assistant',
           input,
@@ -168,7 +168,7 @@ export const assistantService = {
     capituloId
   }: CreativeIdeasOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
         body: {
           mode: 'creative_ideas',
           input,
@@ -206,7 +206,7 @@ export const assistantService = {
     maxResults = 5
   }: SearchOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
         body: {
           mode: 'search',
           input,
@@ -236,20 +236,60 @@ export const assistantService = {
     embeddingFilter
   }: CustomOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-assistant', {
-        body: {
-          mode: 'custom',
-          input,
-          context: {
-            system_prompt: systemPrompt,
-            include_embeddings: includeEmbeddings,
-            max_embeddings: maxEmbeddings,
-            embedding_filter: embeddingFilter
-          }
+      const requestBody = {
+        mode: 'custom',
+        input,
+        context: {
+          system_prompt: systemPrompt,
+          include_embeddings: includeEmbeddings,
+          max_embeddings: maxEmbeddings,
+          embedding_filter: embeddingFilter
         }
+      };
+      
+      console.log('Enviando para claude-embeddings:', JSON.stringify(requestBody, null, 2));
+      
+      // Verificar se o Supabase está inicializado corretamente
+      if (!supabase || !supabase.functions) {
+        throw new Error('Cliente Supabase não inicializado corretamente');
+      }
+      
+      // Versão direta com fetch - provavelmente mais confiável em alguns casos
+      console.log('Tentando fetch direto para a edge function');
+      try {
+        const directResponse = await fetch('https://vuyjxxtxwweeobeyfkzr.supabase.co/functions/v1/claude-embeddings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eWp4eHR4d3dlZW9iZXlma3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MzYxODcsImV4cCI6MjA2MjIxMjE4N30.hcOHnocR9B4ogqt94ugJQw_mC1g40D3ZM7j_lJjuotU'
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!directResponse.ok) {
+          console.error(`Fetch retornou status ${directResponse.status}. Tentando conexão via SDK...`);
+          throw new Error(`HTTP error: ${directResponse.status}`);
+        }
+        
+        const directData = await directResponse.json();
+        console.log('Resposta direta via fetch:', directData);
+        return directData;
+      } catch (fetchError) {
+        console.warn('Erro ao tentar fetch direto, tentando via SDK:', fetchError);
+        // Continuar com o método do SDK se o fetch falhar
+      }
+      
+      // Continuar com o método do SDK
+      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+        body: requestBody
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erro na resposta da função Edge:', error);
+        throw error;
+      }
+      
+      console.log('Resposta da API claude-embeddings:', data);
       return data;
     } catch (error) {
       console.error('Erro ao usar modo personalizado:', error);

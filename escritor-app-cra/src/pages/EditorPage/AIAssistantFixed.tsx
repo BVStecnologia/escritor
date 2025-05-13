@@ -324,7 +324,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!aiPrompt.trim()) return;
+    if (!aiPrompt.trim() || isLoading) return;
     
     // Add user message to conversation
     const userMessage: Message = { role: 'user', content: aiPrompt };
@@ -339,49 +339,89 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
         chapterId
       });
       
-      // Call the AI service
-      const response = await assistantService.custom({
-        input: aiPrompt,
-        systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
-Seja conciso, específico e útil. Você está ajudando com o livro ID: ${bookId || 'não especificado'}, capítulo ID: ${chapterId || 'não especificado'}.`,
-        includeEmbeddings: true,
-        embeddingFilter: bookId ? `livro_id=${bookId}` : undefined,
-        maxEmbeddings: 5
-      });
-      
-      console.log('Resposta recebida do assistente:', response);
-      
-      // Extrair a resposta do assistente no formato correto do Claude API v1
-      let assistantContent = '';
-      if (response && response.content && Array.isArray(response.content)) {
-        // Esse é o formato da resposta do Claude API v1
-        const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
-        if (textContent && textContent.text) {
-          assistantContent = textContent.text;
+      // Teste direto via fetch para verificar se é um problema com o assistantService ou com a função edge
+      try {
+        const requestBody = {
+          mode: 'custom',
+          input: aiPrompt,
+          context: {
+            system_prompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.\nSeja conciso, específico e útil.`,
+            include_embeddings: true,
+            max_embeddings: 5
+          }
+        };
+        
+        console.log('Enviando request direto via fetch:', requestBody);
+        
+        // Vamos tentar usar uma abordagem mais simples com supabase
+        const response = await assistantService.custom({
+          input: aiPrompt,
+          systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
+Seja conciso, específico e útil.`,
+          includeEmbeddings: true,
+          maxEmbeddings: 5
+        });
+        
+        console.log('Resposta recebida do assistantService:', response);
+        
+        /* Deixando o código fetch comentado para referência futura
+        const fetchResponse = await fetch('https://vuyjxxtxwweeobeyfkzr.supabase.co/functions/v1/claude-embeddings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eWp4eHR4d3dlZW9iZXlma3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MzYxODcsImV4cCI6MjA2MjIxMjE4N30.hcOHnocR9B4ogqt94ugJQw_mC1g40D3ZM7j_lJjuotU',
+            'Access-Control-Allow-Origin': '*'
+          },
+          mode: 'cors',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          body: JSON.stringify(requestBody)
+        });
+        */
+        
+        // Extrair a resposta do assistente no formato correto
+        let assistantContent = '';
+        
+        if (response && response.content && Array.isArray(response.content)) {
+          // Formato Claude API v1
+          const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
+          if (textContent && textContent.text) {
+            assistantContent = textContent.text;
+          }
+        } else if (response && typeof response === 'string') {
+          assistantContent = response;
+        } else if (response && response.text) {
+          assistantContent = response.text;
         }
-      } else if (response && response.text) {
-        // Formato de respostas diretas da função Edge
-        assistantContent = response.text;
-      } else if (response && typeof response === 'string') {
-        // Fallback para string simples
-        assistantContent = response;
-      } else if (response && response.message) {
-        // Outro possível formato
-        assistantContent = response.message;
+        
+        // Se não conseguir extrair o texto, usar mensagem genérica
+        if (!assistantContent) {
+          assistantContent = "Desculpe, não consegui processar sua solicitação. Tente novamente.";
+          console.error('Não foi possível extrair o conteúdo da resposta:', response);
+        }
+        
+        // Add AI response to conversation
+        const assistantMessage: Message = { role: 'assistant', content: assistantContent };
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (serviceError) {
+        console.error('Erro no assistantService:', serviceError);
+        throw serviceError; // Propagar o erro para o próximo bloco catch
       }
-      
-      // Se não conseguir extrair o texto, usar mensagem genérica
-      if (!assistantContent) {
-        assistantContent = "Desculpe, não consegui processar sua solicitação. Tente novamente.";
-        console.error('Não foi possível extrair o conteúdo da resposta:', response);
-      }
-      
-      // Add AI response to conversation
-      const assistantMessage: Message = { role: 'assistant', content: assistantContent };
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Erro ao enviar prompt:', error);
-      const errorMessage: Message = { role: 'assistant', content: 'Desculpe, ocorreu um erro ao processar sua solicitação.' };
+      
+      // Exibir detalhes completos do erro para depuração
+      console.log('Detalhes completos do erro:', JSON.stringify(error, null, 2));
+      
+      // Criar mensagem de erro mais informativa
+      let errorContent = 'Desculpe, ocorreu um erro ao processar sua solicitação.';
+      
+      // Adicionar detalhes do erro se disponíveis
+      if (error instanceof Error) {
+        errorContent += ' Detalhes: ' + error.message;
+      }
+      
+      const errorMessage: Message = { role: 'assistant', content: errorContent };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -466,7 +506,7 @@ Seja conciso, específico e útil. Você está ajudando com o livro ID: ${bookId
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
               <AISubmitButton type="submit" disabled={!aiPrompt.trim() || isLoading}>
-                <SendIcon />
+                {isLoading ? '...' : <SendIcon />}
               </AISubmitButton>
             </AIInputForm>
           </AIFooter>
