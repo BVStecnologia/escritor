@@ -121,6 +121,8 @@ export const BookTitle = styled.span`
   position: relative;
   padding-left: 1rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
 
   &::before {
     content: '';
@@ -132,6 +134,19 @@ export const BookTitle = styled.span`
     height: 20px;
     background: ${({ theme }) => theme.colors.primaryGradient};
     border-radius: 2px;
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    color: ${({ theme }) => theme.colors.text.secondary};
+    opacity: 0.7;
+    transition: opacity 0.2s ease, color 0.2s ease;
+  }
+
+  button:hover svg {
+    opacity: 1;
+    color: ${({ theme }) => theme.colors.primary};
   }
 `;
 

@@ -82,7 +82,6 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
       <HeaderContent>
         <LogoSection>
           <Logo>
-            <PenIcon />
             Bookwriter
             <svg width="0" height="0">
               <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -103,6 +102,24 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           ) : (
             <BookTitle onClick={handleToggleTitleEdit}>
               {bookTitle || "Sem título"}
+              <button 
+                style={{ 
+                  background: 'transparent', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  padding: '0', 
+                  marginLeft: '8px', 
+                  display: 'inline-flex', 
+                  alignItems: 'center' 
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleTitleEdit();
+                }}
+                title="Editar informações do livro"
+              >
+                <PenIcon />
+              </button>
             </BookTitle>
           )}
         </LogoSection>
