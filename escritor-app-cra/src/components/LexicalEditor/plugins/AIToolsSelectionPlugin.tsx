@@ -4,11 +4,16 @@ import {
   $getSelection, 
   $isRangeSelection,
   SELECTION_CHANGE_COMMAND,
-  COMMAND_PRIORITY_LOW
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  LexicalCommand
 } from 'lexical';
 import styled from 'styled-components';
 import { assistantService } from '../../../services/assistantService';
 import { Spinner } from '../../styled';
+
+// Comando personalizado para aplicar resultado da IA
+const APPLY_AI_RESULT_COMMAND: LexicalCommand<string> = createCommand();
 
 const AIToolsContainer = styled.div`
   transition: all 0.3s ease-in-out;
@@ -142,6 +147,7 @@ export const AIToolsSelectionPlugin = ({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [selectedText, setSelectedText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const editorRootRef = useRef<HTMLElement | null>(null);
   
   // Estados para gerenciar o processamento da IA
   const [isLoading, setIsLoading] = useState(false);
@@ -149,6 +155,29 @@ export const AIToolsSelectionPlugin = ({
   const [showResult, setShowResult] = useState(false);
   const [currentTool, setCurrentTool] = useState('');
   
+  // Obter referência ao elemento raiz do editor
+  useEffect(() => {
+    editorRootRef.current = editor.getRootElement();
+  }, [editor]);
+  
+  // Registrar comando para aplicar resultado da IA
+  useEffect(() => {
+    return editor.registerCommand(
+      APPLY_AI_RESULT_COMMAND,
+      (payload: string) => {
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(payload);
+          }
+        });
+        return true;
+      },
+      COMMAND_PRIORITY_LOW
+    );
+  }, [editor]);
+  
+  // Monitor de mudanças na seleção
   useEffect(() => {
     return editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
@@ -159,59 +188,46 @@ export const AIToolsSelectionPlugin = ({
           if ($isRangeSelection(selection) && !selection.isCollapsed()) {
             const text = selection.getTextContent();
             
-            // Mostrar ferramentas apenas para seleções maiores (mínimo 3 palavras)
+            // Verificar se a seleção tem pelo menos 3 palavras
             if (text && text.trim().length > 2) {
-              // Verificar se é a seleção contém uma palavra com erro ortográfico
-              // Obtém os elementos DOM da seleção atual
-              const domSelection = window.getSelection();
-              if (!domSelection || domSelection.rangeCount === 0) return false;
-              
-              // Verificar se o pai ou algum elemento na seleção tem a classe spelling-error
-              const range = domSelection.getRangeAt(0);
-              const selectionParent = range.commonAncestorContainer as Element;
-              
-              // Se o elemento selecionado ou seu pai for uma palavra com erro ortográfico,
-              // não mostramos as ferramentas de IA
-              if (selectionParent.classList?.contains('spelling-error') || 
-                  selectionParent.parentElement?.classList?.contains('spelling-error')) {
-                setIsVisible(false);
-                return false;
-              }
-              
-              // Contar o número de palavras na seleção
               const wordCount = text.trim().split(/\s+/).length;
               
-              // Só mostrar para seleções de pelo menos 3 palavras
               if (wordCount < 3) {
                 setIsVisible(false);
                 return false;
               }
               
-              // Obter posição da seleção
+              // Se o editor root element não existir, não podemos posicionar
+              if (!editorRootRef.current) {
+                setIsVisible(false);
+                return false;
+              }
+              
+              // Posicionar o menu na parte inferior da seleção
+              const domSelection = window.getSelection();
+              if (!domSelection || domSelection.rangeCount === 0) return false;
+              
+              const range = domSelection.getRangeAt(0);
               const rect = range.getBoundingClientRect();
               
-              // Encontrar o elemento do editor correto
-              const editorEl = document.querySelector('.editor-input');
-              if (!editorEl) return false;
+              const editorRect = editorRootRef.current.getBoundingClientRect();
               
-              const editorRect = editorEl.getBoundingClientRect();
-              
-              // Calculamos a posição relativa ao centro da seleção, na parte inferior
-              const relativeTop = rect.bottom - editorRect.top + 5; // Um pouco abaixo da seleção
-              const relativeLeft = rect.left + (rect.width / 2) - editorRect.left;
+              // Posicionar no centro e abaixo da seleção
+              const newTop = rect.bottom - editorRect.top;
+              const newLeft = rect.left + (rect.width / 2) - editorRect.left;
               
               setPosition({
-                top: relativeTop + window.scrollY,
-                left: relativeLeft + window.scrollX
+                top: newTop,
+                left: newLeft
               });
               
               setSelectedText(text);
               setIsVisible(true);
-              return false;
+              return true;
             }
           }
           
-          // Esconder se não há seleção válida
+          // Se não há seleção válida, esconder
           setIsVisible(false);
           setSelectedText('');
           return false;
@@ -221,6 +237,42 @@ export const AIToolsSelectionPlugin = ({
       COMMAND_PRIORITY_LOW
     );
   }, [editor]);
+  
+  // Ajustar posição do menu
+  useEffect(() => {
+    if (containerRef.current && isVisible && editorRootRef.current) {
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      
+      const editorRect = editorRootRef.current.getBoundingClientRect();
+      
+      // Ajustar horizontalmente para ficar centralizado
+      let adjustedLeft = position.left;
+      
+      // Garantir que não saia pelos lados
+      const rightEdge = adjustedLeft + (containerRect.width / 2);
+      if (rightEdge > editorRect.width - 10) {
+        adjustedLeft = editorRect.width - (containerRect.width / 2) - 10;
+      }
+      
+      const leftEdge = adjustedLeft - (containerRect.width / 2);
+      if (leftEdge < 10) {
+        adjustedLeft = (containerRect.width / 2) + 10;
+      }
+      
+      // Ajustar posição vertical para garantir visibilidade
+      let adjustedTop = position.top;
+      
+      // Se estiver muito abaixo, posicionar acima
+      if (adjustedTop + containerRect.height > editorRect.height - 20) {
+        adjustedTop = position.top - containerRect.height - 10;
+      }
+      
+      // Aplicar ajustes
+      container.style.left = `${adjustedLeft}px`;
+      container.style.top = `${adjustedTop}px`;
+    }
+  }, [isVisible, position]);
   
   // Esconder quando clicar fora
   useEffect(() => {
@@ -235,64 +287,10 @@ export const AIToolsSelectionPlugin = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  
-  // Modificar a função de ajuste de posição para ser mais precisa
-  useEffect(() => {
-    if (containerRef.current && isVisible) {
-      const container = containerRef.current;
-      const containerRect = container.getBoundingClientRect();
-      
-      const editorEl = document.querySelector('.editor-input');
-      if (!editorEl) return;
-      
-      const editorRect = editorEl.getBoundingClientRect();
-      
-      // Ajustar posição horizontal mantendo centralizado na seleção
-      let adjustedLeft = position.left;
-      
-      // Garantir que não saia pela direita (descontando a centralização)
-      if (adjustedLeft + (containerRect.width / 2) > editorRect.width - 10) {
-        adjustedLeft = editorRect.width - (containerRect.width / 2) - 10;
-      }
-      
-      // Garantir que não saia pela esquerda (descontando a centralização)
-      if (adjustedLeft - (containerRect.width / 2) < 10) {
-        adjustedLeft = (containerRect.width / 2) + 10;
-      }
-      
-      // Ajustar posição vertical para ficar visível
-      let adjustedTop = position.top;
-      
-      // Se estiver fora da área visível, colocar acima da seleção
-      if (adjustedTop + containerRect.height > editorRect.height - 10) {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const rect = range.getBoundingClientRect();
-          adjustedTop = rect.top - editorRect.top - containerRect.height - 5 + window.scrollY;
-        }
-      }
-      
-      // Aplicar ajustes
-      container.style.left = `${adjustedLeft}px`;
-      container.style.top = `${adjustedTop}px`;
-    }
-  }, [isVisible, position, containerRef]);
-  
-  // Função para substituir o texto selecionado no editor
-  const replaceSelectedText = (newText: string) => {
-    editor.update(() => {
-      const selection = $getSelection();
-      
-      if ($isRangeSelection(selection)) {
-        selection.insertText(newText);
-      }
-    });
-  };
 
-  // Função para aplicar o resultado da IA ao texto
+  // Função para aplicar o resultado da IA
   const applyAiResult = () => {
-    replaceSelectedText(aiResult);
+    editor.dispatchCommand(APPLY_AI_RESULT_COMMAND, aiResult);
     setShowResult(false);
     setAiResult('');
     setCurrentTool('');
@@ -341,8 +339,29 @@ export const AIToolsSelectionPlugin = ({
           break;
       }
       
-      if (result && result.content) {
-        setAiResult(result.content);
+      // Extrair conteúdo da resposta
+      let responseContent = '';
+      
+      if (result && result.content && Array.isArray(result.content)) {
+        // Formato Claude API v1
+        const textContent = result.content.find((item: { type: string; text?: string }) => item.type === 'text');
+        if (textContent && textContent.text) {
+          responseContent = textContent.text;
+        }
+      } else if (result && typeof result === 'string') {
+        responseContent = result;
+      } else if (result && result.text) {
+        responseContent = result.text;
+      } else if (result && result.message) {
+        responseContent = result.message;
+      } else if (result && result.content) {
+        responseContent = result.content;
+      } else if (result && result.revised_text) {
+        responseContent = result.revised_text;
+      }
+      
+      if (responseContent) {
+        setAiResult(responseContent);
         setShowResult(true);
       } else {
         throw new Error('Resposta inválida do assistente');
@@ -357,11 +376,7 @@ export const AIToolsSelectionPlugin = ({
     }
   };
   
-  if (!isVisible) {
-    return null;
-  }
-  
-  // Renderização condicional: mostra o menu de ferramentas ou o resultado
+  // Não renderizar se não estiver visível e não estiver mostrando resultados
   if (!isVisible && !showResult) {
     return null;
   }
@@ -374,7 +389,8 @@ export const AIToolsSelectionPlugin = ({
         style={{ 
           top: position.top, 
           left: position.left,
-          width: '300px'
+          width: '300px',
+          transform: 'translateX(-50%)' // Centralizar
         }}
       >
         <ResultContainer>

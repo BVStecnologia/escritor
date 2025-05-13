@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { $getRoot, $getSelection, EditorState } from 'lexical';
 import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -16,7 +16,6 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
-import { InitialContentPlugin } from './plugins/InitialContentPlugin';
 import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
@@ -108,7 +107,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   onWordCountChanged,
   setSaveStatus
 }) => {
-  const [saveStatus, setSaveStatusInternal] = useState<'saving' | 'saved' | 'error' | 'unsaved'>('saved');
+  const [saveStatusInternal, setSaveStatusInternal] = useState<'saving' | 'saved' | 'error' | 'unsaved'>('saved');
   const [isOnline, setIsOnline] = useState(true);
   
   // Observador de status online/offline
@@ -177,9 +176,6 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <LinkPlugin />
         <ImagePlugin />
         
-        {/* Carregar conteúdo inicial */}
-        {initialContent && <InitialContentPlugin initialContent={initialContent} />}
-        
         {/* Plugins de IA refatorados */}
         <AIAutocompletePlugin livroId={bookId} capituloId={chapterId} />
         <AIToolsSelectionPlugin livroId={bookId} capituloId={chapterId} />
@@ -196,7 +192,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         )}
         
         {/* Indicador de salvamento */}
-        <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
+        <FloatingSaveStatus saveStatus={saveStatusInternal} isOnline={isOnline} />
       </EditorContainer>
     </LexicalComposer>
   );
