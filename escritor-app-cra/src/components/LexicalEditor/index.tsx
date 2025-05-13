@@ -148,29 +148,50 @@ export const LexicalEditor = ({
   }, []);
 
   // Configuração inicial do editor
-  const initialConfig = useMemo(() => ({
-    namespace: 'escritor-editor',
-    theme: editorTheme,
-    onError(error: Error) {
-      console.error(error);
-    },
-    nodes: [
-      HeadingNode,
-      ListNode,
-      ListItemNode,
-      QuoteNode,
-      CodeNode,
-      CodeHighlightNode,
-      TableNode,
-      TableRowNode,
-      TableCellNode,
-      LinkNode,
-      AutoLinkNode,
-      ImageNode
-    ],
-    editorState: initialContent,
-    editable: !readOnly
-  }), [initialContent, readOnly]);
+  const initialConfig = useMemo(() => {
+    // Função para verificar se o conteúdo inicial é válido
+    let parsedEditorState = undefined;
+    
+    if (initialContent) {
+      try {
+        // Verificar se já é um objeto
+        if (typeof initialContent === 'object') {
+          parsedEditorState = initialContent;
+        } else if (typeof initialContent === 'string' && initialContent.trim() !== '') {
+          // Se for string não-vazia, tentar fazer o parse
+          parsedEditorState = JSON.parse(initialContent);
+        }
+      } catch (error) {
+        console.error('Erro ao analisar conteúdo inicial do editor:', error);
+        // Em caso de erro, deixar undefined para criar um documento vazio
+      }
+    }
+
+    return {
+      namespace: 'escritor-editor',
+      theme: editorTheme,
+      onError(error: Error) {
+        console.error('Erro no editor Lexical:', error);
+      },
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        CodeHighlightNode,
+        TableNode,
+        TableRowNode,
+        TableCellNode,
+        LinkNode,
+        AutoLinkNode,
+        ImageNode
+      ],
+      // Usar undefined para criar um documento vazio se o parse falhar
+      editorState: parsedEditorState,
+      editable: !readOnly
+    };
+  }, [initialContent, readOnly]);
 
   // Handler para salvar conteúdo com debounce
   const handleSave = useCallback(
