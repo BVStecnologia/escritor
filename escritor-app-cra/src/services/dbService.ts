@@ -420,12 +420,30 @@ export const dbService = {
     // Se tiver conteúdo, coloca na coluna 'texto' (não 'conteudo')
     if (capituloData.conteudo !== undefined) {
       console.log('Atualizando conteúdo');
-      updateData.texto = capituloData.conteudo;
+      
+      // Verificar se o conteúdo está em formato válido antes de salvar
+      // Isto evita problemas ao carregar o conteúdo posteriormente
+      const conteudoValidado = this.validarConteudoEditor(capituloData.conteudo);
+      updateData.texto = conteudoValidado;
       
       // Se não tiver customData.palavras, calcula a partir do conteúdo
       if (!capituloData.customData?.palavras) {
-        // Calcular número de palavras
-        updateData.palavras = capituloData.conteudo.split(/\s+/).filter(Boolean).length;
+        // Calcular número de palavras a partir do texto extraído
+        try {
+          // Tentar extrair texto do JSON se for um objeto Lexical válido
+          let textoPlano = '';
+          const conteudoObj = JSON.parse(conteudoValidado);
+          
+          // Extrair texto dos nós (simplificado)
+          if (conteudoObj && conteudoObj.root && conteudoObj.root.children) {
+            textoPlano = this.extrairTextoDeNos(conteudoObj.root.children);
+          }
+          
+          updateData.palavras = textoPlano.split(/\s+/).filter(Boolean).length;
+        } catch (e) {
+          // Se falhar, usar método simples
+          updateData.palavras = conteudoValidado.split(/\s+/).filter(Boolean).length;
+        }
       }
     }
     
@@ -470,6 +488,103 @@ export const dbService = {
     throw error;
   }
 },
+  
+  /**
+   * Função auxiliar para validar o conteúdo do editor antes de salvar
+   * Garante que o conteúdo esteja em um formato que o editor possa carregar posteriormente
+   */
+  validarConteudoEditor(conteudo: string): string {
+    try {
+      // Se já for um objeto, converter para string JSON
+      if (typeof conteudo === 'object') {
+        return JSON.stringify(conteudo);
+      }
+      
+      // Verificar se é uma string JSON válida
+      const trimmed = conteudo.trim();
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        // Verificar se é um objeto Lexical válido
+        const parsed = JSON.parse(trimmed);
+        
+        // Verificar estrutura mínima esperada
+        if (parsed && parsed.root) {
+          return trimmed; // Formato válido
+        } else {
+          console.warn('Conteúdo JSON não possui estrutura Lexical válida');
+          // Retornar um documento Lexical vazio válido
+          return JSON.stringify({
+            "root": {
+              "children": [
+                {
+                  "children": [],
+                  "direction": null,
+                  "format": "",
+                  "indent": 0,
+                  "type": "paragraph",
+                  "version": 1
+                }
+              ],
+              "direction": null,
+              "format": "",
+              "indent": 0,
+              "type": "root",
+              "version": 1
+            }
+          });
+        }
+      }
+      
+      // Se não for um JSON, retornar como está (pode ser texto simples)
+      return conteudo;
+    } catch (error) {
+      console.error('Erro ao validar conteúdo do editor:', error);
+      // Retornar um documento Lexical vazio válido em caso de erro
+      return JSON.stringify({
+        "root": {
+          "children": [
+            {
+              "children": [],
+              "direction": null,
+              "format": "",
+              "indent": 0,
+              "type": "paragraph",
+              "version": 1
+            }
+          ],
+          "direction": null,
+          "format": "",
+          "indent": 0,
+          "type": "root",
+          "version": 1
+        }
+      });
+    }
+  },
+  
+  /**
+   * Função auxiliar para extrair texto plano de nós do Lexical
+   */
+  extrairTextoDeNos(nos: any[]): string {
+    if (!Array.isArray(nos)) return '';
+    
+    return nos.map(no => {
+      // Extrair texto deste nó
+      let texto = '';
+      
+      // Se for um nó de texto
+      if (no.type === 'text' && typeof no.text === 'string') {
+        texto += no.text;
+      }
+      
+      // Se tiver filhos, extrair texto recursivamente
+      if (Array.isArray(no.children) && no.children.length > 0) {
+        texto += this.extrairTextoDeNos(no.children);
+      }
+      
+      return texto;
+    }).join(' ');
+  },
   
   /**
    * Excluir um capítulo
