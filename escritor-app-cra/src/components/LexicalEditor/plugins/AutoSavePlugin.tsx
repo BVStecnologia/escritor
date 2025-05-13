@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical';
+import { $getRoot } from 'lexical';
 import { dbService } from '../../../services/dbService';
 
 interface AutoSavePluginProps {
@@ -20,31 +20,11 @@ export function AutoSavePlugin({
 }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const periodicSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wordCountTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   const lastSeenContent = useRef<string>('');
-  // IMPORTANTE: Inicializamos como true para garantir que o salvamento funcione desde o início
-  const [isEditorActive, setIsEditorActive] = useState(true);
   const hasUnsavedChanges = useRef<boolean>(false);
-  const initialCountUpdated = useRef<boolean>(false);
-
-  // Função para atualizar a contagem de palavras de forma explícita
-  const updateWordCount = () => {
-    if (!onWordCountChanged) return;
-    
-    try {
-      const plainText = editor.getEditorState().read(() => $getRoot().getTextContent());
-      const palavras = plainText.split(/\s+/).filter(Boolean).length;
-      console.log('Atualizando contagem de palavras explicitamente:', palavras);
-      onWordCountChanged(palavras);
-      
-      // Marcar que já atualizamos a contagem inicial
-      initialCountUpdated.current = true;
-    } catch (error) {
-      console.error('Erro ao calcular contagem de palavras:', error);
-    }
-  };
-
+  
   // Função segura para serializar o estado do editor
   const serializeEditorState = (ignoreCache = false) => {
     try {
@@ -64,21 +44,38 @@ export function AutoSavePlugin({
       return serialized;
     } catch (error) {
       console.error('Erro ao serializar estado do editor:', error);
-      return lastSeenContent.current; // Retorna o último estado conhecido em caso de erro
+      return lastSeenContent.current;
     }
   };
 
-  // Função de salvamento que pode ser chamada por diferentes gatilhos
+  // Função para calcular e atualizar a contagem de palavras
+  const updateWordCount = () => {
+    try {
+      // Extrair texto puro do editor
+      const plainText = editor.getEditorState().read(() => $getRoot().getTextContent());
+      
+      // Calcular contagem de palavras
+      const palavras = plainText.split(/\s+/).filter(Boolean).length;
+      
+      // Notificar sobre a mudança na contagem de palavras
+      if (onWordCountChanged) {
+        onWordCountChanged(palavras);
+      }
+      
+      return palavras;
+    } catch (error) {
+      console.error('Erro ao calcular palavras:', error);
+      return 0;
+    }
+  };
+
+  // Função de salvamento corrigida para mapear corretamente para os campos do banco
   const saveContent = async (content: string) => {
-    // Não faz nada se não houver IDs ou se o conteúdo já foi salvo
     if (!bookId || !chapterId) return;
-    
-    // Verificar se o conteúdo é válido - evitando salvar conteúdo vazio ou malformado
     if (!content || content.trim() === '' || content === '{}' || content === '[]') {
       console.log('Conteúdo vazio ou inválido, pulando salvamento.');
       return;
     }
-    
     if (content === lastSavedContent.current) {
       console.log('Conteúdo já salvo, pulando salvamento.');
       return;
@@ -86,39 +83,25 @@ export function AutoSavePlugin({
 
     if (onStatusChange) onStatusChange('saving');
     try {
-      // Extrair o texto limpo do estado do editor para calcular contagem de palavras
-      const plainText = editor.getEditorState().read(() => $getRoot().getTextContent());
-      
-      // Calcular contagem de palavras
-      const palavras = plainText.split(/\s+/).filter(Boolean).length;
-      
-      // Notificar sobre a mudança na contagem de palavras, se o callback existir
-      if (onWordCountChanged) {
-        onWordCountChanged(palavras);
-      }
-      
-      // Atualizar o capítulo com o conteúdo e a contagem de palavras explicitamente
-      // IMPORTANTE: Não incluímos o título aqui para evitar sobrescrever o título durante o salvamento automático
+      const palavras = updateWordCount();
+      // Enviar tanto para os campos do banco quanto para compatibilidade com CapituloData
       const updateData = {
-        conteudo: content, 
-        customData: {
-          palavras
-        }
+        conteudo: content, // compatibilidade com CapituloData
+        customData: { palavras },
+        texto: content, // campo real do banco
+        palavras: palavras, // campo real do banco
+        last_edit: new Date().toISOString()
       };
-      
       console.log('Salvando capítulo com dados:', {
         id: chapterId,
         palavras,
-        conteudo: 'texto do editor (não exibido para economia de espaço)'
+        texto: 'texto do editor (não exibido para economia de espaço)',
+        last_edit: updateData.last_edit
       });
-      
       await dbService.atualizarCapitulo(chapterId, updateData);
-      
       lastSavedContent.current = content;
       hasUnsavedChanges.current = false;
       console.log('Conteúdo salvo automaticamente:', new Date().toLocaleTimeString());
-      console.log('Contagem de palavras:', palavras);
-      
       if (onStatusChange) onStatusChange('saved');
     } catch (error) {
       console.error('Erro ao salvar automaticamente:', error);
@@ -126,56 +109,23 @@ export function AutoSavePlugin({
     }
   };
 
-  // Inicialização e atualização forçada da contagem de palavras logo após a montagem
+  // IMPORTANTE: Atualizar contagem de palavras INDEPENDENTE do salvamento
   useEffect(() => {
-    if (bookId && chapterId && editor && !initialCountUpdated.current) {
-      // Aguardar um pouco para garantir que o editor esteja pronto
-      const timer = setTimeout(() => {
-        updateWordCount();
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [bookId, chapterId, editor]);
-
-  // Adiciona listeners globais para verificar o foco no editor
-  useEffect(() => {
-    const editorRoot = editor.getRootElement();
-    if (!editorRoot) return;
-
-    // Sempre começa como ativo
-    setIsEditorActive(true);
-
-    const handleDocumentClick = (e: MouseEvent) => {
-      // Verificar se o clique foi no componente AIAssistantFixed
-      const aiElement = document.querySelector('[class*="AIContainer"]');
-      const clickedInAI = aiElement?.contains(e.target as Node);
-      
-      // Considerar cliques no editor OU no componente de IA como editor ativo
-      if (editorRoot.contains(e.target as Node) || clickedInAI) {
-        setIsEditorActive(true);
-      } else {
-        // Não desativamos o editor, apenas sinalizamos para salvar se houver mudanças
-        if (hasUnsavedChanges.current) {
-          console.log('Editor perdeu foco com alterações não salvas, salvando...');
-          const content = serializeEditorState();
-          saveContent(content);
-        }
+    // Atualizar contagem de palavras a cada 2 segundos
+    wordCountTimerRef.current = setInterval(() => {
+      updateWordCount();
+    }, 2000);
+    
+    return () => {
+      if (wordCountTimerRef.current) {
+        clearInterval(wordCountTimerRef.current);
       }
     };
-
-    document.addEventListener('mousedown', handleDocumentClick);
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentClick);
-    };
-  }, [editor]);
+  }, []);
 
   // Adiciona listener para eventos de atualização do editor
   useEffect(() => {
     if (!bookId || !chapterId) return;
-
-    // Sempre manter o editor como ativo
-    setIsEditorActive(true);
 
     const removeUpdateListener = editor.registerUpdateListener(({ editorState }) => {
       if (saveTimerRef.current) {
@@ -191,14 +141,7 @@ export function AutoSavePlugin({
           hasUnsavedChanges.current = true;
           if (onStatusChange) onStatusChange('unsaved');
           
-          // Sempre atualizar a contagem de palavras no callback
-          const plainText = editorState.read(() => $getRoot().getTextContent());
-          const palavras = plainText.split(/\s+/).filter(Boolean).length;
-          if (onWordCountChanged) {
-            onWordCountChanged(palavras);
-          }
-          
-          // Programa salvamento com delay para todas as alterações
+          // Programa salvamento com delay
           saveTimerRef.current = setTimeout(() => {
             saveContent(content);
           }, delay);
@@ -213,63 +156,52 @@ export function AutoSavePlugin({
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
-      if (periodicSaveTimerRef.current) {
-        clearInterval(periodicSaveTimerRef.current);
-      }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange, onWordCountChanged]);
+  }, [bookId, chapterId, delay, editor, onStatusChange]);
 
-  // Configura verificação periódica a cada 30 segundos para salvar alterações pendentes
+  // Configurar verificação periódica a cada 30 segundos para salvar alterações pendentes
   useEffect(() => {
     if (!bookId || !chapterId) return;
     
-    // Verifica a cada 30 segundos se há alterações não salvas
-    periodicSaveTimerRef.current = setInterval(() => {
+    // Verificar a cada 30 segundos se há alterações não salvas
+    const periodicSaveInterval = setInterval(() => {
       if (hasUnsavedChanges.current) {
         console.log('Verificação periódica: encontradas alterações não salvas');
         const content = serializeEditorState();
         saveContent(content);
       }
-    }, 30000); // 30 segundos
+    }, 30000);
     
     return () => {
-      if (periodicSaveTimerRef.current) {
-        clearInterval(periodicSaveTimerRef.current);
-      }
+      clearInterval(periodicSaveInterval);
     };
   }, [bookId, chapterId]);
 
-  // Salvar quando a página for fechada/navegada para outro lugar
+  // Salvar quando a página for fechada
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (hasUnsavedChanges.current) {
-        // Tentativa de salvamento síncrono antes de sair
         try {
-          // Obter conteúdo serializado para enviar ao servidor
           const content = serializeEditorState();
-          
-          // Tentar fazer salvamento síncrono com a API existente
-          const savePromise = dbService.atualizarCapitulo(chapterId || '', {
-            conteudo: content
-          });
-          
-          // Extrair o texto puro do editor para armazenar no localStorage
-          // Isso é mais seguro do que armazenar a estrutura JSON completa
+          const palavras = updateWordCount();
+          // Usar o mesmo formato de dados para o salvamento de emergência
+          const updateData = {
+            conteudo: content,
+            customData: { palavras },
+            texto: content,
+            palavras: palavras,
+            last_edit: new Date().toISOString()
+          };
+          const savePromise = dbService.atualizarCapitulo(chapterId || '', updateData);
           const plainTextContent = editor.getEditorState().read(() => {
             return $getRoot().getTextContent();
           });
-          
-          // Forçar salvamento no localStorage como backup (apenas texto)
           try {
             localStorage.setItem(`emergency_save_text_${chapterId}`, plainTextContent);
-            console.log('Backup de emergência (texto) salvo no localStorage');
+            console.log('Backup de emergência salvo');
           } catch (storageError) {
             console.error('Erro ao salvar no localStorage:', storageError);
           }
-          
-          console.log('Salvamento de emergência iniciado antes de sair da página');
-          
-          // Mensagem de confirmação para o usuário (pode não aparecer em alguns navegadores)
           event.returnValue = 'Há alterações não salvas. Tem certeza que deseja sair?';
           return event.returnValue;
         } catch (error) {
@@ -277,58 +209,19 @@ export function AutoSavePlugin({
         }
       }
     };
-    
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [chapterId, editor]);
 
-  // Verifica se existe um salvamento de emergência no localStorage
+  // Forçar uma atualização inicial da contagem de palavras para garantir
   useEffect(() => {
-    if (!bookId || !chapterId) return;
-    
-    try {
-      // Verificar salvamento de emergência em formato de texto
-      const emergencySaveText = localStorage.getItem(`emergency_save_text_${chapterId}`);
-      
-      if (emergencySaveText) {
-        console.log('Encontrado salvamento de emergência (texto) no localStorage');
-        
-        // Perguntar ao usuário se deseja restaurar o conteúdo de emergência
-        const shouldRestore = window.confirm(
-          'Encontramos um texto que pode não ter sido salvo na sua última sessão. Deseja restaurá-lo?'
-        );
-        
-        if (shouldRestore) {
-          try {
-            // Simplesmente atualizar o editor com o texto puro, sem tentar manipular estrutura complexa
-            editor.update(() => {
-              const root = $getRoot();
-              root.clear();
-              root.append($createParagraphNode().append($createTextNode(emergencySaveText)));
-            });
-            
-            console.log('Texto de emergência restaurado com sucesso');
-            
-            // Forçar salvamento imediato para persistir no servidor
-            setTimeout(() => {
-              const currentState = serializeEditorState();
-              saveContent(currentState);
-            }, 500);
-          } catch (parseError) {
-            console.error('Erro ao restaurar texto de emergência:', parseError);
-          }
-        }
-        
-        // Limpar o salvamento de emergência após processá-lo
-        localStorage.removeItem(`emergency_save_text_${chapterId}`);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar salvamento de emergência:', error);
-    }
-  }, [bookId, chapterId, editor]);
+    // Executar uma vez após a inicialização
+    setTimeout(() => {
+      updateWordCount();
+    }, 1000);
+  }, []);
 
   return null;
 }
