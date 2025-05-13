@@ -136,7 +136,8 @@ const EditorPage: React.FC = () => {
     setSaveStatus,
     loadingChapter,
     setCapitulos,
-    setWordCount
+    setWordCount,
+    setLivro
   } = useEditorPage(bookId, chapterId);
 
   // Função para atualizar a contagem de palavras em tempo real
@@ -164,8 +165,38 @@ const EditorPage: React.FC = () => {
   }, [chapterId, capitulos, setCapitulos, setWordCount]);
 
   // Função para abrir o modal de edição de livro
-  const handleOpenEditModal = () => {
-    setIsEditModalOpen(true);
+  const handleOpenEditModal = async () => {
+    if (bookId) {
+      try {
+        // Buscar os dados mais recentes do livro no Supabase antes de abrir o modal
+        const livroId = parseInt(bookId);
+        const livroAtualizado = await dbService.getLivroPorId(livroId);
+        
+        if (livroAtualizado) {
+          // Atualizar o estado do livro com os dados mais recentes
+          setLivro(livroAtualizado);
+          
+          // Atualizar o documento com o título atual (se necessário)
+          document.title = `${livroAtualizado.titulo || livroAtualizado["Nome do livro"]} | Editor`;
+          
+          // Abrir o modal com os dados mais recentes
+          setIsEditModalOpen(true);
+        } else {
+          console.error('Erro: Não foi possível obter os dados atualizados do livro');
+          
+          // Mesmo em caso de erro, abrimos o modal com os dados em cache
+          setIsEditModalOpen(true);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados atualizados do livro:', error);
+        
+        // Mesmo em caso de erro, abrimos o modal com os dados em cache
+        setIsEditModalOpen(true);
+      }
+    } else {
+      // Se não tiver ID, apenas abre o modal
+      setIsEditModalOpen(true);
+    }
   };
 
   // Função para fechar o modal de edição

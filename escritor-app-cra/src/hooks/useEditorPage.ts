@@ -26,6 +26,7 @@ export interface UseEditorPageReturn {
   setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
   setCapitulos: React.Dispatch<React.SetStateAction<Capitulo[]>>;
   setWordCount: React.Dispatch<React.SetStateAction<number>>;
+  setLivro: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPageReturn & { loadingChapter: boolean; setLoadingChapter: React.Dispatch<React.SetStateAction<boolean>> } {
@@ -422,17 +423,18 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
     chapterTitle,
     chapterContent,
     handleChapterTitleChange,
-    handleChapterTitleUpdate,
     handleEditorChange,
     handleChapterSelect,
     handleNewChapter,
     handleDeleteChapter,
     handleBookTitleChange,
     handleChaptersReorder,
+    handleChapterTitleUpdate,
     setSaveStatus,
     loadingChapter,
     setLoadingChapter,
     setCapitulos,
-    setWordCount
+    setWordCount,
+    setLivro
   };
 }
