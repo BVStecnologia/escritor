@@ -23,7 +23,7 @@ import styled from 'styled-components';
 
 // Importar os plugins de IA reformulados usando DOM APIs
 // import { AIAutocompletePlugin } from './plugins/AIAutocompletePlugin';
-// import { AutocompletePlugin } from './plugins/AutocompletePlugin';
+import { AutocompletePlugin } from './plugins/AutocompletePlugin';
 import { AIToolsSelectionPlugin } from './plugins/AIToolsSelectionPlugin';
 import { DOMSpellCheckPlugin } from './plugins/DOMSpellCheckPlugin';
 import { ConsolidatedAutocompletePlugin } from './plugins/ConsolidatedAutocompletePlugin';

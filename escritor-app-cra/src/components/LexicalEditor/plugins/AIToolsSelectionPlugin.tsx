@@ -20,12 +20,13 @@ const AIToolsContainer = styled.div`
   position: absolute;
   z-index: 100;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  background: ${({ theme }) => theme.colors.primary + '10'};
-  border: 1px solid ${({ theme }) => theme.colors.primary + '30'};
+  box-shadow: 0 4px 16px ${({ theme }) => theme.colors.shadow || 'rgba(0, 0, 0, 0.2)'};
+  background: ${({ theme }) => theme.colors.background.paper + '95'};
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0, 0, 0, 0.1)'};
   padding: 4px;
   display: flex;
   gap: 2px;
+  min-width: 360px;
   transform: translateX(-50%);
   margin-top: 5px;
   backdrop-filter: blur(4px);
@@ -55,7 +56,7 @@ const ToolButton = styled.button`
     background: ${({ theme }) => theme.colors.primary + '20'};
     color: ${({ theme }) => theme.colors.primary};
     transform: scale(1.05);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px ${({ theme }) => theme.colors.shadow || 'rgba(0, 0, 0, 0.1)'};
   }
   
   &:disabled {
@@ -93,8 +94,9 @@ const ResultContainer = styled.div`
   width: 300px;
   max-height: 250px;
   overflow-y: auto;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px ${({ theme }) => theme.colors.shadow || 'rgba(0, 0, 0, 0.2)'};
   margin-top: 8px;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const ButtonRow = styled.div`
@@ -119,7 +121,7 @@ const ActionButton = styled.button<ActionButtonProps>`
       default: return theme.colors.primary;
     }
   }};
-  color: white;
+  color: ${({ theme }) => theme.colors.text.light || 'white'};
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
@@ -130,6 +132,7 @@ const ActionButton = styled.button<ActionButtonProps>`
   &:hover {
     opacity: 0.9;
     transform: translateY(-1px);
+    box-shadow: 0 2px 4px ${({ theme }) => theme.colors.shadow || 'rgba(0, 0, 0, 0.2)'};
   }
 `;
 
@@ -213,9 +216,15 @@ export const AIToolsSelectionPlugin = ({
               const editorRect = editorRootRef.current.getBoundingClientRect();
               
               // Posicionar no centro e abaixo da seleção
-              const newTop = rect.bottom - editorRect.top;
-              const newLeft = rect.left + (rect.width / 2) - editorRect.left;
-              
+              const newTop = rect.bottom - editorRect.top + 10; // Um pouco abaixo da seleção
+              let newLeft = rect.left + (rect.width / 2) - editorRect.left;
+              const toolWidth = 360;
+              if (newLeft + (toolWidth / 2) > editorRect.width - 20) {
+                newLeft = editorRect.width - (toolWidth / 2) - 20;
+              }
+              if (newLeft - (toolWidth / 2) < 20) {
+                newLeft = (toolWidth / 2) + 20;
+              }
               setPosition({
                 top: newTop,
                 left: newLeft
@@ -243,36 +252,28 @@ export const AIToolsSelectionPlugin = ({
     if (containerRef.current && isVisible && editorRootRef.current) {
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
-      
       const editorRect = editorRootRef.current.getBoundingClientRect();
-      
-      // Ajustar horizontalmente para ficar centralizado
       let adjustedLeft = position.left;
-      
-      // Garantir que não saia pelos lados
-      const rightEdge = adjustedLeft + (containerRect.width / 2);
-      if (rightEdge > editorRect.width - 10) {
+      if (adjustedLeft + (containerRect.width / 2) > editorRect.width - 10) {
         adjustedLeft = editorRect.width - (containerRect.width / 2) - 10;
       }
-      
-      const leftEdge = adjustedLeft - (containerRect.width / 2);
-      if (leftEdge < 10) {
+      if (adjustedLeft - (containerRect.width / 2) < 10) {
         adjustedLeft = (containerRect.width / 2) + 10;
       }
-      
-      // Ajustar posição vertical para garantir visibilidade
       let adjustedTop = position.top;
-      
-      // Se estiver muito abaixo, posicionar acima
-      if (adjustedTop + containerRect.height > editorRect.height - 20) {
-        adjustedTop = position.top - containerRect.height - 10;
+      if (adjustedTop + containerRect.height > editorRect.height - 10) {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          adjustedTop = rect.top - editorRect.top - containerRect.height - 5 + window.scrollY;
+        }
       }
-      
-      // Aplicar ajustes
+      adjustedTop = Math.max(10, adjustedTop);
       container.style.left = `${adjustedLeft}px`;
       container.style.top = `${adjustedTop}px`;
     }
-  }, [isVisible, position]);
+  }, [isVisible, position, containerRef]);
   
   // Esconder quando clicar fora
   useEffect(() => {

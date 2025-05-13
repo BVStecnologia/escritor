@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import throttle from 'lodash/throttle';
 import { 
@@ -11,6 +11,7 @@ import {
   $isTextNode
 } from 'lexical';
 import styled from 'styled-components';
+import { computePosition, flip, shift, offset } from '@floating-ui/dom';
 
 const AutocompleteContainer = styled.div<{ $visible: boolean }>`
   position: absolute;
@@ -18,15 +19,12 @@ const AutocompleteContainer = styled.div<{ $visible: boolean }>`
   border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
-  max-width: 300px;
-  z-index: 100;
+  width: 230px;
+  z-index: 999;
   padding: 0.5rem;
   display: ${({ $visible }) => ($visible ? 'block' : 'none')};
-  margin-top: 20px !important; /* Margem maior para garantir que fique bem abaixo */
-  transform: translateY(0) !important; /* Impedir qualquer deslocamento para cima */
-  opacity: 0.95; /* Leve transparência para melhorar a visualização */
-  class-name: 'autocomplete-container';
+  max-height: 300px;
+  overflow-y: auto;
 `;
 
 const SuggestionList = styled.ul`
@@ -297,34 +295,35 @@ export const AutocompletePlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const autocompleteRef = useRef<HTMLDivElement>(null);
   const throttledUpdateRef = useRef<any>(null);
   const currentMisspelledElementRef = useRef<HTMLElement | null>(null);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Referência para o timeout de exibição
+  const editorRootRef = useRef<HTMLElement | null>(null);
 
   // Função para atrasar a exibição do autocomplete
-  const showWithDelay = (positionData: {top: number, left: number}, newSuggestions: string[]) => {
-    // Cancelar qualquer timeout existente
+  const showWithDelay = (newSuggestions: string[], positionData?: { top: number, left: number }) => {
     if (showTimeoutRef.current) {
       clearTimeout(showTimeoutRef.current);
     }
-    
-    // Esconder imediatamente para garantir que não apareça em posição errada
     setIsVisible(false);
-    
-    // Configurar posição e sugestões
-    setPosition(positionData);
     setSuggestions(newSuggestions);
     setActiveIndex(0);
-    
-    // Atrasar a exibição em 1 segundo
+    if (positionData) {
+      setPosition(positionData);
+    }
     showTimeoutRef.current = setTimeout(() => {
       setIsVisible(true);
       showTimeoutRef.current = null;
-    }, 1000);
+    }, 300);
   };
+  
+  // Obter referência ao elemento raiz do editor
+  useEffect(() => {
+    editorRootRef.current = editor.getRootElement();
+  }, [editor]);
 
   // Limpar timeout ao desmontar
   useEffect(() => {
@@ -371,61 +370,53 @@ export const AutocompletePlugin = () => {
     const checkTextAndUpdateSuggestions = () => {
       editor.update(() => {
         const selection = $getSelection();
-        
-        // Manter a verificação de seleção válida
-        if (!$isRangeSelection(selection)) {
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
           setIsVisible(false);
           return;
         }
-
-        // Obter o texto selecionado
         const selectedText = selection.getTextContent().trim();
-        
-        // Verificar se é uma única palavra (sem espaços)
-        // Só mostrar se não contiver espaços, ou seja, uma única palavra
         const isWord = !selectedText.includes(' ');
-        
-        // Se não for uma única palavra ou for muito curta, não mostrar sugestões
         if (!isWord || selectedText.length < 2) {
           setIsVisible(false);
           return;
         }
-        
-        // A partir daqui, temos certeza que é uma única palavra
-        // Verificar se a palavra selecionada tem erro ortográfico
         const hasError = checkSpellingError(selectedText);
-
-        // Encontrar sugestões usando o algoritmo aprimorado
         let foundSuggestions = findRelevantSuggestions(selectedText);
-        
         if (foundSuggestions.length > 0) {
-          // Eliminar duplicatas e limitar a 5 sugestões
           const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
+          setSuggestions(uniqueSuggestions);
           
-          // Posicionar o menu próximo da palavra selecionada
-          requestAnimationFrame(() => {
-            const domSelection = window.getSelection();
-            if (domSelection && domSelection.rangeCount > 0) {
-              const range = domSelection.getRangeAt(0);
-              const rect = range.getBoundingClientRect();
-              
-              // Encontrar o elemento do editor
-              const editorEl = document.querySelector('.editor-input');
-              if (!editorEl) return;
-              
-              const editorRect = editorEl.getBoundingClientRect();
-              
-              // Posicionar SEMPRE bem abaixo da palavra para não tapar
-              const positionData = {
-                // +30px para garantir que fique MUITO abaixo da palavra
-                top: rect.bottom - editorRect.top + window.scrollY + 30,
-                left: rect.left - editorRect.left + window.scrollX
-              };
-              
-              // Usar a função de delay para mostrar
-              showWithDelay(positionData, uniqueSuggestions);
-            }
-          });
+          // Calcular posição baseada na seleção atual
+          const domSelection = window.getSelection();
+          if (!domSelection || domSelection.rangeCount === 0) {
+            setIsVisible(true); // Mostrar mesmo sem posição precisa
+            return;
+          }
+          
+          const range = domSelection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          const editorEl = document.querySelector('.editor-input');
+          if (!editorEl) {
+            setIsVisible(true); // Mostrar mesmo sem referência do editor
+            return;
+          }
+          
+          const editorRect = editorEl.getBoundingClientRect();
+          const menuWidth = 230;
+          
+          let menuLeft = rect.left - editorRect.left + window.scrollX;
+          if (menuLeft + menuWidth > editorRect.width - 20) {
+            menuLeft = Math.max(20, rect.left - editorRect.left - menuWidth + window.scrollX);
+          }
+          
+          const positionData = {
+            top: rect.bottom - editorRect.top + window.scrollY + 8,
+            left: menuLeft
+          };
+          
+          setPosition(positionData);
+          setIsVisible(true);
         } else {
           setIsVisible(false);
         }
@@ -457,62 +448,61 @@ export const AutocompletePlugin = () => {
         : target.closest('.spelling-error');
       
       if (spellingErrorElement) {
-        // Verificar se é uma palavra única (sem espaços)
-        const word = spellingErrorElement.textContent?.trim() || '';
-        if (!word || word.includes(' ')) {
-          setIsVisible(false);
-          return;
-        }
-        
-        // Salvar referência ao elemento com erro
-        currentMisspelledElementRef.current = spellingErrorElement as HTMLElement;
-        
-        // Obter o texto da palavra com erro - usar o atributo data-word se disponível
-        const errorWord = (spellingErrorElement as HTMLElement).getAttribute('data-word');
-        
-        if (word) {
-          // Usar sugestões pré-computadas do atributo data-suggestions, se disponível
-          let foundSuggestions: string[] = [];
-          
-          try {
-            // Tentar obter sugestões do atributo data-suggestions
-            const suggestionsAttr = (spellingErrorElement as HTMLElement).getAttribute('data-suggestions');
-            if (suggestionsAttr) {
-              foundSuggestions = JSON.parse(suggestionsAttr);
-            } 
-          } catch (error) {
-            console.log('Erro ao obter sugestões do atributo:', error);
+        // Verificar se há texto selecionado no editor
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+            setIsVisible(false);
+            return;
           }
-          
-          // Se não existirem sugestões no atributo, usar nosso algoritmo aprimorado
-          if (foundSuggestions.length === 0) {
-            foundSuggestions = findRelevantSuggestions(word);
+          // Verificar se é uma palavra única (sem espaços)
+          const word = spellingErrorElement.textContent?.trim() || '';
+          if (!word || word.includes(' ')) {
+            setIsVisible(false);
+            return;
           }
-          
-          if (foundSuggestions.length > 0) {
-            // Eliminar duplicatas e limitar a 5 sugestões
-            const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
-            
-            // Posicionar o menu próximo da palavra clicada
-            const rect = (spellingErrorElement as HTMLElement).getBoundingClientRect();
-            
-            // Encontrar o elemento do editor
-            const editorEl = document.querySelector('.editor-input');
-            if (!editorEl) return;
-            
-            const editorRect = editorEl.getBoundingClientRect();
-            
-            // Posicionar SEMPRE bem abaixo da palavra para não tapar
-            const positionData = {
-              // +30px para garantir que fique MUITO abaixo da palavra
-              top: rect.bottom - editorRect.top + window.scrollY + 30,
-              left: rect.left - editorRect.left + window.scrollX
-            };
-            
-            // Usar a função de delay para mostrar
-            showWithDelay(positionData, uniqueSuggestions);
+          // Salvar referência ao elemento com erro
+          currentMisspelledElementRef.current = spellingErrorElement as HTMLElement;
+          // Obter o texto da palavra com erro - usar o atributo data-word se disponível
+          const errorWord = (spellingErrorElement as HTMLElement).getAttribute('data-word');
+          if (word) {
+            // Usar sugestões pré-computadas do atributo data-suggestions, se disponível
+            let foundSuggestions: string[] = [];
+            try {
+              // Tentar obter sugestões do atributo data-suggestions
+              const suggestionsAttr = (spellingErrorElement as HTMLElement).getAttribute('data-suggestions');
+              if (suggestionsAttr) {
+                foundSuggestions = JSON.parse(suggestionsAttr);
+              } 
+            } catch (error) {
+              console.log('Erro ao obter sugestões do atributo:', error);
+            }
+            // Se não existirem sugestões no atributo, usar nosso algoritmo aprimorado
+            if (foundSuggestions.length === 0) {
+              foundSuggestions = findRelevantSuggestions(word);
+            }
+            if (foundSuggestions.length > 0) {
+              // Eliminar duplicatas e limitar a 5 sugestões
+              const uniqueSuggestions = Array.from(new Set(foundSuggestions)).slice(0, 5);
+              // Posicionar o menu próximo da palavra clicada
+              const rect = (spellingErrorElement as HTMLElement).getBoundingClientRect();
+              const editorEl = document.querySelector('.editor-input');
+              if (!editorEl) return;
+              const editorRect = editorEl.getBoundingClientRect();
+              const menuWidth = 220;
+              let menuLeft = rect.left - editorRect.left + window.scrollX;
+              if (menuLeft + menuWidth > editorRect.width - 20) {
+                menuLeft = Math.max(20, rect.left - editorRect.left - menuWidth + window.scrollX);
+              }
+              const positionData = {
+                top: rect.bottom - editorRect.top + window.scrollY + 30,
+                left: menuLeft
+              };
+              setPosition(positionData);
+              showWithDelay(uniqueSuggestions);
+            }
           }
-        }
+        });
       }
     };
     
@@ -549,30 +539,8 @@ export const AutocompletePlugin = () => {
           // Em vez de tentar usar o nó diretamente, vamos usar a seleção atual ou criar uma
           const selection = $getSelection();
           
-          if ($isRangeSelection(selection)) {
-            // Se já tem seleção, usar diretamente
+          if (selection && $isRangeSelection(selection)) {
             selection.insertText(suggestion);
-          } else {
-            // Se não tem seleção, tentar selecionar a palavra com erro e substituir
-            // Usando DOM para criar uma seleção
-            const domSelection = window.getSelection();
-            if (domSelection) {
-              // Limpar seleção existente
-              domSelection.removeAllRanges();
-              
-              // Criar range para a palavra com erro
-              const range = document.createRange();
-              range.selectNodeContents(misspelledElement);
-              domSelection.addRange(range);
-              
-              // Aplicar a substituição no editor
-              editor.update(() => {
-                const selection = $getSelection();
-                if ($isRangeSelection(selection)) {
-                  selection.insertText(suggestion);
-                }
-              });
-            }
           }
         });
       }
@@ -644,56 +612,17 @@ export const AutocompletePlugin = () => {
     };
   }, []);
 
-  // Ajustar posição do menu para evitar que saia dos limites da tela
+  // Posicionar container baseado nas coordenadas calculadas
   useEffect(() => {
-    if (isVisible && autocompleteRef.current) {
-      const popover = autocompleteRef.current;
-      const editorEl = document.querySelector('.editor-input');
-      
-      if (editorEl) {
-        const editorRect = editorEl.getBoundingClientRect();
-        const popoverRect = popover.getBoundingClientRect();
-        
-        // Verificar se está saindo pela direita
-        const rightEdge = position.left + popoverRect.width;
-        if (rightEdge > editorRect.width - 20) {
-          const newLeft = Math.max(20, editorRect.width - 20 - popoverRect.width);
-          popover.style.left = `${newLeft}px`;
-        }
-      }
+    if (autocompleteRef.current && isVisible) {
+      autocompleteRef.current.style.top = `${position.top}px`;
+      autocompleteRef.current.style.left = `${position.left}px`;
     }
   }, [isVisible, position]);
-
-  // Adicionar este useEffect antes do return do componente
-  // Garantir que o componente seja renderizado sempre abaixo da palavra
-  useEffect(() => {
-    if (isVisible && autocompleteRef.current) {
-      // Forçar posicionamento abaixo ao renderizar
-      const popover = autocompleteRef.current;
-      
-      // Adicionar estilo inline para garantir que fique abaixo
-      popover.style.marginTop = '20px';
-      
-      // Verificar se o componente não está visível na tela e ajustar se necessário
-      setTimeout(() => {
-        if (!popover) return;
-        
-        const rect = popover.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        
-        // Se estiver saindo da tela pela parte inferior, ajustar
-        if (rect.bottom > viewportHeight) {
-          const newTop = Math.max(20, position.top - (rect.bottom - viewportHeight) - 20);
-          popover.style.top = `${newTop}px`;
-        }
-      }, 0);
-    }
-  }, [isVisible, position]);
-
+  
   return (
     <AutocompleteContainer
       ref={autocompleteRef}
-      style={{ top: position.top, left: position.left }}
       $visible={isVisible}
     >
       <SuggestionList>

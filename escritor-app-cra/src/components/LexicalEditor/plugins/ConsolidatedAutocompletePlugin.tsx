@@ -324,11 +324,21 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     const editorElement = document.querySelector('.editor-input');
     if (!editorElement) return null;
     const editorRect = editorElement.getBoundingClientRect();
-    return {
-      top: rect.bottom - editorRect.top + 8,
-      left: rect.left - editorRect.left,
-      width: Math.max(350, rect.width * 1.5)
-    };
+    
+    // Garantir que o popup fique dentro dos limites do editor
+    let top = rect.bottom - editorRect.top + window.scrollY + 8;
+    let left = rect.left - editorRect.left;
+    
+    // Verificar se o popup sairia pela direita e ajustar
+    const width = Math.max(350, rect.width * 1.5);
+    if (left + width > editorRect.width) {
+      left = Math.max(10, editorRect.width - width - 10);
+    }
+    
+    // Evitar que saia pela esquerda
+    left = Math.max(10, left);
+    
+    return { top, left, width };
   };
 
   // Atualizar a função updatePosition para usar handlePositioning
@@ -561,7 +571,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           padding: 12,
           borderRadius: 6,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-          background: '#181A20', // contraste escuro
+          background: 'rgba(24, 26, 32, 0.95)', // contraste escuro semi-transparente
           color: '#fff',
         }}
       >
