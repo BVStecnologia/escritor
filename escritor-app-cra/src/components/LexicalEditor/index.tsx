@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { $getRoot, $getSelection, EditorState } from 'lexical';
 import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -65,6 +65,8 @@ interface LexicalEditorProps {
   onChange?: (content: string) => void;
   bookId?: string;
   chapterId?: string;
+  onWordCountChanged?: (wordCount: number) => void;
+  setSaveStatus?: (status: 'saving' | 'saved' | 'error' | 'unsaved') => void;
 }
 
 // Configuração inicial do editor
@@ -87,23 +89,45 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   initialContent,
   onChange,
   bookId,
-  chapterId
+  chapterId,
+  onWordCountChanged,
+  setSaveStatus
 }) => {
-  const handleChange = (editorState: EditorState) => {
+  // Função para calcular a contagem de palavras diretamente a partir do texto
+  const calculateWordCount = useCallback((text: string): number => {
+    return text.split(/\s+/).filter(Boolean).length;
+  }, []);
+
+  // Handler para mudanças no editor
+  const handleChange = useCallback((editorState: EditorState) => {
     editorState.read(() => {
       const root = $getRoot();
       const content = root.getTextContent();
+      
+      // Atualiza o conteúdo
       onChange?.(content);
+      
+      // Calcula e atualiza a contagem de palavras em tempo real
+      if (onWordCountChanged) {
+        const wordCount = calculateWordCount(content);
+        onWordCountChanged(wordCount);
+      }
     });
-  };
+  }, [onChange, onWordCountChanged, calculateWordCount]);
 
-  // Usar a configuração inicial padrão
-  
-  // Log para diagnóstico
-  console.log('Renderizando LexicalEditor:', {
-    contentType: typeof initialContent,
-    contentLength: initialContent?.length || 0
-  });
+  // Handler para mudanças no status de salvamento
+  const handleStatusChange = useCallback((status: 'saving' | 'saved' | 'error' | 'unsaved') => {
+    if (setSaveStatus) {
+      setSaveStatus(status);
+    }
+  }, [setSaveStatus]);
+
+  // Handler para mudanças na contagem de palavras do AutoSavePlugin
+  const handleWordCountUpdate = useCallback((wordCount: number) => {
+    if (onWordCountChanged) {
+      onWordCountChanged(wordCount);
+    }
+  }, [onWordCountChanged]);
   
   return (
     <LexicalComposer initialConfig={initialConfig}>
@@ -125,7 +149,14 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <LinkPlugin />
         <ImagePlugin />
         <InitialContentPlugin initialContent={initialContent} />
-        {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
+        {bookId && chapterId && (
+          <AutoSavePlugin 
+            bookId={bookId} 
+            chapterId={chapterId} 
+            onStatusChange={handleStatusChange}
+            onWordCountChanged={handleWordCountUpdate}
+          />
+        )}
       </EditorContainer>
     </LexicalComposer>
   );

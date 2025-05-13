@@ -20,7 +20,6 @@ export function AutoSavePlugin({
 }: AutoSavePluginProps) {
   const [editor] = useLexicalComposerContext();
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const wordCountTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   const lastSeenContent = useRef<string>('');
   const hasUnsavedChanges = useRef<boolean>(false);
@@ -92,12 +91,7 @@ export function AutoSavePlugin({
         palavras: palavras, // campo real do banco
         last_edit: new Date().toISOString()
       };
-      console.log('Salvando capítulo com dados:', {
-        id: chapterId,
-        palavras,
-        texto: 'texto do editor (não exibido para economia de espaço)',
-        last_edit: updateData.last_edit
-      });
+
       await dbService.atualizarCapitulo(chapterId, updateData);
       lastSavedContent.current = content;
       hasUnsavedChanges.current = false;
@@ -109,19 +103,17 @@ export function AutoSavePlugin({
     }
   };
 
-  // IMPORTANTE: Atualizar contagem de palavras INDEPENDENTE do salvamento
+  // Registra listener para atualizar a contagem de palavras em tempo real
   useEffect(() => {
-    // Atualizar contagem de palavras a cada 2 segundos
-    wordCountTimerRef.current = setInterval(() => {
+    const removeUpdateListener = editor.registerUpdateListener(() => {
+      // Atualizar imediatamente a contagem de palavras sempre que o editor é atualizado
       updateWordCount();
-    }, 2000);
+      // Atualizar o status para indicar que existem alterações não salvas
+      if (onStatusChange) onStatusChange('unsaved');
+    });
     
-    return () => {
-      if (wordCountTimerRef.current) {
-        clearInterval(wordCountTimerRef.current);
-      }
-    };
-  }, []);
+    return removeUpdateListener;
+  }, [editor, onStatusChange]);
 
   // Adiciona listener para eventos de atualização do editor
   useEffect(() => {
@@ -139,7 +131,6 @@ export function AutoSavePlugin({
         // Verifica se o conteúdo mudou desde o último salvamento
         if (content !== lastSavedContent.current) {
           hasUnsavedChanges.current = true;
-          if (onStatusChange) onStatusChange('unsaved');
           
           // Programa salvamento com delay
           saveTimerRef.current = setTimeout(() => {
@@ -157,7 +148,7 @@ export function AutoSavePlugin({
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange]);
+  }, [bookId, chapterId, delay, editor]);
 
   // Configurar verificação periódica a cada 30 segundos para salvar alterações pendentes
   useEffect(() => {
@@ -220,7 +211,7 @@ export function AutoSavePlugin({
     // Executar uma vez após a inicialização
     setTimeout(() => {
       updateWordCount();
-    }, 1000);
+    }, 500);
   }, []);
 
   return null;

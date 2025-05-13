@@ -256,17 +256,10 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
       );
     }
 
-    if (saveStatus === 'saved') {
-      return (
-        <StatusIndicator $status="saved">
-          Salvo
-        </StatusIndicator>
-      );
-    }
-
+    // Estados 'saved' ou qualquer outro estado (incluindo o padrão)
     return (
-      <StatusIndicator $status="online">
-        Online
+      <StatusIndicator $status="saved">
+        Salvo
       </StatusIndicator>
     );
   };
