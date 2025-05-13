@@ -23,8 +23,27 @@ export function AutoSavePlugin({
   const periodicSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   const lastSeenContent = useRef<string>('');
-  const [isEditorActive, setIsEditorActive] = useState(false);
+  // IMPORTANTE: Inicializamos como true para garantir que o salvamento funcione desde o início
+  const [isEditorActive, setIsEditorActive] = useState(true);
   const hasUnsavedChanges = useRef<boolean>(false);
+  const initialCountUpdated = useRef<boolean>(false);
+
+  // Função para atualizar a contagem de palavras de forma explícita
+  const updateWordCount = () => {
+    if (!onWordCountChanged) return;
+    
+    try {
+      const plainText = editor.getEditorState().read(() => $getRoot().getTextContent());
+      const palavras = plainText.split(/\s+/).filter(Boolean).length;
+      console.log('Atualizando contagem de palavras explicitamente:', palavras);
+      onWordCountChanged(palavras);
+      
+      // Marcar que já atualizamos a contagem inicial
+      initialCountUpdated.current = true;
+    } catch (error) {
+      console.error('Erro ao calcular contagem de palavras:', error);
+    }
+  };
 
   // Função segura para serializar o estado do editor
   const serializeEditorState = (ignoreCache = false) => {
@@ -107,18 +126,36 @@ export function AutoSavePlugin({
     }
   };
 
+  // Inicialização e atualização forçada da contagem de palavras logo após a montagem
+  useEffect(() => {
+    if (bookId && chapterId && editor && !initialCountUpdated.current) {
+      // Aguardar um pouco para garantir que o editor esteja pronto
+      const timer = setTimeout(() => {
+        updateWordCount();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [bookId, chapterId, editor]);
+
   // Adiciona listeners globais para verificar o foco no editor
   useEffect(() => {
     const editorRoot = editor.getRootElement();
     if (!editorRoot) return;
 
+    // Sempre começa como ativo
+    setIsEditorActive(true);
+
     const handleDocumentClick = (e: MouseEvent) => {
-      if (editorRoot.contains(e.target as Node)) {
+      // Verificar se o clique foi no componente AIAssistantFixed
+      const aiElement = document.querySelector('[class*="AIContainer"]');
+      const clickedInAI = aiElement?.contains(e.target as Node);
+      
+      // Considerar cliques no editor OU no componente de IA como editor ativo
+      if (editorRoot.contains(e.target as Node) || clickedInAI) {
         setIsEditorActive(true);
       } else {
-        setIsEditorActive(false);
-        
-        // Se sair do editor (blur) e houver mudanças, salva imediatamente
+        // Não desativamos o editor, apenas sinalizamos para salvar se houver mudanças
         if (hasUnsavedChanges.current) {
           console.log('Editor perdeu foco com alterações não salvas, salvando...');
           const content = serializeEditorState();
@@ -137,6 +174,9 @@ export function AutoSavePlugin({
   useEffect(() => {
     if (!bookId || !chapterId) return;
 
+    // Sempre manter o editor como ativo
+    setIsEditorActive(true);
+
     const removeUpdateListener = editor.registerUpdateListener(({ editorState }) => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
@@ -151,12 +191,17 @@ export function AutoSavePlugin({
           hasUnsavedChanges.current = true;
           if (onStatusChange) onStatusChange('unsaved');
           
-          // Programa salvamento com delay, mas apenas se o editor estiver ativo
-          if (isEditorActive) {
-            saveTimerRef.current = setTimeout(() => {
-              saveContent(content);
-            }, delay);
+          // Sempre atualizar a contagem de palavras no callback
+          const plainText = editorState.read(() => $getRoot().getTextContent());
+          const palavras = plainText.split(/\s+/).filter(Boolean).length;
+          if (onWordCountChanged) {
+            onWordCountChanged(palavras);
           }
+          
+          // Programa salvamento com delay para todas as alterações
+          saveTimerRef.current = setTimeout(() => {
+            saveContent(content);
+          }, delay);
         }
       } catch (error) {
         console.error('Erro ao processar atualização do editor:', error);
@@ -172,7 +217,7 @@ export function AutoSavePlugin({
         clearInterval(periodicSaveTimerRef.current);
       }
     };
-  }, [bookId, chapterId, delay, editor, onStatusChange, isEditorActive, onWordCountChanged]);
+  }, [bookId, chapterId, delay, editor, onStatusChange, onWordCountChanged]);
 
   // Configura verificação periódica a cada 30 segundos para salvar alterações pendentes
   useEffect(() => {
