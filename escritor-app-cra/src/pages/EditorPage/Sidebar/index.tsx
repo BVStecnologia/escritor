@@ -14,8 +14,20 @@ import {
   ChaptersContainer,
   NewChapterButton
 } from './styles';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { useTheme } from '../../../contexts/ThemeContext';
+
+// Animações para os componentes
+const fadeInUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 const PopupOverlay = styled.div`
   position: fixed;
@@ -248,6 +260,73 @@ const DeleteConfirmationModal = ({
   );
 };
 
+// Adicionar este componente estilizado para as instruções
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  height: 100%;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  animation: ${fadeInUp} 0.5s ease;
+`;
+
+const EmptyStateIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+`;
+
+const EmptyStateTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const EmptyStateText = styled.p`
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+`;
+
+const EmptyStateExample = styled.div`
+  background: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'};
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  font-size: 0.9rem;
+  text-align: left;
+`;
+
+const ExampleItem = styled.div`
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ExampleNumber = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.primary}40;
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 0.75rem;
+  font-weight: bold;
+`;
+
 interface SidebarProps {
   chapters: Capitulo[];
   activeChapterId?: string;
@@ -372,13 +451,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </SidebarHeader>
 
       {isOpen && (
-        <ChapterSearch $isOpen={isOpen}>
-          <SearchInput
-            placeholder="Buscar partes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </ChapterSearch>
+        // Mostrar campo de busca apenas se tiver mais de 3 partes
+        filteredChapters.length > 3 && (
+          <ChapterSearch $isOpen={isOpen}>
+            <SearchInput
+              placeholder="Buscar partes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </ChapterSearch>
+        )
       )}
 
       <ChaptersContainer>
@@ -392,15 +474,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {...provided.droppableProps}
                   style={{ width: '100%' }}
                 >
-                  {renderChapters()}
-                  {provided.placeholder}
+                  {filteredChapters.length > 0 ? (
+                    <>
+                      {renderChapters()}
+                      {provided.placeholder}
+                    </>
+                  ) : (
+                    <EmptyStateContainer>
+                      <EmptyStateIcon>📝</EmptyStateIcon>
+                      <EmptyStateTitle>Monte as partes do seu livro</EmptyStateTitle>
+                      <EmptyStateText>
+                        Crie partes para organizar o conteúdo do seu livro. 
+                        Você pode arrastar e soltar para reorganizá-las a qualquer momento.
+                      </EmptyStateText>
+                      
+                      <EmptyStateExample>
+                        <ExampleItem>
+                          <ExampleNumber>1</ExampleNumber>
+                          Capa
+                        </ExampleItem>
+                        <ExampleItem>
+                          <ExampleNumber>2</ExampleNumber>
+                          Introdução
+                        </ExampleItem>
+                        <ExampleItem>
+                          <ExampleNumber>3</ExampleNumber>
+                          Capítulo 1
+                        </ExampleItem>
+                      </EmptyStateExample>
+                      
+                      <NewChapterButton onClick={() => setShowPopup(true)}>
+                        <PlusIcon />
+                        Criar primeira parte
+                      </NewChapterButton>
+                    </EmptyStateContainer>
+                  )}
                 </div>
               )}
             </Droppable>
-            <NewChapterButton onClick={() => setShowPopup(true)}>
-              <PlusIcon />
-              Nova Parte
-            </NewChapterButton>
+            {filteredChapters.length > 0 && (
+              <NewChapterButton onClick={() => setShowPopup(true)}>
+                <PlusIcon />
+                Nova Parte
+              </NewChapterButton>
+            )}
           </DragDropContext>
         ) : (
           // Versão recolhida - apenas ícones ou versão simplificada
