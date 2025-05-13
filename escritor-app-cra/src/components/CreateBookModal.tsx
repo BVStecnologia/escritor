@@ -41,23 +41,58 @@ const ModalOverlay = styled.div`
   z-index: 1000;
   animation: ${fadeIn} 0.3s ease-out;
   backdrop-filter: blur(5px);
+  padding: 20px;
+  box-sizing: border-box;
 `;
 
 const ModalContainer = styled.div`
   position: relative;
   width: 600px;
   max-width: 95%;
-  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   border-radius: 16px;
-  padding: 3rem;
   box-shadow: ${({ theme }) => theme.colors.shadow?.xl || theme.shadows.xl};
-  border: 1px solid ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : (theme.colors.border?.light || theme.colors.gray[200])};
   animation: ${slideUp} 0.5s ease-out, ${bookOpen} 0.8s ease-out;
-  overflow: hidden;
-
+  overflow: hidden; /* Importante: esconde qualquer overflow, incluindo barras de rolagem */
+  user-select: none;
+  
+  /* Fundo unificado para todo o container */
+  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
+  border: 1px solid ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : (theme.colors.border?.light || theme.colors.gray[200])};
+  
   @media (max-width: 768px) {
-    padding: 2rem;
+    max-height: 80vh;
   }
+`;
+
+const ContentWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden; 
+  
+  /* Esconder a barra de rolagem no Chrome, Safari e novos Edge */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'};
+    border-radius: 4px;
+  }
+  
+  /* Para Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => 
+    theme.isDarkMode 
+      ? 'rgba(255, 255, 255, 0.2) transparent' 
+      : 'rgba(0, 0, 0, 0.1) transparent'
+  };
 `;
 
 const BookDecoration = styled.div`
@@ -70,12 +105,29 @@ const BookDecoration = styled.div`
   font-size: 8rem;
   transform: rotate(15deg);
   color: ${({ theme }) => theme.colors.primary};
+  z-index: 1;
 `;
 
 const ModalHeader = styled.div`
   text-align: center;
-  margin-bottom: 2.5rem;
+  padding: 2.5rem 2rem 1.5rem;
+  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
   position: relative;
+  z-index: 3;
+  cursor: move;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 5px;
+    background-color: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'};
+    border-radius: 3px;
+    opacity: 0.8;
+  }
 `;
 
 const QuillIcon = styled.div`
@@ -109,10 +161,25 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding: 0 3rem 6rem;
+  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
+  
+  @media (max-width: 768px) {
+    padding: 0 2rem 6rem;
+  }
 `;
 
 const FormGroup = styled.div`
   position: relative;
+  margin: 0;
+  padding: 0;
+  border: none;
+`;
+
+const RequiredAsterisk = styled.span`
+  color: ${({ theme }) => theme.colors.primary || '#f97316'};
+  margin-left: 5px;
+  font-weight: bold;
 `;
 
 const Label = styled.label`
@@ -121,13 +188,54 @@ const Label = styled.label`
   font-weight: 600;
   color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
 `;
 
-const Input = styled.input`
+const Tooltip = styled.span`
+  position: relative;
+  margin-left: 5px;
+  cursor: help;
+  
+  &:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -5px;
+    left: 20px;
+    background: ${({ theme }) => theme.isDarkMode ? '#4a5568' : theme.colors.background.light};
+    color: ${({ theme }) => theme.isDarkMode ? '#e2e8f0' : theme.colors.text.primary};
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: normal;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    max-width: 270px;
+    white-space: normal;
+    transform: translateY(-100%);
+    width: 270px;
+    
+    @media (max-width: 768px) {
+      left: 50%;
+      transform: translateX(-50%) translateY(-100%);
+    }
+  }
+`;
+
+interface InputProps {
+  required?: boolean;
+}
+
+const Input = styled.input<InputProps>`
   width: 100%;
   padding: 0.875rem 1rem;
   background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
+  border: 2px solid ${({ theme, required }) => 
+    required 
+      ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
+      : theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])
+  };
   border-radius: 8px;
   font-size: 1rem;
   color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
@@ -144,11 +252,19 @@ const Input = styled.input`
   }
 `;
 
-const Textarea = styled.textarea`
+interface TextareaProps {
+  required?: boolean;
+}
+
+const Textarea = styled.textarea<TextareaProps>`
   width: 100%;
   padding: 0.875rem 1rem;
   background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
+  border: 2px solid ${({ theme, required }) => 
+    required 
+      ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
+      : theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])
+  };
   border-radius: 8px;
   font-size: 1rem;
   color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
@@ -168,11 +284,19 @@ const Textarea = styled.textarea`
   }
 `;
 
-const Select = styled.select`
+interface SelectProps {
+  required?: boolean;
+}
+
+const Select = styled.select<SelectProps>`
   width: 100%;
   padding: 0.875rem 1rem;
   background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
+  border: 2px solid ${({ theme, required }) => 
+    required 
+      ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
+      : theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])
+  };
   border-radius: 8px;
   font-size: 1rem;
   color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
@@ -195,6 +319,17 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
+  position: sticky;
+  bottom: 0;
+  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
+  padding: 1.5rem 3rem;
+  z-index: 3;
+  margin-bottom: 0;
+  box-shadow: 0 -10px 20px ${({ theme }) => theme.isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem 2rem;
+  }
   
   @media (max-width: 468px) {
     flex-direction: column;
@@ -267,6 +402,7 @@ const ProgressBar = styled.div`
   background: ${({ theme }) => theme.colors.gray[200]};
   border-radius: 0 0 16px 16px;
   overflow: hidden;
+  z-index: 5;
 `;
 
 const ProgressFill = styled.div<{ progress: number }>`
@@ -306,6 +442,39 @@ const CloseButton = styled.button`
   }
 `;
 
+// Novo componente para separador de seção
+const SectionDivider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0 1rem;
+  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
+  font-size: 0.9rem;
+  font-weight: 600;
+  
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+  }
+  
+  &::before {
+    margin-right: 0.75rem;
+  }
+  
+  &::after {
+    margin-left: 0.75rem;
+  }
+`;
+
+const RequiredFieldsNote = styled.p`
+  text-align: center;
+  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
+  font-size: 0.8rem;
+  margin-top: 1rem;
+  font-style: italic;
+`;
+
 // Genres list
 const GENRES = [
   'Romance',
@@ -335,6 +504,10 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [genero, setGenero] = useState('');
+  const [autor, setAutor] = useState('');
+  const [personagens, setPersonagens] = useState('');
+  const [ambientacao, setAmbientacao] = useState('');
+  const [palavrasChave, setPalavrasChave] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -347,20 +520,33 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
       setTitulo('');
       setDescricao('');
       setGenero('');
+      setAutor('');
+      setPersonagens('');
+      setAmbientacao('');
+      setPalavrasChave('');
       setError('');
       setSuccess(false);
       setProgress(0);
     }
   }, [isOpen]);
 
-  // Atualizar barra de progresso
+  // Atualizar barra de progresso com pesos diferentes
   useEffect(() => {
     let filled = 0;
-    if (titulo) filled += 33;
-    if (descricao) filled += 33;
-    if (genero) filled += 34;
-    setProgress(filled);
-  }, [titulo, descricao, genero]);
+    
+    // Campos obrigatórios (75% do peso total)
+    if (titulo) filled += 25;
+    if (descricao) filled += 25;
+    if (genero) filled += 25;
+    
+    // Campos opcionais (25% do peso total)
+    if (autor) filled += 6.25;
+    if (personagens) filled += 6.25;
+    if (ambientacao) filled += 6.25;
+    if (palavrasChave) filled += 6.25;
+    
+    setProgress(Math.min(filled, 100)); // Garante que não ultrapasse 100%
+  }, [titulo, descricao, genero, autor, personagens, ambientacao, palavrasChave]);
 
   // Fechar ao clicar fora
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -389,9 +575,12 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
     try {
       await dbService.criarLivro({
         titulo,
-        autor: '', // Você pode adicionar um campo de autor se desejar
+        autor,
         sinopse: descricao,
-        genero: genero
+        genero,
+        personagens,
+        ambientacao,
+        palavras_chave: palavrasChave
       });
 
       setSuccess(true);
@@ -425,66 +614,164 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
         <ModalHeader>
           <QuillIcon>✍️</QuillIcon>
           <Title>Criar Novo Livro</Title>
-          <Subtitle>Dê vida à sua nova história</Subtitle>
+          <Subtitle>Preencha as informações básicas do seu livro</Subtitle>
         </ModalHeader>
 
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="titulo">Título do Livro *</Label>
-            <Input
-              id="titulo"
-              type="text"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Digite o título da sua obra"
-              required
-              autoFocus
-            />
-          </FormGroup>
+        <ContentWrapper>
+          <Form onSubmit={handleSubmit}>
+            {/* Campos Obrigatórios */}
+            <FormGroup>
+              <Label htmlFor="titulo">
+                Título do Livro
+                <RequiredAsterisk>*</RequiredAsterisk>
+                <Tooltip data-tooltip="O título é a identidade principal do seu livro e será usado para referência nos sistemas de IA.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Input
+                id="titulo"
+                type="text"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Digite o título da sua obra (obrigatório)"
+                autoFocus
+                maxLength={100}
+                required={true}
+              />
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="descricao">Sinopse</Label>
-            <Textarea
-              id="descricao"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Conte um pouco sobre sua história..."
-            />
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="genero">
+                Gênero Literário
+                <RequiredAsterisk>*</RequiredAsterisk>
+                <Tooltip data-tooltip="O gênero ajuda a IA a entender o estilo, tom e convenções que deve seguir ao auxiliar na escrita.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Select
+                id="genero"
+                value={genero}
+                onChange={(e) => setGenero(e.target.value)}
+                required={true}
+              >
+                <option value="">Selecione um gênero (obrigatório)</option>
+                {GENRES.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </Select>
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="genero">Gênero Literário</Label>
-            <Select
-              id="genero"
-              value={genero}
-              onChange={(e) => setGenero(e.target.value)}
-            >
-              <option value="">Selecione um gênero</option>
-              {GENRES.map(g => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </Select>
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="descricao">
+                Sinopse/Premissa
+                <RequiredAsterisk>*</RequiredAsterisk>
+                <Tooltip data-tooltip="Um breve resumo da história que fornece contexto essencial para a IA compreender o enredo central.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Textarea
+                id="descricao"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Descreva o conceito principal da sua história em poucas linhas (obrigatório)"
+                maxLength={500}
+                required={true}
+              />
+            </FormGroup>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>Livro criado com sucesso! ✨</SuccessMessage>}
+            {/* Separador para campos opcionais */}
+            <SectionDivider>Informações Adicionais (Opcionais)</SectionDivider>
 
-          <ButtonGroup>
-            <SecondaryButton
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancelar
-            </SecondaryButton>
-            <PrimaryButton
-              type="submit"
-              disabled={loading || !titulo}
-            >
-              {loading ? 'Criando...' : 'Criar Livro'}
-            </PrimaryButton>
-          </ButtonGroup>
-        </Form>
+            <FormGroup>
+              <Label htmlFor="autor">
+                Autor
+                <Tooltip data-tooltip="Nome do autor ou pseudônimo. Se não preenchido, usará seu nome de usuário.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Input
+                id="autor"
+                type="text"
+                value={autor}
+                onChange={(e) => setAutor(e.target.value)}
+                placeholder="Seu nome como autor ou pseudônimo (opcional)"
+                maxLength={100}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="personagens">
+                Personagens Principais
+                <Tooltip data-tooltip="Liste os protagonistas com breves descrições para ajudar a IA a manter consistência nos diálogos e ações.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Textarea
+                id="personagens"
+                value={personagens}
+                onChange={(e) => setPersonagens(e.target.value)}
+                placeholder="Ex: Maria Silva: protagonista, 30 anos, determinada; João Pereira: antagonista, ambicioso... (opcional)"
+                maxLength={500}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="ambientacao">
+                Ambientação/Cenário
+                <Tooltip data-tooltip="Defina onde e quando a história se passa para criar uma atmosfera coerente e referências temporais adequadas.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Textarea
+                id="ambientacao"
+                value={ambientacao}
+                onChange={(e) => setAmbientacao(e.target.value)}
+                placeholder="Ex: Brasil, anos 90, em uma pequena cidade litorânea cercada por florestas... (opcional)"
+                maxLength={500}
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <Label htmlFor="palavrasChave">
+                Palavras-chave
+                <Tooltip data-tooltip="Termos relevantes que caracterizam a obra e ajudam na recuperação de informações pela IA.">
+                  💡
+                </Tooltip>
+              </Label>
+              <Input
+                id="palavrasChave"
+                type="text"
+                value={palavrasChave}
+                onChange={(e) => setPalavrasChave(e.target.value)}
+                placeholder="Ex: aventura, mistério, viagem no tempo, distopia (separadas por vírgula, opcional)"
+                maxLength={200}
+              />
+            </FormGroup>
+
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            {success && <SuccessMessage>Livro criado com sucesso! ✨</SuccessMessage>}
+
+            <RequiredFieldsNote>
+              Campos marcados com <RequiredAsterisk>*</RequiredAsterisk> são obrigatórios
+            </RequiredFieldsNote>
+
+            <ButtonGroup>
+              <SecondaryButton
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancelar
+              </SecondaryButton>
+              <PrimaryButton
+                type="submit"
+                disabled={loading || !titulo || !genero || !descricao}
+              >
+                {loading ? 'Criando...' : 'Criar Livro'}
+              </PrimaryButton>
+            </ButtonGroup>
+          </Form>
+        </ContentWrapper>
 
         <ProgressBar>
           <ProgressFill progress={progress} />

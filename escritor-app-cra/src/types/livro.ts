@@ -8,4 +8,10 @@ export interface Livro {
   email_user?: string;
   titulo?: string; // Adicionado para compatibilidade com DashboardPage
   autor?: string;  // Adicionado para compatibilidade com DashboardPage
+  sinopse?: string;
+  genero?: string;
+  personagens?: string;
+  ambientacao?: string;
+  palavras_chave?: string;
+  capa?: string;
 }
