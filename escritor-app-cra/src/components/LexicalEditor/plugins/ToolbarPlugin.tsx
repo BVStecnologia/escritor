@@ -49,10 +49,12 @@ const Toolbar = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
-  height: 89px; /* Mantendo a altura consistente com os outros cabeçalhos */
+  height: auto;
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  z-index: 10;
+  position: relative;
 `;
 
 const ToolbarSection = styled.div`

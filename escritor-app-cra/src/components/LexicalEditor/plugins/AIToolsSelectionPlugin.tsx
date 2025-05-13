@@ -7,8 +7,11 @@ import {
   COMMAND_PRIORITY_LOW
 } from 'lexical';
 import styled from 'styled-components';
+import { assistantService } from '../../../services/assistantService';
+import { Spinner } from '../../styled';
 
 const AIToolsContainer = styled.div`
+  transition: all 0.3s ease-in-out;
   position: absolute;
   z-index: 100;
   border-radius: 8px;
@@ -49,6 +52,13 @@ const ToolButton = styled.button`
     transform: scale(1.05);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 `;
 
 // Ferramentas de IA disponíveis na seleção
@@ -70,12 +80,74 @@ const AI_TOOLS = [
   }
 ];
 
-export const AIToolsSelectionPlugin = () => {
+const ResultContainer = styled.div`
+  background: ${({ theme }) => theme.colors.background.paper + '95'};
+  border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
+  border-radius: 8px;
+  padding: 12px;
+  width: 300px;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-top: 8px;
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 8px;
+`;
+
+interface ActionButtonProps {
+  color?: 'primary' | 'error' | 'success' | 'warning';
+}
+
+const ActionButton = styled.button<ActionButtonProps>`
+  background: ${({ theme, color }) => {
+    if (!color) return theme.colors.primary;
+    switch(color) {
+      case 'error': return theme.colors.error || '#ef4444';
+      case 'success': return theme.colors.success || '#10b981';
+      case 'warning': return theme.colors.warning || '#f59e0b';
+      case 'primary': 
+      default: return theme.colors.primary;
+    }
+  }};
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+`;
+
+interface AIToolsSelectionPluginProps {
+  livroId?: string;
+  capituloId?: string;
+}
+
+export const AIToolsSelectionPlugin = ({
+  livroId,
+  capituloId
+}: AIToolsSelectionPluginProps = {}) => {
   const [editor] = useLexicalComposerContext();
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [selectedText, setSelectedText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Estados para gerenciar o processamento da IA
+  const [isLoading, setIsLoading] = useState(false);
+  const [aiResult, setAiResult] = useState('');
+  const [showResult, setShowResult] = useState(false);
+  const [currentTool, setCurrentTool] = useState('');
   
   useEffect(() => {
     return editor.registerCommand(
@@ -207,30 +279,127 @@ export const AIToolsSelectionPlugin = () => {
     }
   }, [isVisible, position, containerRef]);
   
-  const handleToolAction = (toolId: string) => {
-    // Feedback visual para o usuário
+  // Função para substituir o texto selecionado no editor
+  const replaceSelectedText = (newText: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      
+      if ($isRangeSelection(selection)) {
+        selection.insertText(newText);
+      }
+    });
+  };
+
+  // Função para aplicar o resultado da IA ao texto
+  const applyAiResult = () => {
+    replaceSelectedText(aiResult);
+    setShowResult(false);
+    setAiResult('');
+    setCurrentTool('');
+  };
+
+  // Função para cancelar e limpar os resultados
+  const cancelAiResult = () => {
+    setShowResult(false);
+    setAiResult('');
+    setCurrentTool('');
+  };
+
+  const handleToolAction = async (toolId: string) => {
+    // Guarda o texto original
     const originalText = selectedText;
+    setCurrentTool(toolId);
+    setIsLoading(true);
     
-    switch(toolId) {
-      case 'rewrite':
-        alert(`A ferramenta irá reescrever o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
-        break;
-      case 'expand':
-        alert(`A ferramenta irá expandir o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
-        break;
-      case 'summarize':
-        alert(`A ferramenta irá resumir o texto: "${originalText.substring(0, 30)}${originalText.length > 30 ? '...' : ''}"`);
-        break;
+    try {
+      let result;
+      
+      switch(toolId) {
+        case 'rewrite':
+          result = await assistantService.writingAssistant({
+            input: originalText,
+            action: 'rewrite',
+            focusAreas: ['clarity', 'engagement'],
+            livroId,
+            capituloId
+          });
+          break;
+        case 'expand':
+          result = await assistantService.writingAssistant({
+            input: originalText,
+            action: 'improve',
+            focusAreas: ['engagement', 'flow'],
+            livroId,
+            capituloId
+          });
+          break;
+        case 'summarize':
+          result = await assistantService.custom({
+            input: `Resumir o seguinte texto, mantendo apenas as informações mais importantes: ${originalText}`,
+            systemPrompt: "Você é um assistente de escrita especializado em criar resumos concisos. Crie um resumo que mantenha apenas os pontos principais do texto original, reduzindo significativamente o tamanho sem perder as informações essenciais."
+          });
+          break;
+      }
+      
+      if (result && result.content) {
+        setAiResult(result.content);
+        setShowResult(true);
+      } else {
+        throw new Error('Resposta inválida do assistente');
+      }
+    } catch (error) {
+      console.error(`Erro ao processar ação ${toolId}:`, error);
+      setAiResult('Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.');
+      setShowResult(true);
+    } finally {
+      setIsLoading(false);
+      setIsVisible(false);
     }
-    
-    // Aqui seria a implementação real da ação de IA
-    setIsVisible(false);
   };
   
   if (!isVisible) {
     return null;
   }
   
+  // Renderização condicional: mostra o menu de ferramentas ou o resultado
+  if (!isVisible && !showResult) {
+    return null;
+  }
+  
+  // Renderizar resultado da IA
+  if (showResult) {
+    return (
+      <AIToolsContainer 
+        ref={containerRef}
+        style={{ 
+          top: position.top, 
+          left: position.left,
+          width: '300px'
+        }}
+      >
+        <ResultContainer>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+            {currentTool === 'rewrite' && '✍️ Texto Reescrito'}
+            {currentTool === 'expand' && '🔍 Texto Expandido'}
+            {currentTool === 'summarize' && '📝 Resumo'}
+          </div>
+          <div style={{ fontSize: '13px', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+            {aiResult}
+          </div>
+          <ButtonRow>
+            <ActionButton onClick={cancelAiResult} color="error">
+              Cancelar
+            </ActionButton>
+            <ActionButton onClick={applyAiResult}>
+              Aplicar
+            </ActionButton>
+          </ButtonRow>
+        </ResultContainer>
+      </AIToolsContainer>
+    );
+  }
+  
+  // Renderizar menu de ferramentas
   return (
     <AIToolsContainer 
       ref={containerRef}
@@ -239,15 +408,21 @@ export const AIToolsSelectionPlugin = () => {
         left: position.left
       }}
     >
-      {AI_TOOLS.map(tool => (
-        <ToolButton 
-          key={tool.id}
-          onClick={() => handleToolAction(tool.id)}
-          title={tool.label}
-        >
-          {tool.icon} {tool.label}
+      {isLoading ? (
+        <ToolButton disabled>
+          <Spinner size="small" /> Processando...
         </ToolButton>
-      ))}
+      ) : (
+        AI_TOOLS.map(tool => (
+          <ToolButton 
+            key={tool.id}
+            onClick={() => handleToolAction(tool.id)}
+            title={tool.label}
+          >
+            {tool.icon} {tool.label}
+          </ToolButton>
+        ))
+      )}
     </AIToolsContainer>
   );
 };

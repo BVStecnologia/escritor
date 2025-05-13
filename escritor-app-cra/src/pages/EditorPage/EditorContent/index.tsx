@@ -23,7 +23,7 @@ interface EditorContentProps {
   initialContent?: string;
   saveStatus: string;
   isOnline: boolean;
-  setSaveStatus?: (status: 'saving' | 'saved' | 'idle') => void;
+  setSaveStatus?: (status: 'saving' | 'saved' | 'error' | 'unsaved') => void;
   loadingChapter: boolean;
 }
 
@@ -66,7 +66,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
 
   return (
     <Content>
-      {/* Removemos a barra de ferramentas, já que não temos mais elementos nela */}
+      {/* Toolbar foi removida conforme solicitado */}
       
       {loadingChapter ? (
         <LoadingChapter mensagem="Carregando capítulo..." alinhamentoEsquerda />
@@ -77,6 +77,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               key={editorKey}
               initialContent={initialContent}
               onChange={onEditorChange}
+              livroId={bookId}
+              capituloId={chapterId}
               bookId={bookId}
               chapterId={chapterId}
               setSaveStatus={setSaveStatus}

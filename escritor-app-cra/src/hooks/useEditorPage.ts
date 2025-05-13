@@ -10,7 +10,7 @@ export interface UseEditorPageReturn {
   loading: boolean;
   erro: string | null;
   isOnline: boolean;
-  saveStatus: 'idle' | 'saving' | 'saved';
+  saveStatus: 'unsaved' | 'saving' | 'saved' | 'error';
   titleSaveStatus: 'idle' | 'saving' | 'saved';
   wordCount: number;
   chapterTitle: string;
@@ -23,7 +23,7 @@ export interface UseEditorPageReturn {
   handleBookTitleChange: (value: string) => void;
   handleChaptersReorder: (reorderedChapters: Capitulo[]) => void;
   handleChapterTitleUpdate: (chapterId: string, newTitle: string) => void;
-  setSaveStatus: React.Dispatch<React.SetStateAction<'idle' | 'saving' | 'saved'>>;
+  setSaveStatus: React.Dispatch<React.SetStateAction<'unsaved' | 'saving' | 'saved' | 'error'>>;
   setCapitulos: React.Dispatch<React.SetStateAction<Capitulo[]>>;
   setWordCount: React.Dispatch<React.SetStateAction<number>>;
   setLivro: React.Dispatch<React.SetStateAction<any>>;
@@ -36,7 +36,7 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'unsaved' | 'saving' | 'saved' | 'error'>('saved');
   const [titleSaveStatus, setTitleSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [wordCount, setWordCount] = useState(0);
   const [chapterTitle, setChapterTitle] = useState('');

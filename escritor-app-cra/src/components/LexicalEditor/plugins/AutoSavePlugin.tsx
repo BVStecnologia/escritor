@@ -7,7 +7,7 @@ interface AutoSavePluginProps {
   bookId?: string;
   chapterId?: string;
   delay?: number;
-  onStatusChange?: (status: 'saving' | 'saved' | 'idle') => void;
+  onStatusChange?: (status: 'saving' | 'saved' | 'error' | 'unsaved') => void;
   onWordCountChanged?: (wordCount: number) => void;
 }
 
@@ -87,7 +87,7 @@ export function AutoSavePlugin({
         if (onStatusChange) onStatusChange('saved');
       } catch (error) {
         console.error('Erro ao salvar automaticamente:', error);
-        if (onStatusChange) onStatusChange('idle');
+        if (onStatusChange) onStatusChange('error');
       }
     };
 

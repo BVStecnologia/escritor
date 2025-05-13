@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { assistantService } from '../../services/assistantService';
 import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon, CollapseRightIcon } from '../../components/icons';
 import styled from 'styled-components';
@@ -294,6 +294,8 @@ interface AIAssistantFixedProps {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  isTyping?: boolean;
+  fullContent?: string;
 }
 
 export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
@@ -304,6 +306,66 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Função para rolar para a última mensagem
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Efeito para rolar para o fim quando mensagens mudam
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Adicionar uma mensagem de boas-vindas ao inicializar o componente
+  useEffect(() => {
+    setMessages([{
+      role: 'assistant',
+      content: 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje? Você pode me perguntar sobre escrita criativa, desenvolvimento de personagens, revisão de texto, ou qualquer outro aspecto do seu projeto.'
+    }]);
+  }, []);
+
+  // Efeito para simulação de digitação
+  useEffect(() => {
+    const typingMessage = messages.find(m => m.isTyping && m.fullContent);
+    
+    if (typingMessage) {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+      
+      typingTimerRef.current = setTimeout(() => {
+        // Se o conteúdo atual é menor que o conteúdo completo, adiciona mais caracteres
+        if (typingMessage.content.length < typingMessage.fullContent!.length) {
+          setMessages(prevMessages => {
+            return prevMessages.map(m => {
+              if (m.isTyping && m.fullContent) {
+                // Pega mais 3-8 caracteres de cada vez para dar impressão de digitação
+                const charsToAdd = Math.floor(Math.random() * 6) + 3;
+                const newContent = m.fullContent!.substring(0, m.content.length + charsToAdd);
+                return {
+                  ...m,
+                  content: newContent,
+                  // Se chegou ao fim, marca como não mais digitando
+                  isTyping: newContent.length < m.fullContent!.length
+                };
+              }
+              return m;
+            });
+          });
+        }
+      }, 30); // Velocidade da digitação (30ms)
+    }
+    
+    // Limpar o timer quando o componente for desmontado
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+    };
+  }, [messages]);
 
   const aiSuggestions = [
     { icon: <LightbulbIcon />, text: "Melhorar a descrição desta cena" },
@@ -339,86 +401,64 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
         chapterId
       });
       
-      // Teste direto via fetch para verificar se é um problema com o assistantService ou com a função edge
-      try {
-        const requestBody = {
-          mode: 'custom',
-          input: aiPrompt,
-          context: {
-            system_prompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.\nSeja conciso, específico e útil.`,
-            include_embeddings: true,
-            max_embeddings: 5
-          }
-        };
-        
-        console.log('Enviando request direto via fetch:', requestBody);
-        
-        // Vamos tentar usar uma abordagem mais simples com supabase
-        const response = await assistantService.custom({
-          input: aiPrompt,
-          systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
+      const response = await assistantService.custom({
+        input: aiPrompt,
+        systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
 Seja conciso, específico e útil.`,
-          includeEmbeddings: true,
-          maxEmbeddings: 5
-        });
-        
-        console.log('Resposta recebida do assistantService:', response);
-        
-        /* Deixando o código fetch comentado para referência futura
-        const fetchResponse = await fetch('https://vuyjxxtxwweeobeyfkzr.supabase.co/functions/v1/claude-embeddings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eWp4eHR4d3dlZW9iZXlma3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MzYxODcsImV4cCI6MjA2MjIxMjE4N30.hcOHnocR9B4ogqt94ugJQw_mC1g40D3ZM7j_lJjuotU',
-            'Access-Control-Allow-Origin': '*'
-          },
-          mode: 'cors',
-          cache: 'no-cache',
-          credentials: 'same-origin',
-          body: JSON.stringify(requestBody)
-        });
-        */
-        
-        // Extrair a resposta do assistente no formato correto
-        let assistantContent = '';
-        
-        if (response && response.content && Array.isArray(response.content)) {
-          // Formato Claude API v1
-          const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
-          if (textContent && textContent.text) {
-            assistantContent = textContent.text;
-          }
-        } else if (response && typeof response === 'string') {
-          assistantContent = response;
-        } else if (response && response.text) {
-          assistantContent = response.text;
-        }
-        
-        // Se não conseguir extrair o texto, usar mensagem genérica
-        if (!assistantContent) {
-          assistantContent = "Desculpe, não consegui processar sua solicitação. Tente novamente.";
-          console.error('Não foi possível extrair o conteúdo da resposta:', response);
-        }
-        
-        // Add AI response to conversation
-        const assistantMessage: Message = { role: 'assistant', content: assistantContent };
-        setMessages(prev => [...prev, assistantMessage]);
-      } catch (serviceError) {
-        console.error('Erro no assistantService:', serviceError);
-        throw serviceError; // Propagar o erro para o próximo bloco catch
-      }
-    } catch (error) {
-      console.error('Erro ao enviar prompt:', error);
+        includeEmbeddings: true,
+        maxEmbeddings: 5
+      });
       
-      // Exibir detalhes completos do erro para depuração
+      console.log('Resposta recebida do assistantService:', response);
+      
+      // Extrair a resposta do assistente no formato correto
+      let assistantContent = '';
+      
+      if (response && response.content && Array.isArray(response.content)) {
+        // Formato Claude API v1
+        const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
+        if (textContent && textContent.text) {
+          assistantContent = textContent.text;
+        }
+      } else if (response && typeof response === 'string') {
+        assistantContent = response;
+      } else if (response && response.text) {
+        assistantContent = response.text;
+      } else if (response && response.message) {
+        assistantContent = response.message;
+      } else if (response && response.error) {
+        throw new Error(response.error);
+      }
+      
+      // Se não conseguir extrair o texto, usar mensagem genérica
+      if (!assistantContent) {
+        assistantContent = "Desculpe, não consegui processar sua solicitação. Tente novamente com uma pergunta diferente.";
+        console.error('Não foi possível extrair o conteúdo da resposta:', response);
+      }
+      
+      // Iniciar com apenas os primeiros caracteres e definir isTyping como true
+      const assistantMessage: Message = { 
+        role: 'assistant', 
+        content: assistantContent.substring(0, 1), // Começa com apenas o primeiro caractere
+        fullContent: assistantContent, // Guarda o conteúdo completo
+        isTyping: true
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error: any) {
+      console.error('Erro ao enviar prompt:', error);
       console.log('Detalhes completos do erro:', JSON.stringify(error, null, 2));
       
-      // Criar mensagem de erro mais informativa
-      let errorContent = 'Desculpe, ocorreu um erro ao processar sua solicitação.';
+      // Criar mensagem de erro mais amigável
+      let errorContent = 'Desculpe, não foi possível obter resposta do assistente. ';
       
-      // Adicionar detalhes do erro se disponíveis
-      if (error instanceof Error) {
-        errorContent += ' Detalhes: ' + error.message;
+      if (error.message?.includes('Failed to send a request')) {
+        errorContent += 'Não foi possível conectar com o serviço de IA. Por favor, verifique sua conexão com a internet e tente novamente.';
+      } else if (error.message?.includes('timeout')) {
+        errorContent += 'O tempo de resposta esgotou. O serviço pode estar sobrecarregado no momento. Tente novamente mais tarde.';
+      } else if (error.message?.includes('CORS')) {
+        errorContent += 'Erro de permissão de acesso ao servidor. Entre em contato com o suporte.';
+      } else if (error instanceof Error) {
+        errorContent += error.message;
       }
       
       const errorMessage: Message = { role: 'assistant', content: errorContent };
@@ -469,6 +509,7 @@ Seja conciso, específico e útil.`,
                     Pensando...
                   </AIMessage>
                 )}
+                <div ref={messagesEndRef} />
               </AIConversation>
             ) : (
               <>

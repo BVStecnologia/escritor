@@ -42,8 +42,11 @@ interface CustomOptions {
   systemPrompt?: string;
   includeEmbeddings?: boolean;
   maxEmbeddings?: number;
-  embeddingFilter?: string;
+  embeddingFilter?: string | null;
 }
+
+// Obter a chave anônima do Supabase do cliente
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eWp4eHR4d3dlZW9iZXlma3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MzYxODcsImV4cCI6MjA2MjIxMjE4N30.hcOHnocR9B4ogqt94ugJQw_mC1g40D3ZM7j_lJjuotU';
 
 // Serviço para integração com a Claude AI através das Edge Functions do Supabase
 export const assistantService = {
@@ -57,7 +60,7 @@ export const assistantService = {
     livroId
   }: AutocompleteOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: {
           mode: 'autocomplete',
           input,
@@ -96,7 +99,7 @@ export const assistantService = {
     pageLength = 'medium'
   }: GeneratePageOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: {
           mode: 'generate_page',
           input,
@@ -128,7 +131,7 @@ export const assistantService = {
     capituloId
   }: WritingAssistantOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: {
           mode: 'writing_assistant',
           input,
@@ -168,7 +171,7 @@ export const assistantService = {
     capituloId
   }: CreativeIdeasOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: {
           mode: 'creative_ideas',
           input,
@@ -206,7 +209,7 @@ export const assistantService = {
     maxResults = 5
   }: SearchOptions) {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: {
           mode: 'search',
           input,
@@ -232,10 +235,11 @@ export const assistantService = {
     input,
     systemPrompt,
     includeEmbeddings = true,
-    maxEmbeddings = 3,
-    embeddingFilter
+    maxEmbeddings = 5,
+    embeddingFilter = null
   }: CustomOptions) {
     try {
+      // Preparar o corpo da requisição no formato esperado pela função Edge
       const requestBody = {
         mode: 'custom',
         input,
@@ -247,40 +251,15 @@ export const assistantService = {
         }
       };
       
-      console.log('Enviando para claude-embeddings:', JSON.stringify(requestBody, null, 2));
+      console.log('Enviando para Claude_embebedings:', JSON.stringify(requestBody, null, 2));
       
       // Verificar se o Supabase está inicializado corretamente
       if (!supabase || !supabase.functions) {
         throw new Error('Cliente Supabase não inicializado corretamente');
       }
       
-      // Versão direta com fetch - provavelmente mais confiável em alguns casos
-      console.log('Tentando fetch direto para a edge function');
-      try {
-        const directResponse = await fetch('https://vuyjxxtxwweeobeyfkzr.supabase.co/functions/v1/claude-embeddings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1eWp4eHR4d3dlZW9iZXlma3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MzYxODcsImV4cCI6MjA2MjIxMjE4N30.hcOHnocR9B4ogqt94ugJQw_mC1g40D3ZM7j_lJjuotU'
-          },
-          body: JSON.stringify(requestBody)
-        });
-        
-        if (!directResponse.ok) {
-          console.error(`Fetch retornou status ${directResponse.status}. Tentando conexão via SDK...`);
-          throw new Error(`HTTP error: ${directResponse.status}`);
-        }
-        
-        const directData = await directResponse.json();
-        console.log('Resposta direta via fetch:', directData);
-        return directData;
-      } catch (fetchError) {
-        console.warn('Erro ao tentar fetch direto, tentando via SDK:', fetchError);
-        // Continuar com o método do SDK se o fetch falhar
-      }
-      
-      // Continuar com o método do SDK
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+      // Chamar a função Edge usando o formato documentado
+      const { data, error } = await supabase.functions.invoke('Claude_embebedings', {
         body: requestBody
       });
       
@@ -289,10 +268,11 @@ export const assistantService = {
         throw error;
       }
       
-      console.log('Resposta da API claude-embeddings:', data);
+      console.log('Resposta da API Claude_embebedings:', data);
       return data;
     } catch (error) {
       console.error('Erro ao usar modo personalizado:', error);
+      console.error('Detalhes completos do erro:', JSON.stringify(error, null, 2));
       throw error;
     }
   }
