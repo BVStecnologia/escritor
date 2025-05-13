@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { $getRoot, $getSelection, EditorState } from 'lexical';
 import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -21,11 +21,12 @@ import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
 
-// Importar os plugins refatorados
-import { AIAutocompletePlugin } from './plugins/AIAutocompletePlugin';
+// Importar os plugins de IA reformulados usando DOM APIs
+// import { AIAutocompletePlugin } from './plugins/AIAutocompletePlugin';
+// import { AutocompletePlugin } from './plugins/AutocompletePlugin';
 import { AIToolsSelectionPlugin } from './plugins/AIToolsSelectionPlugin';
 import { DOMSpellCheckPlugin } from './plugins/DOMSpellCheckPlugin';
-import { FloatingSaveStatus } from './FloatingSaveStatus';
+import { ConsolidatedAutocompletePlugin } from './plugins/ConsolidatedAutocompletePlugin';
 
 const EditorContainer = styled.div`
   position: relative;
@@ -108,23 +109,6 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   onWordCountChanged,
   setSaveStatus
 }) => {
-  const [saveStatus, setSaveStatusInternal] = useState<'saving' | 'saved' | 'error' | 'unsaved'>('saved');
-  const [isOnline, setIsOnline] = useState(true);
-  
-  // Observador de status online/offline
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   // Função para calcular a contagem de palavras diretamente a partir do texto
   const calculateWordCount = useCallback((text: string): number => {
     return text.split(/\s+/).filter(Boolean).length;
@@ -149,11 +133,17 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
 
   // Handler para mudanças no status de salvamento
   const handleStatusChange = useCallback((status: 'saving' | 'saved' | 'error' | 'unsaved') => {
-    setSaveStatusInternal(status);
     if (setSaveStatus) {
       setSaveStatus(status);
     }
   }, [setSaveStatus]);
+
+  // Handler para mudanças na contagem de palavras do AutoSavePlugin
+  const handleWordCountUpdate = useCallback((wordCount: number) => {
+    if (onWordCountChanged) {
+      onWordCountChanged(wordCount);
+    }
+  }, [onWordCountChanged]);
   
   return (
     <LexicalComposer initialConfig={initialConfig}>
@@ -168,35 +158,31 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
             />
           </ContentEditableWrapper>
         </EditorInner>
-        
-        {/* Plugins básicos */}
+        {/* Container fixo para popups do editor */}
+        <div id="editor-popups" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10000 }} />
         <HistoryPlugin />
         <AutoFocusPlugin />
         <OnChangePlugin onChange={handleChange} />
         <ListPlugin />
         <LinkPlugin />
         <ImagePlugin />
+        <InitialContentPlugin initialContent={initialContent} />
         
-        {/* Carregar conteúdo inicial */}
-        {initialContent && <InitialContentPlugin initialContent={initialContent} />}
-        
-        {/* Plugins de IA refatorados */}
-        <AIAutocompletePlugin livroId={bookId} capituloId={chapterId} />
+        {/* Plugins de IA baseados em DOM */}
+        {/* <AIAutocompletePlugin livroId={bookId} capituloId={chapterId} /> */}
+        {/* <AutocompletePlugin /> */}
+        <ConsolidatedAutocompletePlugin livroId={bookId} capituloId={chapterId} />
         <AIToolsSelectionPlugin livroId={bookId} capituloId={chapterId} />
         <DOMSpellCheckPlugin checkInterval={5000} />
         
-        {/* Plugin de salvamento automático */}
         {bookId && chapterId && (
           <AutoSavePlugin 
             bookId={bookId} 
             chapterId={chapterId} 
             onStatusChange={handleStatusChange}
-            onWordCountChanged={onWordCountChanged}
+            onWordCountChanged={handleWordCountUpdate}
           />
         )}
-        
-        {/* Indicador de salvamento */}
-        <FloatingSaveStatus saveStatus={saveStatus} isOnline={isOnline} />
       </EditorContainer>
     </LexicalComposer>
   );
