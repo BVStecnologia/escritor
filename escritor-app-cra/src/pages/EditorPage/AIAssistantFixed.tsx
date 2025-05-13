@@ -351,17 +351,23 @@ Seja conciso, específico e útil. Você está ajudando com o livro ID: ${bookId
       
       console.log('Resposta recebida do assistente:', response);
       
-      // Extrair a resposta do assistente
+      // Extrair a resposta do assistente no formato correto do Claude API v1
       let assistantContent = '';
       if (response && response.content && Array.isArray(response.content)) {
+        // Esse é o formato da resposta do Claude API v1
         const textContent = response.content.find((item: { type: string; text?: string }) => item.type === 'text');
         if (textContent && textContent.text) {
           assistantContent = textContent.text;
         }
-      } else if (response && typeof response === 'string') {
-        assistantContent = response;
       } else if (response && response.text) {
+        // Formato de respostas diretas da função Edge
         assistantContent = response.text;
+      } else if (response && typeof response === 'string') {
+        // Fallback para string simples
+        assistantContent = response;
+      } else if (response && response.message) {
+        // Outro possível formato
+        assistantContent = response.message;
       }
       
       // Se não conseguir extrair o texto, usar mensagem genérica

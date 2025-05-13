@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Logo, BookTitle, HeaderContent, HeaderControls, ThemeToggleButton, StatusIndicator, ActionButton, Header, LogoSection } from './styles';
+import { Logo, BookTitle, HeaderContent, ThemeToggleButton, StatusIndicator, ActionButton, Header } from './styles';
 import { PenIcon, ArrowBackIcon } from '../../components/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import styled from 'styled-components';
@@ -40,6 +40,22 @@ const MotivationalText = styled.div`
   text-align: center;
 `;
 
+// Novos componentes com largura fixa garantindo centralização
+const SideSection = styled.div`
+  display: flex;
+  align-items: center;
+  width: 350px; /* Largura fixa para ambos os lados */
+`;
+
+const LeftSection = styled(SideSection)`
+  justify-content: flex-start;
+`;
+
+const RightSection = styled(SideSection)`
+  justify-content: flex-end;
+  gap: 16px; /* Espaçamento uniforme entre os itens */
+`;
+
 // Componente centralizado no cabeçalho
 const CenterContent = styled.div`
   display: flex;
@@ -48,8 +64,9 @@ const CenterContent = styled.div`
   flex: 1;
 `;
 
-// Frases motivacionais para escritores
+// Frases motivacionais para escritores - lista expandida
 const motivationalPhrases = [
+  // Frases originais
   "Cada palavra é um novo mundo.",
   "A melhor inspiração vem da dedicação.",
   "Escreva hoje o que outros lerão amanhã.",
@@ -59,7 +76,49 @@ const motivationalPhrases = [
   "A escrita transforma o invisível em visível.",
   "Escrever é descobrir o que você não sabia que sabia.",
   "Cada parágrafo é um passo em sua jornada.",
-  "Sua história merece ser contada."
+  "Sua história merece ser contada.",
+  
+  // Novas frases
+  "Grandes histórias começam com a coragem de escrever.",
+  "No silêncio das palavras, encontramos nosso eco.",
+  "Quem escreve, constrói pontes entre mundos.",
+  "Deixe suas palavras serem o mapa para o desconhecido.",
+  "A escrita é a mais poderosa forma de magia.",
+  "Cada frase é uma semente para novas ideias.",
+  "Seja o autor da sua própria história.",
+  "O melhor momento para escrever é agora.",
+  "Palavras são ferramentas que constroem realidades.",
+  "As melhores histórias nascem da verdade interior.",
+  "Escrever é libertar a voz do silêncio.",
+  "Suas palavras podem mudar o mundo de alguém.",
+  "A criatividade floresce no jardim da disciplina.",
+  "A inspiração vem enquanto escrevemos, não antes.",
+  "Escrever é um ato de coragem e descoberta.",
+  "Toda grande jornada começa com um primeiro parágrafo.",
+  "As palavras são as asas dos pensamentos.",
+  "Escrever é pintar com palavras.",
+  "O livro que não escrevemos também não será lido.",
+  "Somos as histórias que contamos a nós mesmos.",
+  "A persistência transforma palavras em obras-primas.",
+  "Escrever é dançar com as ideias.",
+  "Palavras mudam mentes, histórias mudam corações.",
+  "Quando escrevemos, criamos nosso próprio destino.",
+  "A imaginação é o lápis que nunca se gasta.",
+  "O papel em branco é o espelho da possibilidade.",
+  "A escrita é a voz da alma no papel.",
+  "Histórias são mapas para navegar pela vida.",
+  "Na escrita encontramos a liberdade das possibilidades infinitas.",
+  "Os melhores escritores são primeiro grandes observadores.",
+  "Escrever é um ato de resistência contra o esquecimento.",
+  "Uma história bem contada pode mudar o mundo.",
+  "Escrever todos os dias é como regar um jardim interior.",
+  "A melhor edição vem depois do primeiro rascunho.",
+  "Suas palavras são sementes; plante-as com sabedoria.",
+  "Escolha palavras que deixem marcas, não apenas impressões.",
+  "A escrita nos ensina a ver além do óbvio.",
+  "Escrever é um ato de fé no poder das palavras.",
+  "Sua voz única é sua maior força como escritor.",
+  "Escrever é mergulhar no oceano da imaginação."
 ];
 
 // Componente para a saudação
@@ -180,7 +239,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   return (
     <Header>
       <HeaderContent>
-        <LogoSection>
+        <LeftSection>
           <Logo>
             Bookwriter
             <svg width="0" height="0">
@@ -209,14 +268,13 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
               <PenIcon />
             </button>
           </BookTitle>
-        </LogoSection>
+        </LeftSection>
         
-        {/* Componente de saudação centralizado */}
         <CenterContent>
           <Greeting />
         </CenterContent>
 
-        <HeaderControls>
+        <RightSection>
           {renderStatus()}
           
           <ThemeToggleButton onClick={onToggleTheme}>
@@ -225,9 +283,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           
           <ActionButton onClick={onBackToDashboard}>
             <ArrowBackIcon />
-            Voltar
+            Painel
           </ActionButton>
-        </HeaderControls>
+        </RightSection>
       </HeaderContent>
     </Header>
   );
