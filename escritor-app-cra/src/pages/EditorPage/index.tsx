@@ -12,6 +12,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { EditorPageContainer, MainLayout } from './styles';
 import defaultTheme from '../../styles/theme';
 import { LoadingChapter } from './LoadingChapter';
+import CreateBookModal from '../../components/CreateBookModal';
+import { dbService } from '../../services/dbService';
 
 const lightTheme = {
   ...defaultTheme,
@@ -57,6 +59,7 @@ const lightTheme = {
 
 const darkTheme = {
   ...defaultTheme,
+  isDarkMode: true,
   colors: {
     ...defaultTheme.colors,
     background: {
@@ -94,7 +97,10 @@ const darkTheme = {
     success: '#4ade80',
     warning: '#fbbf24',
     error: '#f87171',
-  }
+  },
+  cardBackground: '#1a1a1a',
+  textPrimary: '#ffffff',
+  textSecondary: '#94a3b8'
 };
 
 const editorThemes = {
@@ -106,6 +112,7 @@ const EditorPage: React.FC = () => {
   const { bookId, chapterId } = useParams<{ bookId: string; chapterId?: string }>();
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const {
     livro,
@@ -156,6 +163,62 @@ const EditorPage: React.FC = () => {
     }
   }, [chapterId, capitulos, setCapitulos, setWordCount]);
 
+  // Função para abrir o modal de edição de livro
+  const handleOpenEditModal = () => {
+    setIsEditModalOpen(true);
+  };
+
+  // Função para fechar o modal de edição
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  // Função chamada após a edição bem-sucedida do livro
+  const handleEditSuccess = async () => {
+    // Recarregar os dados do livro após a edição
+    if (bookId) {
+      try {
+        const livroId = parseInt(bookId);
+        const livroAtualizado = await dbService.getLivroPorId(livroId);
+        
+        // Atualizar o livro no estado local - melhor do que recarregar a página inteira
+        if (livroAtualizado) {
+          // Usar uma abordagem mais elegante do que recarregar a página
+          document.title = `${livroAtualizado.titulo || livroAtualizado["Nome do livro"]} | Editor`;
+          
+          // Fechar o modal
+          setIsEditModalOpen(false);
+          
+          // Mostrar uma notificação de sucesso temporária
+          const notification = document.createElement('div');
+          notification.style.position = 'fixed';
+          notification.style.bottom = '30px';
+          notification.style.right = '30px';
+          notification.style.padding = '15px 20px';
+          notification.style.backgroundColor = '#10b981';
+          notification.style.color = 'white';
+          notification.style.borderRadius = '8px';
+          notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+          notification.style.zIndex = '9999';
+          notification.style.transition = 'all 0.3s ease';
+          notification.textContent = 'Livro atualizado com sucesso!';
+          
+          document.body.appendChild(notification);
+          
+          // Remover a notificação após 3 segundos
+          setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+              document.body.removeChild(notification);
+            }, 300);
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Erro ao recarregar livro após edição:', error);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
@@ -187,6 +250,7 @@ const EditorPage: React.FC = () => {
           }}
           onBackToDashboard={() => navigate('/dashboard')}
           onBookTitleChange={handleBookTitleChange}
+          onEditBookInfo={handleOpenEditModal}
         />
 
         <MainLayout>
@@ -220,6 +284,15 @@ const EditorPage: React.FC = () => {
             chapterId={chapterId}
           />
         </MainLayout>
+
+        {/* Modal de Edição do Livro */}
+        <CreateBookModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSuccess={handleEditSuccess}
+          livro={livro}
+          isEditMode={true}
+        />
       </EditorPageContainer>
     </ThemeProvider>
   );

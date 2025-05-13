@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { dbService } from '../services/dbService';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Animações
 const fadeIn = keyframes`
@@ -231,7 +232,7 @@ interface InputProps {
 const Input = styled.input<InputProps>`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  background: ${({ theme }) => theme.isDarkMode ? '#1a1a1a' : theme.colors.background.light};
   border: 2px solid ${({ theme, required }) => 
     required 
       ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
@@ -239,7 +240,7 @@ const Input = styled.input<InputProps>`
   };
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? 'white' : theme.colors.text.primary};
   transition: all 0.2s ease;
 
   &:focus {
@@ -249,7 +250,7 @@ const Input = styled.input<InputProps>`
   }
 
   &::placeholder {
-    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
+    color: ${({ theme }) => theme.isDarkMode ? '#94a3b8' : theme.colors.text.tertiary};
   }
 `;
 
@@ -260,7 +261,7 @@ interface TextareaProps {
 const Textarea = styled.textarea<TextareaProps>`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  background: ${({ theme }) => theme.isDarkMode ? '#1a1a1a' : theme.colors.background.light};
   border: 2px solid ${({ theme, required }) => 
     required 
       ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
@@ -268,7 +269,7 @@ const Textarea = styled.textarea<TextareaProps>`
   };
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? 'white' : theme.colors.text.primary};
   min-height: 120px;
   resize: vertical;
   transition: all 0.2s ease;
@@ -281,7 +282,7 @@ const Textarea = styled.textarea<TextareaProps>`
   }
 
   &::placeholder {
-    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
+    color: ${({ theme }) => theme.isDarkMode ? '#94a3b8' : theme.colors.text.tertiary};
   }
 `;
 
@@ -292,7 +293,7 @@ interface SelectProps {
 const Select = styled.select<SelectProps>`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
+  background: ${({ theme }) => theme.isDarkMode ? '#1a1a1a' : theme.colors.background.light};
   border: 2px solid ${({ theme, required }) => 
     required 
       ? `${theme.isDarkMode ? theme.colors.primary+'40' : theme.colors.primary+'30'}`
@@ -300,7 +301,7 @@ const Select = styled.select<SelectProps>`
   };
   border-radius: 8px;
   font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
+  color: ${({ theme }) => theme.isDarkMode ? 'white' : theme.colors.text.primary};
   transition: all 0.2s ease;
   cursor: pointer;
 
@@ -311,8 +312,8 @@ const Select = styled.select<SelectProps>`
   }
 
   option {
-    background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.paper};
-    color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
+    background: ${({ theme }) => theme.isDarkMode ? '#222222' : theme.colors.background.paper};
+    color: ${({ theme }) => theme.isDarkMode ? 'white' : theme.colors.text.primary};
   }
 `;
 
@@ -499,14 +500,17 @@ interface CreateBookModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  livro?: any;
+  isEditMode?: boolean;
 }
 
-const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSuccess, livro, isEditMode = false }) => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
   const [titulo, setTitulo] = useState('');
+  const [autor, setAutor] = useState('');
   const [descricao, setDescricao] = useState('');
   const [genero, setGenero] = useState('');
-  const [autor, setAutor] = useState('');
   const [personagens, setPersonagens] = useState('');
   const [ambientacao, setAmbientacao] = useState('');
   const [palavrasChave, setPalavrasChave] = useState('');
@@ -516,21 +520,73 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
   const [progress, setProgress] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Resetar form quando modal abre
+  // Log para depuração quando o componente é renderizado
+  React.useEffect(() => {
+    if (isOpen) {
+      // Log do tema atual
+      console.log('CreateBookModal aberto. Tema atual:', {
+        isDarkMode: isDarkMode,
+        bodyTheme: document.body.className,
+      });
+      
+      // Log dos dados do livro
+      if (isEditMode && livro) {
+        console.log('CreateBookModal em modo de edição. Dados do livro:', {
+          id: livro.id,
+          titulo: livro.titulo || livro["Nome do livro"],
+          autor: livro.autor || livro["Autor"],
+          sinopse: livro.sinopse,
+          genero: livro.genero,
+          personagens: livro.personagens,
+          ambientacao: livro.ambientacao,
+          palavras_chave: livro.palavras_chave
+        });
+      }
+    }
+  }, [isOpen, isEditMode, livro, isDarkMode]);
+
+  // Quando o modal abre, preencher o formulário com dados do livro se estiver em modo de edição
   useEffect(() => {
     if (isOpen) {
-      setTitulo('');
-      setDescricao('');
-      setGenero('');
-      setAutor('');
-      setPersonagens('');
-      setAmbientacao('');
-      setPalavrasChave('');
+      if (isEditMode && livro) {
+        // Limpar os dados anteriores
+        console.log('Preenchendo formulário com dados do livro:', livro);
+        
+        // Preencher o formulário com os dados do livro - verificando cada propriedade cuidadosamente
+        setTitulo(livro.titulo || livro["Nome do livro"] || '');
+        setDescricao(livro.sinopse || '');
+        setGenero(livro.genero || '');
+        setAutor(livro.autor || livro["Autor"] || '');
+        setPersonagens(livro.personagens || '');
+        setAmbientacao(livro.ambientacao || '');
+        setPalavrasChave(livro.palavras_chave || '');
+        
+        // Calcular progresso após preencher os dados
+        let filled = 0;
+        if (livro.titulo || livro["Nome do livro"]) filled += 25;
+        if (livro.sinopse) filled += 25;
+        if (livro.genero) filled += 25;
+        if (livro.autor || livro["Autor"]) filled += 6.25;
+        if (livro.personagens) filled += 6.25;
+        if (livro.ambientacao) filled += 6.25;
+        if (livro.palavras_chave) filled += 6.25;
+        setProgress(Math.min(filled, 100));
+      } else {
+        // Resetar formulário
+        setTitulo('');
+        setDescricao('');
+        setGenero('');
+        setAutor('');
+        setPersonagens('');
+        setAmbientacao('');
+        setPalavrasChave('');
+        setProgress(0);
+      }
+      
       setError('');
       setSuccess(false);
-      setProgress(0);
     }
-  }, [isOpen]);
+  }, [isOpen, isEditMode, livro]);
 
   // Atualizar barra de progresso com pesos diferentes
   useEffect(() => {
@@ -575,31 +631,53 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
     setLoading(true);
 
     try {
-      const novoLivro = await dbService.criarLivro({
-        titulo,
-        autor,
-        sinopse: descricao,
-        genero,
-        personagens,
-        ambientacao,
-        palavras_chave: palavrasChave
-      });
+      if (isEditMode && livro) {
+        // Atualizar livro existente
+        await dbService.atualizarLivro(livro.id, {
+          titulo: titulo,
+          autor: autor,
+          genero: genero,
+          sinopse: descricao,
+          personagens: personagens,
+          ambientacao: ambientacao,
+          palavras_chave: palavrasChave
+        });
 
-      setSuccess(true);
-      
-      // Após criar o livro com sucesso, aguarda 1,5 segundos para melhor experiência
-      setTimeout(() => {
-        onSuccess();
+        setSuccess(true);
         
-        // Redireciona para o editor, usando o ID do livro recém-criado
-        if (novoLivro && novoLivro.id) {
-          navigate(`/editor/${novoLivro.id}`);
-        } else {
+        // Após atualizar, fechar o modal
+        setTimeout(() => {
+          onSuccess();
           onClose();
-        }
-      }, 1500);
+        }, 1500);
+      } else {
+        // Criar novo livro
+        const novoLivro = await dbService.criarLivro({
+          titulo,
+          autor,
+          sinopse: descricao,
+          genero,
+          personagens,
+          ambientacao,
+          palavras_chave: palavrasChave
+        });
+
+        setSuccess(true);
+        
+        // Após criar o livro com sucesso, aguarda 1,5 segundos para melhor experiência
+        setTimeout(() => {
+          onSuccess();
+          
+          // Redireciona para o editor, usando o ID do livro recém-criado
+          if (novoLivro && novoLivro.id) {
+            navigate(`/editor/${novoLivro.id}`);
+          } else {
+            onClose();
+          }
+        }, 1500);
+      }
     } catch (err: any) {
-      setError(err.message || 'Erro ao criar o livro. Tente novamente.');
+      setError(err.message || `Erro ao ${isEditMode ? 'atualizar' : 'criar'} o livro. Tente novamente.`);
     } finally {
       setLoading(false);
     }
@@ -622,8 +700,10 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
         
         <ModalHeader>
           <QuillIcon>✍️</QuillIcon>
-          <Title>Criar Novo Livro</Title>
-          <Subtitle>Preencha as informações básicas do seu livro</Subtitle>
+          <Title>{isEditMode ? 'Editar Livro' : 'Criar Novo Livro'}</Title>
+          <Subtitle>
+            {isEditMode ? 'Atualize as informações do seu livro' : 'Preencha as informações básicas do seu livro'}
+          </Subtitle>
         </ModalHeader>
 
         <ContentWrapper>
@@ -752,17 +832,17 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
                 type="text"
                 value={palavrasChave}
                 onChange={(e) => setPalavrasChave(e.target.value)}
-                placeholder="Ex: aventura, mistério, viagem no tempo, distopia (separadas por vírgula, opcional)"
+                placeholder="Ex: aventura, mistério, amizade, superação... (opcional)"
                 maxLength={200}
               />
             </FormGroup>
 
             {error && <ErrorMessage>{error}</ErrorMessage>}
-            {success && <SuccessMessage>Livro criado com sucesso! ✨</SuccessMessage>}
-
-            <RequiredFieldsNote>
-              Campos marcados com <RequiredAsterisk>*</RequiredAsterisk> são obrigatórios
-            </RequiredFieldsNote>
+            {success && <SuccessMessage>
+              {isEditMode 
+                ? 'Livro atualizado com sucesso!' 
+                : 'Livro criado com sucesso! Redirecionando para o editor...'}
+            </SuccessMessage>}
 
             <ButtonGroup>
               <SecondaryButton
@@ -774,9 +854,14 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
               </SecondaryButton>
               <PrimaryButton
                 type="submit"
-                disabled={loading || !titulo || !genero || !descricao}
+                disabled={loading || !titulo || !descricao || !genero}
               >
-                {loading ? 'Criando...' : 'Criar Livro'}
+                {loading 
+                  ? 'Processando...' 
+                  : isEditMode 
+                    ? 'Salvar Alterações' 
+                    : 'Criar Livro'
+                }
               </PrimaryButton>
             </ButtonGroup>
           </Form>

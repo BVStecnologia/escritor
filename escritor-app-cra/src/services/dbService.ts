@@ -172,13 +172,26 @@ export const dbService = {
   /**
    * Atualizar um livro existente
    */
-  async atualizarLivro(id: number, livroData: { titulo?: string, autor?: string }) {
+  async atualizarLivro(id: number, livroData: { 
+    titulo?: string, 
+    autor?: string, 
+    sinopse?: string, 
+    genero?: string,
+    personagens?: string,
+    ambientacao?: string,
+    palavras_chave?: string 
+  }) {
     try {
       const { data, error } = await supabase
         .from('Livros')
         .update({
           "Nome do livro": livroData.titulo,
-          "Autor": livroData.autor
+          "Autor": livroData.autor,
+          sinopse: livroData.sinopse,
+          genero: livroData.genero,
+          personagens: livroData.personagens,
+          ambientacao: livroData.ambientacao,
+          palavras_chave: livroData.palavras_chave
         })
         .eq('id', id)
         .select();
