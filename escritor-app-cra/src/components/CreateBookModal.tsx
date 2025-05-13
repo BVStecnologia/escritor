@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { dbService } from '../services/dbService';
+import { useNavigate } from 'react-router-dom';
 
 // Animações
 const fadeIn = keyframes`
@@ -501,6 +502,7 @@ interface CreateBookModalProps {
 }
 
 const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const navigate = useNavigate();
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [genero, setGenero] = useState('');
@@ -573,7 +575,7 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
     setLoading(true);
 
     try {
-      await dbService.criarLivro({
+      const novoLivro = await dbService.criarLivro({
         titulo,
         autor,
         sinopse: descricao,
@@ -585,9 +587,16 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
 
       setSuccess(true);
       
+      // Após criar o livro com sucesso, aguarda 1,5 segundos para melhor experiência
       setTimeout(() => {
         onSuccess();
-        onClose();
+        
+        // Redireciona para o editor, usando o ID do livro recém-criado
+        if (novoLivro && novoLivro.id) {
+          navigate(`/editor/${novoLivro.id}`);
+        } else {
+          onClose();
+        }
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'Erro ao criar o livro. Tente novamente.');

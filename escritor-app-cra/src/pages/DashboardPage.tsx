@@ -1275,8 +1275,8 @@ const DashboardPage: React.FC = () => {
           onClose={() => setIsCreateModalOpen(false)}
           onSuccess={() => {
             setIsCreateModalOpen(false);
-            // Recarregar as estatísticas e livros
-            window.location.reload(); // ou chamar carregarEstatisticas se for possível
+            // Não precisa mais recarregar a página, pois o usuário será redirecionado
+            // para o editor automaticamente
           }}
         />
       </DashboardContainer>
