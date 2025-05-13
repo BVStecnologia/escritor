@@ -79,8 +79,6 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               onChange={onEditorChange}
               bookId={bookId}
               chapterId={chapterId}
-              setSaveStatus={setSaveStatus}
-              onWordCountChanged={onWordCountChanged}
             />
           </EditorContainer>
           {/* Contador de palavras flutuante */}
