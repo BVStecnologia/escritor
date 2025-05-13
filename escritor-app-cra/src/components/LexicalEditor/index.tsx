@@ -16,6 +16,7 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 
 import { ToolbarPlugin } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
+import { InitialContentPlugin } from './plugins/InitialContentPlugin';
 import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
@@ -66,6 +67,7 @@ interface LexicalEditorProps {
   chapterId?: string;
 }
 
+// Configuração inicial do editor
 const initialConfig: InitialConfigType = {
   namespace: 'BookEditor',
   theme: editorTheme,
@@ -95,6 +97,14 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
     });
   };
 
+  // Usar a configuração inicial padrão
+  
+  // Log para diagnóstico
+  console.log('Renderizando LexicalEditor:', {
+    contentType: typeof initialContent,
+    contentLength: initialContent?.length || 0
+  });
+  
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <EditorContainer>
@@ -114,6 +124,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <ListPlugin />
         <LinkPlugin />
         <ImagePlugin />
+        <InitialContentPlugin initialContent={initialContent} />
         {bookId && chapterId && <AutoSavePlugin bookId={bookId} chapterId={chapterId} />}
       </EditorContainer>
     </LexicalComposer>
