@@ -400,11 +400,51 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       })
         .then(response => {
           if (response?.suggestions?.length > 0) {
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return;
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            showSuggestions(response.suggestions, anchor, 'ia');
+            // Filtrar comentários explicativos das sugestões
+            const filteredSuggestions = response.suggestions.filter((suggestion: string) => {
+              const lowerSuggestion = suggestion.toLowerCase();
+              
+              // Padrões que indicam comentários em vez de sugestões reais
+              const commentPatterns = [
+                "baseado no seu texto",
+                "posso oferecer",
+                "sugestões:",
+                "continuações naturais",
+                "aqui estão",
+                "baseado na sua escrita",
+                "baseado no contexto",
+                "algumas opções",
+                "algumas sugestões",
+                "algumas ideias",
+                "algumas possibilidades",
+                "começando com",
+                "para continuar"
+              ];
+              
+              // Verificar se é um comentário comparando com os padrões
+              const isComment = commentPatterns.some(pattern => 
+                lowerSuggestion.includes(pattern)
+              );
+              
+              // Verificar se a sugestão está no formato de meta-comentário
+              const isMetaComment = 
+                lowerSuggestion.length > 30 && // Comentários tendem a ser longos
+                (lowerSuggestion.includes(":") || // Contém dois-pontos indicando explicação
+                 lowerSuggestion.startsWith("para ") || // Começa com instruções
+                 /^[a-z]+ (como|que|para|sobre)/.test(lowerSuggestion)); // Padrões explicativos
+              
+              // Retornar apenas sugestões reais (não comentários)
+              return !isComment && !isMetaComment;
+            });
+            
+            // Só mostrar se houver sugestões reais após a filtragem
+            if (filteredSuggestions.length > 0) {
+              const selection = window.getSelection();
+              if (!selection || selection.rangeCount === 0) return;
+              const range = selection.getRangeAt(0);
+              const rect = range.getBoundingClientRect();
+              showSuggestions(filteredSuggestions, anchor, 'ia');
+            }
           }
         })
         .catch(error => {
