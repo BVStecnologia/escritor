@@ -452,11 +452,57 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             
             // Só mostrar se houver sugestões reais após a filtragem
             if (filteredSuggestions.length > 0) {
-              const selection = window.getSelection();
-              if (!selection || selection.rangeCount === 0) return;
-              const range = selection.getRangeAt(0);
-              const rect = range.getBoundingClientRect();
-              showSuggestions(filteredSuggestions, anchor, 'ia');
+              // Verificar se estamos após um final de frase para capitalizar sugestões
+              editor.update(() => {
+                const selection = $getSelection();
+                if (!$isRangeSelection(selection)) return;
+                
+                const node = selection.anchor.getNode();
+                if (!node.getTextContent) return;
+                
+                const text = node.getTextContent();
+                const cursorOffset = selection.anchor.offset;
+                
+                // Calcular onde começa a palavra atual
+                let startPos = cursorOffset;
+                while (startPos > 0 && !/\s/.test(text.charAt(startPos - 1))) {
+                  startPos--;
+                }
+                
+                // Verificar final de frase (sem trim para preservar espaços)
+                const textBefore = text.substring(0, startPos);
+                let shouldCapitalize = false;
+                
+                // Verificar se estamos no início do texto
+                if (startPos === 0) {
+                  shouldCapitalize = true;
+                } 
+                // Verificar se há ponto + espaço antes da posição atual
+                else if (startPos >= 2) {
+                  const prevChar = text.charAt(startPos - 1);
+                  const prevPrevChar = text.charAt(startPos - 2);
+                  
+                  if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
+                    shouldCapitalize = true;
+                    console.log("API: Detectado final de frase - capitalizando sugestões");
+                  }
+                }
+                
+                // Se devemos capitalizar, aplicar a todas as sugestões
+                if (shouldCapitalize) {
+                  filteredSuggestions = filteredSuggestions.map(sugg => 
+                    sugg.charAt(0).toUpperCase() + sugg.slice(1)
+                  );
+                  console.log("Sugestões capitalizadas na API:", filteredSuggestions);
+                }
+                
+                // Mostrar sugestões (possivelmente capitalizadas)
+                const domSelection = window.getSelection();
+                if (!domSelection || domSelection.rangeCount === 0) return;
+                const range = domSelection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                showSuggestions(filteredSuggestions, anchor, 'ia');
+              });
             }
           }
         })
@@ -477,18 +523,54 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         reset();
         return;
       }
-      const found = findRelevantSuggestions(word);
+      let found = findRelevantSuggestions(word);
       if (found.length > 0) {
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        showSuggestions(found, anchor, 'local');
+        // Verificar se estamos no início de uma frase para capitalizar as sugestões
+        editor.update(() => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) return;
+          
+          const node = selection.anchor.getNode();
+          if (!node.getTextContent) return;
+          
+          const text = node.getTextContent();
+          const startPos = anchor.wordStartOffset !== undefined 
+            ? anchor.wordStartOffset 
+            : selection.anchor.offset - word.length;
+
+          // Verificar se estamos no início do texto
+          let shouldCapitalize = false;
+          if (startPos === 0) {
+            shouldCapitalize = true;
+          } 
+          // Verificar se há ponto + espaço antes da palavra atual
+          else if (startPos >= 2) {
+            const prevChar = text.charAt(startPos - 1);
+            const prevPrevChar = text.charAt(startPos - 2);
+            
+            if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
+              shouldCapitalize = true;
+              console.log("Local: Detectado final de frase - capitalizando sugestões");
+            }
+          }
+          
+          // Se devemos capitalizar, aplicar a todas as sugestões
+          if (shouldCapitalize) {
+            found = found.map(sugg => sugg.charAt(0).toUpperCase() + sugg.slice(1));
+            console.log("Sugestões locais capitalizadas:", found);
+          }
+          
+          const domSelection = window.getSelection();
+          if (!domSelection || domSelection.rangeCount === 0) return;
+          const range = domSelection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          showSuggestions(found, anchor, 'local');
+        });
       } else {
         reset();
       }
     }, 200),
-    [reset, showSuggestions]
+    [reset, showSuggestions, editor]
   );
 
   // Função para aplicar sugestão
