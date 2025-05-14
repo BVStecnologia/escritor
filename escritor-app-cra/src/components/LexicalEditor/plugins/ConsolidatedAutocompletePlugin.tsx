@@ -26,6 +26,7 @@ import { createPortal } from 'react-dom';
 import { editorTheme } from '../theme';
 import './ConsolidatedAutocompletePlugin.css'; // Para os estilos globais de spelling-error e suggestions-container
 import { setAutocompleteVisible, canShowAutocomplete } from './sharedPluginState';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 // Dicionário e utilitários do autocomplete local
 // Copiado/adaptado do AutocompletePlugin
@@ -277,6 +278,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   const [cursorPosition, setCursorPosition] = React.useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement | null>(null);
+  const { isDarkMode } = useTheme(); // Obter o estado do tema
 
   const [state, dispatch] = useReducer(autocompleteReducer, initialAutocompleteState);
   const { isVisible, suggestions, selectedIndex, position, anchor, isLoading, mode } = state;
@@ -391,7 +393,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   }, [calculatePosition, isVisible]);
 
   // Atualizar showSuggestions para usar handlePositioning
-  const showSuggestions = useCallback((suggestions: string[], anchor: { nodeKey: string; offset: number }, mode: 'ia' | 'local') => {
+  const showSuggestions = useCallback((suggestions: string[], anchor: { nodeKey: string; offset: number; wordStartOffset?: number }, mode: 'ia' | 'local') => {
     const pos = calculatePosition();
     if (pos) {
       dispatch({ type: 'SHOW_SUGGESTIONS', payload: { suggestions, position: pos, anchor, mode } });
@@ -400,7 +402,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
 
   // Debounced autocomplete IA (sem delay extra)
   const debouncedGetSuggestions = useCallback(
-    debounce((text: string, cursorPosition: number, anchor: { nodeKey: string; offset: number }) => {
+    debounce((text: string, cursorPosition: number, anchor: { nodeKey: string; offset: number; wordStartOffset?: number }) => {
       if (text.length < 10) return;
       dispatch({ type: 'SET_LOADING', payload: true });
       assistantService.autocomplete({
@@ -470,7 +472,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
 
   // Sugestão local (dicionário)
   const fetchSuggestionsLocal = useCallback(
-    throttle((word: string, anchor: { nodeKey: string; offset: number }) => {
+    throttle((word: string, anchor: { nodeKey: string; offset: number; wordStartOffset?: number }) => {
       if (!word || word.length < 2) {
         reset();
         return;
@@ -518,6 +520,67 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       // Obter a palavra parcial atual que o usuário já digitou
       const currentWordPart = text.substring(startPos, cursorOffset);
       
+      // Verificar se o texto anterior termina com ponto seguido de espaço (final de frase)
+      // Padrão para detectar finais de frase: ponto, exclamação ou interrogação seguido de espaço
+      const shouldCapitalize = (() => {
+        // Verificar se estamos no início de uma palavra após ponto, exclamação ou interrogação
+        // Se o startPos é 0, podemos estar no início do documento ou de um parágrafo, 
+        // o que também deve ser capitalizado
+        if (startPos === 0) {
+          return true; // Início do documento/parágrafo sempre capitaliza
+        }
+        
+        // Verificação para ponto/exclamação/interrogação no final do texto anterior
+        // Precisamos verificar o texto completo, não apenas 2 caracteres
+        // IMPORTANTE: NÃO fazer trim() para preservar os espaços que são cruciais para detectar finais de frase
+        const textBefore = text.substring(0, startPos);
+        
+        // Verificar diretamente se o cursor está após um espaço precedido por pontuação de final de frase
+        if (startPos >= 2) {
+          const prevChar = text.charAt(startPos - 1);
+          const prevPrevChar = text.charAt(startPos - 2);
+          
+          // Verificar o padrão exato: pontuação + espaço
+          if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
+            console.log("Detectado final de frase: ponto/exclamação/interrogação + espaço");
+            return true;
+          }
+        }
+        
+        // Verificar se o texto anterior termina com pontuação de final de frase
+        if (textBefore.length > 0) {
+          // Verificar por padrões como ". " (ponto seguido EXATAMENTE por um espaço)
+          // Aqui a regex exige explicitamente um espaço após a pontuação
+          const endsWithPeriodAndSpace = textBefore.match(/[.!?]\s$/);
+          
+          // Adicionar logs para depuração
+          console.log("Debug capitalização:", {
+            textBeforeEnd: textBefore.slice(-5), // Últimos 5 caracteres para visualizar
+            match: endsWithPeriodAndSpace,
+            shouldCapitalize: !!endsWithPeriodAndSpace
+          });
+          
+          return !!endsWithPeriodAndSpace;
+        }
+        return false;
+      })();
+      
+      // Aplicar capitalização se necessário
+      let finalSuggestion = suggestion;
+      
+      // Log para debug (remover em produção)
+      console.log('Autocomplete debug:', {
+        textBefore: text.substring(0, startPos).trim(),
+        shouldCapitalize,
+        suggestion,
+        currentWordPart
+      });
+      
+      if (shouldCapitalize && finalSuggestion.length > 0) {
+        finalSuggestion = finalSuggestion.charAt(0).toUpperCase() + finalSuggestion.slice(1);
+        console.log('Capitalizando sugestão:', finalSuggestion);
+      }
+      
       // Se a sugestão já inclui o que o usuário digitou, remover a palavra parcial primeiro
       if (currentWordPart.length > 0) {
         // Mover o cursor para o início da palavra 
@@ -539,8 +602,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         }
       }
       
-      // Inserir a sugestão completa
-      selection.insertText(suggestion);
+      // Inserir a sugestão completa (possivelmente capitalizada)
+      selection.insertText(finalSuggestion);
       
       setTimeout(() => {
         editor.focus();
@@ -787,9 +850,13 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           minWidth: 350,
           padding: 12,
           borderRadius: 6,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-          background: 'rgba(24, 26, 32, 0.95)', // contraste escuro semi-transparente
-          color: '#fff',
+          boxShadow: isDarkMode 
+            ? '0 4px 16px rgba(0,0,0,0.4)' 
+            : '0 4px 16px rgba(0,0,0,0.2)',
+          background: isDarkMode 
+            ? 'rgba(24, 26, 32, 0.95)' // Tema escuro: contraste escuro semi-transparente
+            : 'rgba(255, 255, 255, 0.95)', // Tema claro: fundo branco semi-transparente
+          color: isDarkMode ? '#fff' : '#212529', // Texto branco no tema escuro, escuro no tema claro
           pointerEvents: 'auto', // Importante: permite interação com o popup
         }}
       >
@@ -804,10 +871,13 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
               style={{
                 padding: '10px 16px',
                 borderRadius: 4,
-                background: index === selectedIndex ? '#2D3748' : 'transparent',
+                background: index === selectedIndex 
+                  ? isDarkMode ? '#2D3748' : '#E2E8F0' // Cor de seleção para tema escuro/claro
+                  : 'transparent',
                 cursor: 'pointer',
                 marginBottom: 2,
                 fontWeight: index === selectedIndex ? 700 : 400,
+                transition: 'all 0.15s ease',
               }}
               onClick={() => applySuggestion(suggestion)}
             >
