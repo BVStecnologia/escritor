@@ -269,6 +269,27 @@ const autocompleteReducer = (state: AutocompleteState, action: AutocompleteActio
   }
 };
 
+// Utilitários de capitalização centralizada
+// Esta função determina se o texto na posição atual deve ser capitalizado
+const shouldCapitalizeText = (text: string, position: number): boolean => {
+  // Início de texto sempre capitaliza
+  if (position === 0) return true;
+  
+  // Verificar o texto antes da posição atual (sem trim!)
+  const textBefore = text.substring(0, position);
+  
+  // Padrão exato: ponto/exclamação/interrogação seguido por espaço(s)
+  return /[.!?]\s+$/.test(textBefore);
+};
+
+// Função para aplicar capitalização se necessário
+const capitalizeIfNeeded = (text: string, shouldCapitalize: boolean): string => {
+  if (shouldCapitalize && text.length > 0) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+  return text;
+};
+
 // Comando Lexical customizado
 const SHOW_AUTOCOMPLETE_COMMAND = createCommand<void>();
 
@@ -452,57 +473,17 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             
             // Só mostrar se houver sugestões reais após a filtragem
             if (filteredSuggestions.length > 0) {
-              // Verificar se estamos após um final de frase para capitalizar sugestões
+              // Mostrar sugestões como estão - a capitalização será aplicada na função applySuggestion
               editor.update(() => {
                 const selection = $getSelection();
                 if (!$isRangeSelection(selection)) return;
                 
-                const node = selection.anchor.getNode();
-                if (!node.getTextContent) return;
-                
-                const text = node.getTextContent();
-                const cursorOffset = selection.anchor.offset;
-                
-                // Calcular onde começa a palavra atual
-                let startPos = cursorOffset;
-                while (startPos > 0 && !/\s/.test(text.charAt(startPos - 1))) {
-                  startPos--;
-                }
-                
-                // Verificar final de frase (sem trim para preservar espaços)
-                const textBefore = text.substring(0, startPos);
-                let shouldCapitalize = false;
-                
-                // Verificar se estamos no início do texto
-                if (startPos === 0) {
-                  shouldCapitalize = true;
-                } 
-                // Verificar se há ponto + espaço antes da posição atual
-                else if (startPos >= 2) {
-                  const prevChar = text.charAt(startPos - 1);
-                  const prevPrevChar = text.charAt(startPos - 2);
-                  
-                  if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
-                    shouldCapitalize = true;
-                    console.log("API: Detectado final de frase - capitalizando sugestões");
-                  }
-                }
-                
-                // Se devemos capitalizar, aplicar a todas as sugestões
-                let capitalizedSuggestions: string[] = [...filteredSuggestions];
-                if (shouldCapitalize) {
-                  capitalizedSuggestions = filteredSuggestions.map((sugg: string) => 
-                    sugg.charAt(0).toUpperCase() + sugg.slice(1)
-                  );
-                  console.log("Sugestões capitalizadas na API:", capitalizedSuggestions);
-                }
-                
-                // Mostrar sugestões (possivelmente capitalizadas)
+                // Mostrar sugestões - a capitalização ocorrerá na aplicação
                 const domSelection = window.getSelection();
                 if (!domSelection || domSelection.rangeCount === 0) return;
                 const range = domSelection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                showSuggestions(capitalizedSuggestions, anchor, 'ia');
+                showSuggestions(filteredSuggestions, anchor, 'ia');
               });
             }
           }
@@ -526,49 +507,16 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       }
       const suggestions = findRelevantSuggestions(word);
       if (suggestions.length > 0) {
-        // Verificar se estamos no início de uma frase para capitalizar as sugestões
+        // Mostrar as sugestões como estão - a capitalização será aplicada na função applySuggestion
         editor.update(() => {
           const selection = $getSelection();
           if (!$isRangeSelection(selection)) return;
-          
-          const node = selection.anchor.getNode();
-          if (!node.getTextContent) return;
-          
-          const text = node.getTextContent();
-          const startPos = anchor.wordStartOffset !== undefined 
-            ? anchor.wordStartOffset 
-            : selection.anchor.offset - word.length;
-
-          // Verificar se estamos no início do texto
-          let shouldCapitalize = false;
-          if (startPos === 0) {
-            shouldCapitalize = true;
-          } 
-          // Verificar se há ponto + espaço antes da palavra atual
-          else if (startPos >= 2) {
-            const prevChar = text.charAt(startPos - 1);
-            const prevPrevChar = text.charAt(startPos - 2);
-            
-            if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
-              shouldCapitalize = true;
-              console.log("Local: Detectado final de frase - capitalizando sugestões");
-            }
-          }
-          
-          // Se devemos capitalizar, aplicar a todas as sugestões
-          let capitalizedSuggestions: string[] = [...suggestions];
-          if (shouldCapitalize) {
-            capitalizedSuggestions = suggestions.map((sugg: string) => 
-              sugg.charAt(0).toUpperCase() + sugg.slice(1)
-            );
-            console.log("Sugestões locais capitalizadas:", capitalizedSuggestions);
-          }
           
           const domSelection = window.getSelection();
           if (!domSelection || domSelection.rangeCount === 0) return;
           const range = domSelection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
-          showSuggestions(capitalizedSuggestions, anchor, 'local');
+          showSuggestions(suggestions, anchor, 'local');
         });
       } else {
         reset();
@@ -606,65 +554,30 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       // Obter a palavra parcial atual que o usuário já digitou
       const currentWordPart = text.substring(startPos, cursorOffset);
       
-      // Verificar se o texto anterior termina com ponto seguido de espaço (final de frase)
-      // Padrão para detectar finais de frase: ponto, exclamação ou interrogação seguido de espaço
-      const shouldCapitalize = (() => {
-        // Verificar se estamos no início de uma palavra após ponto, exclamação ou interrogação
-        // Se o startPos é 0, podemos estar no início do documento ou de um parágrafo, 
-        // o que também deve ser capitalizado
-        if (startPos === 0) {
-          return true; // Início do documento/parágrafo sempre capitaliza
-        }
-        
-        // Verificação para ponto/exclamação/interrogação no final do texto anterior
-        // Precisamos verificar o texto completo, não apenas 2 caracteres
-        // IMPORTANTE: NÃO fazer trim() para preservar os espaços que são cruciais para detectar finais de frase
-        const textBefore = text.substring(0, startPos);
-        
-        // Verificar diretamente se o cursor está após um espaço precedido por pontuação de final de frase
-        if (startPos >= 2) {
-          const prevChar = text.charAt(startPos - 1);
-          const prevPrevChar = text.charAt(startPos - 2);
-          
-          // Verificar o padrão exato: pontuação + espaço
-          if (prevChar === ' ' && ['.', '!', '?'].includes(prevPrevChar)) {
-            console.log("Detectado final de frase: ponto/exclamação/interrogação + espaço");
-            return true;
-          }
-        }
-        
-        // Verificar se o texto anterior termina com pontuação de final de frase
-        if (textBefore.length > 0) {
-          // Verificar por padrões como ". " (ponto seguido EXATAMENTE por um espaço)
-          // Aqui a regex exige explicitamente um espaço após a pontuação
-          const endsWithPeriodAndSpace = textBefore.match(/[.!?]\s$/);
-          
-          // Adicionar logs para depuração
-          console.log("Debug capitalização:", {
-            textBeforeEnd: textBefore.slice(-5), // Últimos 5 caracteres para visualizar
-            match: endsWithPeriodAndSpace,
-            shouldCapitalize: !!endsWithPeriodAndSpace
-          });
-          
-          return !!endsWithPeriodAndSpace;
-        }
-        return false;
-      })();
+      // Usar a função utilitária centralizada para verificar se devemos capitalizar
+      const needsCapitalization = shouldCapitalizeText(text, startPos);
       
-      // Aplicar capitalização se necessário
-      let finalSuggestion = suggestion;
+      // Logs de depuração
+      console.log("Debug capitalização:", {
+        startPos,
+        textBeforeEnd: text.substring(0, startPos).slice(-10), // Últimos 10 caracteres antes da posição
+        needsCapitalization
+      });
+      
+      // Aplicar capitalização usando o utilitário centralizado
+      const finalSuggestion = capitalizeIfNeeded(suggestion, needsCapitalization);
       
       // Log para debug (remover em produção)
       console.log('Autocomplete debug:', {
-        textBefore: text.substring(0, startPos).trim(),
-        shouldCapitalize,
-        suggestion,
+        textBefore: text.substring(Math.max(0, startPos - 10), startPos), // Últimos 10 caracteres antes da posição
+        needsCapitalization,
+        originalSuggestion: suggestion,
+        finalSuggestion,
         currentWordPart
       });
       
-      if (shouldCapitalize && finalSuggestion.length > 0) {
-        finalSuggestion = finalSuggestion.charAt(0).toUpperCase() + finalSuggestion.slice(1);
-        console.log('Capitalizando sugestão:', finalSuggestion);
+      if (needsCapitalization) {
+        console.log('Capitalizando sugestão:', suggestion, '→', finalSuggestion);
       }
       
       // Se a sugestão já inclui o que o usuário digitou, remover a palavra parcial primeiro
