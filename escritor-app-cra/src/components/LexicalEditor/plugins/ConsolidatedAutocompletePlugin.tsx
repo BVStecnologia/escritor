@@ -187,6 +187,8 @@ const SuggestionItem = styled.div<{ $active: boolean }>`
   transition: all 0.15s ease;
   margin-bottom: 2px;
   font-family: inherit;
+  width: 100%;
+  text-align: left;
   &:hover {
     background: ${({ theme }) => theme.colors.primary + '15'};
     transform: translateX(2px);
@@ -498,9 +500,15 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     [showSuggestions, livroId]
   );
 
-  // Sugestão local (dicionário)
+  // Sugestão local (dicionário) - DESATIVADA
   const fetchSuggestionsLocal = useCallback(
     throttle((word: string, anchor: { nodeKey: string; offset: number; wordStartOffset?: number }) => {
+      // Desativando o autocomplete local completamente
+      reset();
+      return;
+      
+      // Código original comentado abaixo
+      /*
       if (!word || word.length < 2) {
         reset();
         return;
@@ -521,6 +529,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       } else {
         reset();
       }
+      */
     }, 200),
     [reset, showSuggestions, editor]
   );
@@ -663,8 +672,17 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     return updateListener;
   }, [editor, debouncedGetSuggestions, reset, currentText, cursorPosition]);
 
-  // Monitor de seleção para autocomplete local
+  // Monitor de seleção para autocomplete local - DESATIVADO
   useEffect(() => {
+    // Desativando completamente o autocomplete local
+    // Não adicionamos os event listeners para evitar processamento desnecessário
+    
+    return () => {
+      // Cleanup vazio
+    };
+    
+    // Código original comentado abaixo
+    /*
     const handleSelectionChange = () => {
       // Verificar primeiro se há qualquer seleção global no DOM
       const domSelection = window.getSelection();
@@ -732,6 +750,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       document.removeEventListener('selectionchange', handleSelectionChange);
       document.removeEventListener('mouseup', handleMouseUp);
     };
+    */
   }, [editor, fetchSuggestionsLocal, reset]);
 
   // Event listener global para navegação por teclado
@@ -877,6 +896,10 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
                 marginBottom: 2,
                 fontWeight: index === selectedIndex ? 700 : 400,
                 transition: 'all 0.15s ease',
+                width: '100%',
+                display: 'block',
+                textAlign: 'left',
+                userSelect: 'none', // Evita seleção de texto ao clicar
               }}
               onClick={() => applySuggestion(suggestion)}
             >

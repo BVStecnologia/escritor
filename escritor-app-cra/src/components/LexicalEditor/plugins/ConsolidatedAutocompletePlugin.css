@@ -23,6 +23,7 @@
   z-index: 9999;
   position: absolute;
   transition: all 0.15s ease-in-out;
+  pointer-events: auto !important; /* Garante que o container receba eventos do mouse */
 }
 
 .suggestion-item.active {
@@ -32,4 +33,20 @@
 
 .suggestion-item {
   transition: background 0.15s;
+  width: 100%;
+  display: block;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto !important; /* Garante que todos os itens recebam eventos de mouse */
+  user-select: none; /* Evita seleção de texto ao clicar */
 } 
+
+/* Garante que o conteúdo do popup também receba eventos de mouse */
+.suggestions-list {
+  width: 100%;
+  pointer-events: auto !important;
+}
+
+.suggestions-header {
+  pointer-events: auto !important;
+}
