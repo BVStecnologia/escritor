@@ -325,20 +325,49 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     if (!editorElement) return null;
     const editorRect = editorElement.getBoundingClientRect();
     
-    // Garantir que o popup fique dentro dos limites do editor
-    let top = rect.bottom - editorRect.top + window.scrollY + 8;
-    let left = rect.left - editorRect.left;
+    // Obter a altura da linha para garantir que o menu fique abaixo do texto
+    const lineHeight = parseFloat(window.getComputedStyle(editorElement).lineHeight) || 24;
     
-    // Verificar se o popup sairia pela direita e ajustar
-    const width = Math.max(350, rect.width * 1.5);
-    if (left + width > editorRect.width) {
-      left = Math.max(10, editorRect.width - width - 10);
+    // Localizar o container de popups (o elemento pai onde o popup será renderizado)
+    const popupsContainer = document.getElementById('editor-popups');
+    
+    if (popupsContainer) {
+      // Quando renderizamos no container de popups, precisamos converter as coordenadas
+      // para serem relativas a este container
+      const popupsRect = popupsContainer.getBoundingClientRect();
+      
+      // Posição abaixo do texto, considerando o scrollY
+      let top = rect.bottom - popupsRect.top + window.scrollY + 8; // 8px de espaço
+      let left = rect.left - popupsRect.left;
+      
+      // Garantir largura mínima do popup
+      const width = Math.max(350, rect.width * 1.5);
+      
+      // Verificar se o popup sairia pela direita e ajustar
+      if (left + width > popupsRect.width) {
+        left = Math.max(10, popupsRect.width - width - 10);
+      }
+      
+      // Evitar que saia pela esquerda
+      left = Math.max(10, left);
+      
+      return { top, left, width };
+    } else {
+      // Fallback: calcular posição relativa ao editor se o container de popups não existe
+      let top = rect.bottom - editorRect.top + window.scrollY + lineHeight;
+      let left = rect.left - editorRect.left;
+      
+      // Verificar se o popup sairia pela direita e ajustar
+      const width = Math.max(350, rect.width * 1.5);
+      if (left + width > editorRect.width) {
+        left = Math.max(10, editorRect.width - width - 10);
+      }
+      
+      // Evitar que saia pela esquerda
+      left = Math.max(10, left);
+      
+      return { top, left, width };
     }
-    
-    // Evitar que saia pela esquerda
-    left = Math.max(10, left);
-    
-    return { top, left, width };
   };
 
   // Atualizar a função updatePosition para usar handlePositioning
@@ -552,13 +581,17 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     applySuggestion(suggestion, index);
   };
 
-  // Renderização segura do popup (sem portal)
+  // Renderização usando portal para o container de popups
   const renderSuggestions = () => {
     const position = calculatePosition();
     if (!position || !isVisible || suggestions.length === 0) {
       return null;
     }
-    return (
+
+    // Encontrar o container de popups designado ou usar o body como fallback
+    const popupsContainer = document.getElementById('editor-popups') || document.body;
+    
+    return createPortal(
       <div
         className="suggestions-container"
         style={{
@@ -573,6 +606,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
           background: 'rgba(24, 26, 32, 0.95)', // contraste escuro semi-transparente
           color: '#fff',
+          pointerEvents: 'auto', // Importante: permite interação com o popup
         }}
       >
         <div className="suggestions-header" style={{ fontWeight: 600, marginBottom: 8 }}>
@@ -597,7 +631,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             </div>
           ))}
         </div>
-      </div>
+      </div>,
+      popupsContainer
     );
   };
 
