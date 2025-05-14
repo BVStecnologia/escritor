@@ -111,7 +111,7 @@ interface ActionButtonProps {
   color?: 'primary' | 'error' | 'success' | 'warning';
 }
 
-const ActionButton = styled.button<ActionButtonProps>`
+const ActionButton = styled.button<ActionButtonProps & { style?: React.CSSProperties }>`
   background: ${({ theme, color }) => {
     if (!color) return theme.colors.primary;
     switch(color) {
@@ -164,6 +164,7 @@ export const AIToolsSelectionPlugin = ({
   const [aiResult, setAiResult] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [currentTool, setCurrentTool] = useState('');
+  const [showOriginalResult, setShowOriginalResult] = useState(false);
   
   // Obter referência ao elemento raiz do editor
   useEffect(() => {
@@ -292,9 +293,70 @@ export const AIToolsSelectionPlugin = ({
     };
   }, []);
 
+  // Função para filtrar comentários e metadados do texto da IA
+  const filterAiContent = (content: string): string => {
+    if (!content) return '';
+    
+    try {
+      // Identificar se o resultado segue um padrão estruturado com títulos e comentários
+      const hasStructuredFormat = /^(#|\🔍|Texto\s+(Expandido|Revisado|Reescrito))/.test(content) || 
+                                 content.includes("---") || 
+                                 content.includes("##") ||
+                                 content.includes("Comentários sobre");
+      
+      // Se não tiver formato estruturado, retornar o conteúdo como está
+      if (!hasStructuredFormat) {
+        return content;
+      }
+      
+      // Localizar o conteúdo principal (geralmente está no início, antes de qualquer comentário)
+      const parts = content.split(/^(---|\*\*\*|#{2,}|Comentários|Sugestões)/m);
+      
+      if (parts.length > 1) {
+        // O texto principal é o que vem antes do primeiro delimitador
+        let mainContent = parts[0];
+        
+        // Remover qualquer título no início (# Texto Revisado, etc.)
+        mainContent = mainContent.replace(/^(#|\🔍).*$/m, '').trim();
+        mainContent = mainContent.replace(/^Texto\s+(Expandido|Revisado|Reescrito).*$/m, '').trim();
+        
+        return mainContent;
+      }
+      
+      // Caso não encontre delimitadores claros, tentar remover padrões comuns
+      let filteredContent = content;
+      
+      // Remover linhas de cabeçalho específicas
+      filteredContent = filteredContent.replace(/^(#|\🔍).*$/m, '').trim();
+      filteredContent = filteredContent.replace(/^# Texto (Revisado|Expandido|Reescrito)$/m, '').trim();
+      filteredContent = filteredContent.replace(/^Texto (Revisado|Expandido|Reescrito)$/m, '').trim();
+      
+      // Remover tudo após marcadores comuns de seção
+      const markers = [
+        "---", "***", "##", "Comentários sobre", "Sugestões para", 
+        "Observações:", "Análise:", "Notas:", "Comentários:"
+      ];
+      
+      for (const marker of markers) {
+        const index = filteredContent.indexOf(marker);
+        if (index > 0) {
+          filteredContent = filteredContent.substring(0, index).trim();
+        }
+      }
+      
+      return filteredContent;
+    } catch (error) {
+      console.error("Erro ao filtrar conteúdo da IA:", error);
+      // Em caso de erro, retornar o conteúdo original
+      return content;
+    }
+  };
+
   // Função para aplicar o resultado da IA
   const applyAiResult = () => {
-    editor.dispatchCommand(APPLY_AI_RESULT_COMMAND, aiResult);
+    // Filtrar o conteúdo antes de aplicar
+    const filteredContent = filterAiContent(aiResult);
+    editor.dispatchCommand(APPLY_AI_RESULT_COMMAND, filteredContent);
     setShowResult(false);
     setAiResult('');
     setCurrentTool('');
@@ -305,6 +367,12 @@ export const AIToolsSelectionPlugin = ({
     setShowResult(false);
     setAiResult('');
     setCurrentTool('');
+    setShowOriginalResult(false);
+  };
+  
+  // Função para alternar entre versão filtrada e original
+  const toggleOriginalResult = () => {
+    setShowOriginalResult(!showOriginalResult);
   };
 
   const handleToolAction = async (toolId: string) => {
@@ -410,15 +478,26 @@ export const AIToolsSelectionPlugin = ({
             whiteSpace: 'pre-wrap',
             width: '100%'
           }}>
-            {aiResult}
+            {showOriginalResult ? aiResult : filterAiContent(aiResult)}
           </div>
-          <ButtonRow style={{ width: '100%' }}>
-            <ActionButton onClick={cancelAiResult} color="error">
-              Cancelar
-            </ActionButton>
-            <ActionButton onClick={applyAiResult}>
-              Aplicar
-            </ActionButton>
+          <ButtonRow style={{ width: '100%', justifyContent: 'space-between', marginTop: '10px' }}>
+            <div>
+              <ActionButton 
+                onClick={toggleOriginalResult} 
+                color={showOriginalResult ? "primary" : "warning"}
+                style={{ marginRight: '5px' }}
+              >
+                {showOriginalResult ? "Ver filtrado" : "Ver original"}
+              </ActionButton>
+            </div>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <ActionButton onClick={cancelAiResult} color="error">
+                Cancelar
+              </ActionButton>
+              <ActionButton onClick={applyAiResult}>
+                Aplicar
+              </ActionButton>
+            </div>
           </ButtonRow>
         </ResultContainer>
       </AIToolsContainer>
