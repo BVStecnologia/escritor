@@ -489,11 +489,12 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
                 }
                 
                 // Se devemos capitalizar, aplicar a todas as sugestões
+                let capitalizedSuggestions: string[] = [...filteredSuggestions];
                 if (shouldCapitalize) {
-                  filteredSuggestions = filteredSuggestions.map(sugg => 
+                  capitalizedSuggestions = filteredSuggestions.map((sugg: string) => 
                     sugg.charAt(0).toUpperCase() + sugg.slice(1)
                   );
-                  console.log("Sugestões capitalizadas na API:", filteredSuggestions);
+                  console.log("Sugestões capitalizadas na API:", capitalizedSuggestions);
                 }
                 
                 // Mostrar sugestões (possivelmente capitalizadas)
@@ -501,7 +502,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
                 if (!domSelection || domSelection.rangeCount === 0) return;
                 const range = domSelection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                showSuggestions(filteredSuggestions, anchor, 'ia');
+                showSuggestions(capitalizedSuggestions, anchor, 'ia');
               });
             }
           }
@@ -523,8 +524,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         reset();
         return;
       }
-      let found = findRelevantSuggestions(word);
-      if (found.length > 0) {
+      const suggestions = findRelevantSuggestions(word);
+      if (suggestions.length > 0) {
         // Verificar se estamos no início de uma frase para capitalizar as sugestões
         editor.update(() => {
           const selection = $getSelection();
@@ -555,16 +556,19 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           }
           
           // Se devemos capitalizar, aplicar a todas as sugestões
+          let capitalizedSuggestions: string[] = [...suggestions];
           if (shouldCapitalize) {
-            found = found.map(sugg => sugg.charAt(0).toUpperCase() + sugg.slice(1));
-            console.log("Sugestões locais capitalizadas:", found);
+            capitalizedSuggestions = suggestions.map((sugg: string) => 
+              sugg.charAt(0).toUpperCase() + sugg.slice(1)
+            );
+            console.log("Sugestões locais capitalizadas:", capitalizedSuggestions);
           }
           
           const domSelection = window.getSelection();
           if (!domSelection || domSelection.rangeCount === 0) return;
           const range = domSelection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
-          showSuggestions(found, anchor, 'local');
+          showSuggestions(capitalizedSuggestions, anchor, 'local');
         });
       } else {
         reset();
