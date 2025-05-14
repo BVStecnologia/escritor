@@ -1,15 +1,20 @@
 /* Remove o sublinhado vermelho das sugestões dentro do editor */
 .editor-input .spelling-error, 
-.editor-input [data-lexical-decorator="true"] .spelling-error {
+.editor-input [data-lexical-decorator="true"] .spelling-error,
+.spelling-error,
+*[class*="spelling-error"] {
   text-decoration: none !important;
   border-bottom: none !important;
   animation: none !important;
   background: transparent !important;
+  color: inherit !important;
+  display: inline !important;
+  pointer-events: auto !important;
 }
 
 /* Estilo para o popup de sugestões */
 .suggestions-container {
-  min-width: 350px;
+  min-width: 480px;
   padding: 12px;
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);

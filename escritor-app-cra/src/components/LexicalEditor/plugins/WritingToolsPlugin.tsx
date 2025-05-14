@@ -52,7 +52,7 @@ const ToolsPopover = styled.div<{ $visible: boolean }>`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 0.75rem;
   display: ${({ $visible }) => ($visible ? 'block' : 'none')};
-  min-width: 250px;
+  min-width: 350px;
 `;
 
 const ToolsList = styled.ul`

@@ -27,7 +27,7 @@ const AIToolsContainer = styled.div`
   padding: 4px;
   display: flex;
   gap: 2px;
-  min-width: 360px;
+  min-width: 480px;
   transform: translateX(-50%);
   margin-top: 5px;
   backdrop-filter: blur(4px);
@@ -92,8 +92,8 @@ const ResultContainer = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border?.light || 'rgba(0,0,0,0.1)'};
   border-radius: 8px;
   padding: 12px;
-  width: 300px;
-  max-height: 250px;
+  width: 400px;
+  max-height: 300px;
   overflow-y: auto;
   box-shadow: 0 4px 16px ${({ theme }) => theme.colors.shadow || 'rgba(0, 0, 0, 0.2)'};
   margin-top: 8px;
@@ -246,7 +246,7 @@ export const AIToolsSelectionPlugin = ({
               const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
               const newTop = rect.bottom - editorRect.top + scrollY + lineHeight;
               let newLeft = rect.left + (rect.width / 2) - editorRect.left;
-              const toolWidth = 360;
+              const toolWidth = 480;
               if (newLeft + (toolWidth / 2) > editorRect.width - 20) {
                 newLeft = editorRect.width - (toolWidth / 2) - 20;
               }
@@ -393,21 +393,26 @@ export const AIToolsSelectionPlugin = ({
         style={{ 
           top: position.top, 
           left: position.left,
-          width: '300px',
+          width: '400px',
           transform: 'translateX(-50%)', // Centralizar
           zIndex: 9999 // Garantir que fique acima de outros elementos
         }}
       >
-        <ResultContainer>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+        <ResultContainer style={{ width: '100%' }}>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', width: '100%' }}>
             {currentTool === 'rewrite' && '✍️ Texto Reescrito'}
             {currentTool === 'expand' && '🔍 Texto Expandido'}
             {currentTool === 'summarize' && '📝 Resumo'}
           </div>
-          <div style={{ fontSize: '13px', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
+          <div style={{ 
+            fontSize: '13px', 
+            lineHeight: '1.4', 
+            whiteSpace: 'pre-wrap',
+            width: '100%'
+          }}>
             {aiResult}
           </div>
-          <ButtonRow>
+          <ButtonRow style={{ width: '100%' }}>
             <ActionButton onClick={cancelAiResult} color="error">
               Cancelar
             </ActionButton>

@@ -141,8 +141,8 @@ const SuggestionsContainer = styled.div<{ $visible: boolean; $width: number }>`
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   padding: 0.75rem;
-  min-width: 250px;
-  max-width: 500px;
+  min-width: 400px;
+  max-width: 600px;
   width: ${({ $width }) => $width}px;
   z-index: 9999;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -374,7 +374,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       let left = rect.left - popupsRect.left;
       
       // Garantir largura mínima do popup
-      const width = Math.max(350, rect.width * 1.5);
+      const width = Math.max(480, rect.width * 1.5);
       
       // Verificar se o popup sairia pela direita e ajustar
       if (left + width > popupsRect.width) {
@@ -392,7 +392,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       let left = rect.left - editorRect.left;
       
       // Verificar se o popup sairia pela direita e ajustar
-      const width = Math.max(350, rect.width * 1.5);
+      const width = Math.max(480, rect.width * 1.5);
       if (left + width > editorRect.width) {
         left = Math.max(10, editorRect.width - width - 10);
       }
@@ -846,7 +846,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           left: `${position.left}px`,
           width: `${position.width}px`,
           zIndex: 9998, // Usar z-index menor que as ferramentas de seleção (9999)
-          minWidth: 350,
+          minWidth: 480,
           padding: 12,
           borderRadius: 6,
           boxShadow: isDarkMode 
