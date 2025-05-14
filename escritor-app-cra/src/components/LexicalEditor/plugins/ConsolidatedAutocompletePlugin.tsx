@@ -3,6 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   createCommand,
   LexicalCommand,
   COMMAND_PRIORITY_NORMAL,
@@ -12,7 +13,8 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   KEY_ENTER_COMMAND,
-  $getRoot
+  $getRoot,
+  TextNode
 } from 'lexical';
 import { mergeRegister } from '@lexical/utils';
 import styled from 'styled-components';
@@ -23,6 +25,7 @@ import { assistantService } from '../../../services/assistantService';
 import { createPortal } from 'react-dom';
 import { editorTheme } from '../theme';
 import './ConsolidatedAutocompletePlugin.css'; // Para os estilos globais de spelling-error e suggestions-container
+import { setAutocompleteVisible, canShowAutocomplete } from './sharedPluginState';
 
 // Dicionário e utilitários do autocomplete local
 // Copiado/adaptado do AutocompletePlugin
@@ -143,7 +146,7 @@ const SuggestionsContainer = styled.div<{ $visible: boolean; $width: number }>`
   z-index: 9999;
   transition: opacity 0.2s ease, transform 0.2s ease;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transform: ${({ $visible }) => $visible ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.98)'};
+  transform: ${({ $visible }) => $visible ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.98)'};
   pointer-events: ${({ $visible }) => ($visible ? 'auto' : 'none')};
   overflow: hidden;
 `;
@@ -200,13 +203,13 @@ type AutocompleteState = {
   suggestions: string[];
   selectedIndex: number;
   position: { top: number; left: number; width: number };
-  anchor: { nodeKey: string; offset: number } | null;
+  anchor: { nodeKey: string; offset: number; wordStartOffset?: number } | null;
   isLoading: boolean;
   mode: 'ia' | 'local' | null;
 };
 
 type AutocompleteAction =
-  | { type: 'SHOW_SUGGESTIONS'; payload: { suggestions: string[]; position: { top: number; left: number; width: number }; anchor: { nodeKey: string; offset: number }; mode: 'ia' | 'local' } }
+  | { type: 'SHOW_SUGGESTIONS'; payload: { suggestions: string[]; position: { top: number; left: number; width: number }; anchor: { nodeKey: string; offset: number; wordStartOffset?: number }; mode: 'ia' | 'local' } }
   | { type: 'HIDE_SUGGESTIONS' }
   | { type: 'SELECT_SUGGESTION'; payload: number }
   | { type: 'UPDATE_POSITION'; payload: { top: number; left: number; width: number } }
@@ -225,6 +228,8 @@ const initialAutocompleteState: AutocompleteState = {
 const autocompleteReducer = (state: AutocompleteState, action: AutocompleteAction): AutocompleteState => {
   switch (action.type) {
     case 'SHOW_SUGGESTIONS':
+      // Notificar o estado compartilhado
+      setAutocompleteVisible(true);
       return {
         ...state,
         isVisible: true,
@@ -313,6 +318,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   // Função para resetar o estado do autocomplete
   const reset = useCallback(() => {
     dispatch({ type: 'HIDE_SUGGESTIONS' });
+    // Notificar o estado compartilhado que o autocomplete não está mais visível
+    setAutocompleteVisible(false);
   }, []);
 
   // Função para calcular a posição absoluta dentro do editor
@@ -327,6 +334,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     
     // Obter a altura da linha para garantir que o menu fique abaixo do texto
     const lineHeight = parseFloat(window.getComputedStyle(editorElement).lineHeight) || 24;
+    const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
     
     // Localizar o container de popups (o elemento pai onde o popup será renderizado)
     const popupsContainer = document.getElementById('editor-popups');
@@ -337,7 +345,9 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       const popupsRect = popupsContainer.getBoundingClientRect();
       
       // Posição abaixo do texto, considerando o scrollY
-      let top = rect.bottom - popupsRect.top + window.scrollY + 8; // 8px de espaço
+      // Queremos que o popup apareça ABAIXO do texto, nunca acima
+      // Mas NÃO adicionamos lineHeight extra para evitar o salto quando o usuário interage
+      let top = rect.bottom - popupsRect.top + scrollY + 8; // Apenas um pequeno espaçamento fixo
       let left = rect.left - popupsRect.left;
       
       // Garantir largura mínima do popup
@@ -354,7 +364,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       return { top, left, width };
     } else {
       // Fallback: calcular posição relativa ao editor se o container de popups não existe
-      let top = rect.bottom - editorRect.top + window.scrollY + lineHeight;
+      // Garantir que fique abaixo do texto com espaçamento consistente
+      let top = rect.bottom - editorRect.top + scrollY + 8; // Mesmo espaçamento fixo que acima
       let left = rect.left - editorRect.left;
       
       // Verificar se o popup sairia pela direita e ajustar
@@ -484,8 +495,53 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     editor.update(() => {
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) return;
-      selection.deleteCharacter(false);
+      
+      // Obter nó atual e texto
+      const node = selection.anchor.getNode();
+      if (!node.getTextContent) return;
+      
+      const text = node.getTextContent();
+      const cursorOffset = selection.anchor.offset;
+      
+      // Usar o startPos da âncora se disponível, senão calcular
+      let startPos = anchor.wordStartOffset !== undefined 
+        ? anchor.wordStartOffset 
+        : (() => {
+            // Calcular como fallback
+            let pos = cursorOffset;
+            while (pos > 0 && !/\s/.test(text.charAt(pos - 1))) {
+              pos--;
+            }
+            return pos;
+          })();
+      
+      // Obter a palavra parcial atual que o usuário já digitou
+      const currentWordPart = text.substring(startPos, cursorOffset);
+      
+      // Se a sugestão já inclui o que o usuário digitou, remover a palavra parcial primeiro
+      if (currentWordPart.length > 0) {
+        // Mover o cursor para o início da palavra 
+        const node = selection.anchor.getNode();
+        
+        // Verificar se é um TextNode antes de usar setTextNodeRange
+        if ($isTextNode(node)) {
+          // Temos que atualizar tanto anchor quanto focus para o início da palavra
+          selection.setTextNodeRange(node, startPos, node, startPos);
+          
+          // Remover caracteres (palavra parcial atual)
+          for (let i = 0; i < currentWordPart.length; i++) {
+            selection.deleteCharacter(false); // false = deletar para frente
+          }
+        } else {
+          // Se não for um TextNode, apenas inserir no ponto atual
+          // Isso é raro, mas pode acontecer se o cursor estiver em um nó de elemento
+          console.warn('Autocomplete: não é possível remover texto parcial, o nó não é um TextNode');
+        }
+      }
+      
+      // Inserir a sugestão completa
       selection.insertText(suggestion);
+      
       setTimeout(() => {
         editor.focus();
       }, 0);
@@ -498,7 +554,18 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     const updateListener = editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
         const selection = $getSelection();
+        
+        // Verificação rigorosa: autocomplete só aparece quando NÃO há texto selecionado
+        // Usamos isCollapsed para verificar se há texto selecionado (collapsed = sem seleção)
         if ($isRangeSelection(selection) && selection.isCollapsed()) {
+          // Verificar se não há seleção global no documento também
+          const domSelection = window.getSelection();
+          if (domSelection && domSelection.toString().trim().length > 0) {
+            // Há texto selecionado no DOM, esconder autocomplete
+            reset();
+            return;
+          }
+          
           const root = $getRoot();
           const text = root.getTextContent();
           const cursorOffset = selection.anchor.offset;
@@ -506,13 +573,27 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             setCurrentText(text);
             setCursorPosition(cursorOffset);
             if (text.length >= 10) {
-              const anchor = { nodeKey: selection.anchor.key, offset: selection.anchor.offset };
+              // Para IA autocomplete também incluímos o início da palavra atual
+              // Calcular onde começa a palavra atual
+              const node = selection.anchor.getNode();
+              const nodeText = node.getTextContent && node.getTextContent() || '';
+              let startPos = cursorOffset;
+              while (startPos > 0 && !/\s/.test(nodeText.charAt(startPos - 1))) {
+                startPos--;
+              }
+              
+              const anchor = { 
+                nodeKey: selection.anchor.key, 
+                offset: selection.anchor.offset,
+                wordStartOffset: startPos
+              };
               debouncedGetSuggestions(text, cursorOffset, anchor);
             } else {
               reset();
             }
           }
         } else {
+          // Se há texto selecionado ou não é uma range selection, esconder autocomplete
           reset();
         }
       });
@@ -523,23 +604,73 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   // Monitor de seleção para autocomplete local
   useEffect(() => {
     const handleSelectionChange = () => {
+      // Verificar primeiro se há qualquer seleção global no DOM
+      const domSelection = window.getSelection();
+      if (domSelection && domSelection.toString().trim().length > 0) {
+        // Há texto selecionado no DOM, esconder autocomplete imediatamente
+        reset();
+        return;
+      }
+      
       editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const selectedText = selection.getTextContent().trim();
-          const isWord = !selectedText.includes(' ');
-          if (isWord && selectedText.length >= 2 && selectedText.length < 10) {
-            const anchor = { nodeKey: selection.anchor.key, offset: selection.anchor.offset };
-            fetchSuggestionsLocal(selectedText, anchor);
+        // Verifica se a seleção está colapsada (cursor sem texto selecionado) e é uma range selection
+        if ($isRangeSelection(selection) && selection.isCollapsed()) {
+          // O texto "selecionado" aqui é na verdade a palavra atual onde o cursor está
+          const currentNode = selection.anchor.getNode();
+          if (currentNode.getTextContent) {
+            // Verificação adicional: garantir que não há texto selecionado em outro lugar
+            if (document.getSelection()?.toString().trim()) {
+              reset();
+              return;
+            }
+            
+            const nodeText = currentNode.getTextContent();
+            const cursorOffset = selection.anchor.offset;
+            
+            // Tenta encontrar a palavra atual onde o cursor está posicionado
+            let startPos = cursorOffset;
+            while (startPos > 0 && !/\s/.test(nodeText.charAt(startPos - 1))) {
+              startPos--;
+            }
+            
+            const currentWord = nodeText.substring(startPos, cursorOffset).trim();
+            
+            if (currentWord && currentWord.length >= 2 && currentWord.length < 10) {
+              // Incluir o offset do início da palavra na âncora para referência posterior
+              const anchor = { 
+                nodeKey: selection.anchor.key, 
+                offset: selection.anchor.offset,
+                wordStartOffset: startPos 
+              };
+              fetchSuggestionsLocal(currentWord, anchor);
+            }
           }
+        } else {
+          // Se há texto selecionado, esconder o autocomplete
+          reset();
         }
       });
     };
+    
+    // Usar evento 'selectionchange' para detectar quando o usuário seleciona texto
     document.addEventListener('selectionchange', handleSelectionChange);
+    
+    // Adicionar também verificação ao pressionar mouse para detectar seleções rapidamente
+    const handleMouseUp = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        reset();
+      }
+    };
+    
+    document.addEventListener('mouseup', handleMouseUp);
+    
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [editor, fetchSuggestionsLocal]);
+  }, [editor, fetchSuggestionsLocal, reset]);
 
   // Event listener global para navegação por teclado
   useEffect(() => {
@@ -623,6 +754,19 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
 
   // Renderização usando portal para o container de popups
   const renderSuggestions = () => {
+    // Verificar estado compartilhado para garantir exclusão mútua
+    if (!canShowAutocomplete()) {
+      // Se o menu de seleção está visível, não mostrar o autocomplete
+      return null;
+    }
+    
+    // Verificar se há texto selecionado antes de renderizar
+    const domSelection = window.getSelection();
+    if (domSelection && domSelection.toString().trim().length > 0) {
+      // Se há qualquer texto selecionado, não renderizar o autocomplete
+      return null;
+    }
+    
     const position = calculatePosition();
     if (!position || !isVisible || suggestions.length === 0) {
       return null;
@@ -639,7 +783,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           top: `${position.top}px`,
           left: `${position.left}px`,
           width: `${position.width}px`,
-          zIndex: 9999,
+          zIndex: 9998, // Usar z-index menor que as ferramentas de seleção (9999)
           minWidth: 350,
           padding: 12,
           borderRadius: 6,

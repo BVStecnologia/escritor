@@ -11,6 +11,7 @@ import {
 import styled from 'styled-components';
 import { assistantService } from '../../../services/assistantService';
 import { Spinner } from '../../styled';
+import { setSelectionToolsVisible, canShowSelectionTools } from './sharedPluginState';
 
 // Comando personalizado para aplicar resultado da IA
 const APPLY_AI_RESULT_COMMAND: LexicalCommand<string> = createCommand();
@@ -147,6 +148,12 @@ export const AIToolsSelectionPlugin = ({
 }: AIToolsSelectionPluginProps = {}) => {
   const [editor] = useLexicalComposerContext();
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Função para atualizar a visibilidade e notificar o estado compartilhado
+  const updateVisibility = (visible: boolean) => {
+    setIsVisible(visible);
+    setSelectionToolsVisible(visible);
+  };
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [selectedText, setSelectedText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -191,18 +198,26 @@ export const AIToolsSelectionPlugin = ({
           if ($isRangeSelection(selection) && !selection.isCollapsed()) {
             const text = selection.getTextContent();
             
-            // Verificar se a seleção tem pelo menos 3 palavras
-            if (text && text.trim().length > 2) {
-              const wordCount = text.trim().split(/\s+/).length;
+            // Verificar se a seleção tem pelo menos 3 palavras e conteúdo válido
+            if (text && text.trim().length > 10) { // Requer pelo menos alguns caracteres
+              // Contar palavras de forma mais rigorosa
+              const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+              const wordCount = words.length;
               
+              // Verificar se há pelo menos 3 palavras significativas
               if (wordCount < 3) {
-                setIsVisible(false);
+                updateVisibility(false);
+                return false;
+              }
+              
+              // Verificar estado compartilhado para exclusão mútua
+              if (!canShowSelectionTools()) {
                 return false;
               }
               
               // Se o editor root element não existir, não podemos posicionar
               if (!editorRootRef.current) {
-                setIsVisible(false);
+                updateVisibility(false);
                 return false;
               }
               
@@ -215,8 +230,21 @@ export const AIToolsSelectionPlugin = ({
               
               const editorRect = editorRootRef.current.getBoundingClientRect();
               
-              // Posicionar no centro e abaixo da seleção
-              const newTop = rect.bottom - editorRect.top + 10; // Um pouco abaixo da seleção
+              // Forçar posicionamento ABAIXO da seleção
+              // Obtemos a altura da linha a partir do estilo computado
+              const computedStyle = window.getComputedStyle(editorRootRef.current);
+              const lineHeight = parseInt(computedStyle.lineHeight) || 24;
+              
+              // Calculamos a posição abaixo da seleção com base na parte inferior da seleção
+              // 1. rect.bottom é a coordenada Y da parte inferior da seleção
+              // 2. editorRect.top é a coordenada Y do topo do editor
+              // 3. Subtraindo, obtemos a posição relativa ao editor
+              // 4. Adicionamos o scrollY para ajustar ao scroll da página
+              // 5. Adicionamos lineHeight para ficar exatamente uma linha abaixo da seleção
+              
+              // Posicionamento aprimorado para garantir que fique exatamente uma linha abaixo
+              const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+              const newTop = rect.bottom - editorRect.top + scrollY + lineHeight;
               let newLeft = rect.left + (rect.width / 2) - editorRect.left;
               const toolWidth = 360;
               if (newLeft + (toolWidth / 2) > editorRect.width - 20) {
@@ -231,13 +259,13 @@ export const AIToolsSelectionPlugin = ({
               });
               
               setSelectedText(text);
-              setIsVisible(true);
+              updateVisibility(true);
               return true;
             }
           }
           
           // Se não há seleção válida, esconder
-          setIsVisible(false);
+          updateVisibility(false);
           setSelectedText('');
           return false;
         });
@@ -247,39 +275,14 @@ export const AIToolsSelectionPlugin = ({
     );
   }, [editor]);
   
-  // Ajustar posição do menu
-  useEffect(() => {
-    if (containerRef.current && isVisible && editorRootRef.current) {
-      const container = containerRef.current;
-      const containerRect = container.getBoundingClientRect();
-      const editorRect = editorRootRef.current.getBoundingClientRect();
-      let adjustedLeft = position.left;
-      if (adjustedLeft + (containerRect.width / 2) > editorRect.width - 10) {
-        adjustedLeft = editorRect.width - (containerRect.width / 2) - 10;
-      }
-      if (adjustedLeft - (containerRect.width / 2) < 10) {
-        adjustedLeft = (containerRect.width / 2) + 10;
-      }
-      let adjustedTop = position.top;
-      if (adjustedTop + containerRect.height > editorRect.height - 10) {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const rect = range.getBoundingClientRect();
-          adjustedTop = rect.top - editorRect.top - containerRect.height - 5 + window.scrollY;
-        }
-      }
-      adjustedTop = Math.max(10, adjustedTop);
-      container.style.left = `${adjustedLeft}px`;
-      container.style.top = `${adjustedTop}px`;
-    }
-  }, [isVisible, position, containerRef]);
+  // Vamos remover esse ajuste de posição por manipulação direta do DOM, 
+  // pois está conflitando com os outros mecanismos de posicionamento
   
   // Esconder quando clicar fora
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsVisible(false);
+        updateVisibility(false);
       }
     };
     
@@ -373,12 +376,12 @@ export const AIToolsSelectionPlugin = ({
       setShowResult(true);
     } finally {
       setIsLoading(false);
-      setIsVisible(false);
+      updateVisibility(false);
     }
   };
   
   // Não renderizar se não estiver visível e não estiver mostrando resultados
-  if (!isVisible && !showResult) {
+  if ((!isVisible && !showResult) || !canShowSelectionTools()) {
     return null;
   }
   
@@ -391,7 +394,8 @@ export const AIToolsSelectionPlugin = ({
           top: position.top, 
           left: position.left,
           width: '300px',
-          transform: 'translateX(-50%)' // Centralizar
+          transform: 'translateX(-50%)', // Centralizar
+          zIndex: 9999 // Garantir que fique acima de outros elementos
         }}
       >
         <ResultContainer>
@@ -422,7 +426,8 @@ export const AIToolsSelectionPlugin = ({
       ref={containerRef}
       style={{ 
         top: position.top, 
-        left: position.left
+        left: position.left,
+        zIndex: 9999 // Garantir que fique acima de outros elementos
       }}
     >
       {isLoading ? (
