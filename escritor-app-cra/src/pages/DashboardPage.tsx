@@ -491,7 +491,7 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
         onBookClick(livro);
       } else {
         // Busca o último capítulo editado desse livro
-        const ultimoCapitulo = await dbService.getUltimoCapituloEditado(livro.id);
+        const ultimoCapitulo = await dbService.getUltimoCapituloAberto(livro.id);
         
         if (ultimoCapitulo) {
           // Navega diretamente para o último capítulo editado
@@ -1076,7 +1076,7 @@ const DashboardPage: React.FC = () => {
         const ultimoLivroEditado = livros[0];
         
         // Busca o último capítulo editado desse livro
-        const ultimoCapitulo = await dbService.getUltimoCapituloEditado(ultimoLivroEditado.id);
+        const ultimoCapitulo = await dbService.getUltimoCapituloAberto(ultimoLivroEditado.id);
         
         if (ultimoCapitulo) {
           // Navega diretamente para o último capítulo editado
@@ -1098,7 +1098,7 @@ const DashboardPage: React.FC = () => {
       <GlobalStyle />
       <DashboardContainer>
         <Header>
-          <Logo>Minha Biblioteca</Logo>
+          <Logo onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Bookwriter</Logo>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <UserCard onClick={() => navigate('/profile')}>
               <UserAvatar>{getUserInitial()}</UserAvatar>

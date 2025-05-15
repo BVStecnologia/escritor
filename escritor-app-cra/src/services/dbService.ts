@@ -243,36 +243,32 @@ export const dbService = {
   },
 
   /**
-   * Obter o último capítulo editado de um livro
+   * Obter o último capítulo aberto de um livro
    */
-  async getUltimoCapituloEditado(livroId: number) {
+  async getUltimoCapituloAberto(livroId: number) {
     try {
       const { data, error } = await supabase
         .from('Capitulo')
         .select('*')
         .eq('livro_id', livroId)
-        .order('last_edit', { ascending: false })
+        .order('ultima_edicao', { ascending: false })
         .limit(1);
 
       if (error) throw error;
-      
       if (data && data.length > 0) {
         return data[0] as Capitulo;
       }
-      
-      // Se não encontrar por last_edit, tenta buscar o primeiro por ordem
+      // Se não encontrar por ultima_edicao, tenta buscar o primeiro por ordem
       const { data: dataByOrder, error: errorByOrder } = await supabase
         .from('Capitulo')
         .select('*')
         .eq('livro_id', livroId)
         .order('ordem', { ascending: true })
         .limit(1);
-        
       if (errorByOrder) throw errorByOrder;
-      
       return dataByOrder && dataByOrder.length > 0 ? dataByOrder[0] as Capitulo : null;
     } catch (error) {
-      console.error(`Erro ao obter último capítulo editado do livro ${livroId}:`, error);
+      console.error(`Erro ao obter último capítulo aberto do livro ${livroId}:`, error);
       throw error;
     }
   },

@@ -65,6 +65,11 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
         if (livroId && chapterId) {
           console.log('Carregando capítulo com ID:', chapterId);
           const capituloData = await dbService.getCapituloPorId(chapterId);
+          // Atualizar ultima_edicao ao abrir o capítulo
+          await supabase
+            .from('Capitulo')
+            .update({ ultima_edicao: new Date().toISOString() })
+            .eq('id', chapterId);
           
           if (capituloData) {
             console.log('Capítulo carregado:', {
@@ -115,27 +120,23 @@ export function useEditorPage(bookId?: string, chapterId?: string): UseEditorPag
             console.warn('Capítulo não encontrado com ID:', chapterId);
           }
         } else if (capitulosData && capitulosData.length > 0) {
-          // Buscar o último capítulo editado ao invés do último da lista
-          const ultimoCapituloEditado = await dbService.getUltimoCapituloEditado(livroId);
-          console.log('Selecionando último capítulo editado:', ultimoCapituloEditado?.titulo);
+          // Buscar o último capítulo aberto ao invés do último da lista
+          const ultimoCapituloAberto = await dbService.getUltimoCapituloAberto(livroId);
+          console.log('Selecionando último capítulo aberto:', ultimoCapituloAberto?.titulo);
 
-          if (ultimoCapituloEditado) {
-            const conteudoCapitulo = ultimoCapituloEditado.texto || ultimoCapituloEditado.conteudo || '';
-            
+          if (ultimoCapituloAberto) {
+            const conteudoCapitulo = ultimoCapituloAberto.texto || ultimoCapituloAberto.conteudo || '';
             // Garantir que o título seja uma string válida
-            setChapterTitle(typeof ultimoCapituloEditado.titulo === 'string' ? ultimoCapituloEditado.titulo : 'Sem título');
+            setChapterTitle(typeof ultimoCapituloAberto.titulo === 'string' ? ultimoCapituloAberto.titulo : 'Sem título');
             setChapterContent(conteudoCapitulo);
-
             if (conteudoCapitulo) {
               const words = conteudoCapitulo.split(/\s+/).filter(Boolean).length;
               setWordCount(words);
             }
-
-            navigate(`/editor/${bookId}/${ultimoCapituloEditado.id}`);
+            navigate(`/editor/${bookId}/${ultimoCapituloAberto.id}`);
           } else {
-            // Caso não encontre o último editado, usa o primeiro da lista
+            // Caso não encontre o último aberto, usa o primeiro da lista
             const primeiroCapitulo = capitulosData[0];
-            // Garantir que o título seja uma string válida
             setChapterTitle(typeof primeiroCapitulo.titulo === 'string' ? primeiroCapitulo.titulo : 'Sem título');
             setChapterContent(primeiroCapitulo.texto || primeiroCapitulo.conteudo || '');
             navigate(`/editor/${bookId}/${primeiroCapitulo.id}`);
