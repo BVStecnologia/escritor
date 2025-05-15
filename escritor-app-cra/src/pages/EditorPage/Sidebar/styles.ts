@@ -258,32 +258,34 @@ export const ChapterStat = styled.div`
 
 export const ChapterProgress = styled.div<{ $active: boolean }>`
   margin-top: 0.75rem;
-  height: 4px;
-  background: ${({ theme, $active }) => 
-    $active 
+  height: 5px;
+  background: ${({ theme, $active }) =>
+    $active
       ? theme.isDarkMode
-        ? 'rgba(30, 41, 59, 0.5)'
-        : 'rgba(255, 255, 255, 0.2)'
-      : theme.isDarkMode 
-        ? theme.colors.gray[200] 
-        : theme.colors.gray[200]
-  };
-  border-radius: 2px;
+        ? 'linear-gradient(90deg, #3730a3 0%, #0ea5e9 100%)'
+        : 'linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)'
+      : theme.isDarkMode
+        ? 'rgba(30, 41, 59, 0.3)'
+        : 'rgba(148, 163, 184, 0.15)'};
+  border-radius: 3px;
   overflow: hidden;
+  box-shadow: ${({ $active }) => $active ? '0 0 8px 1px rgba(67,97,238,0.15)' : 'none'};
 `;
 
 export const ChapterProgressBar = styled.div<{ $progress: number; $active: boolean }>`
   height: 100%;
   width: ${({ $progress }) => $progress}%;
-  background: ${({ theme, $active }) => 
-    $active 
+  background: ${({ theme, $active }) =>
+    $active
       ? theme.isDarkMode
-        ? theme.colors.primary
-        : theme.colors.primary
-      : theme.colors.primary
-  };
-  border-radius: 2px;
-  transition: width 0.5s ease;
+        ? 'linear-gradient(90deg, #a78bfa 0%, #60a5fa 100%)'
+        : 'linear-gradient(90deg, #4361ee 0%, #4cc9f0 100%)'
+      : theme.isDarkMode
+        ? 'rgba(67,97,238,0.5)'
+        : 'rgba(67,97,238,0.5)'};
+  border-radius: 3px;
+  box-shadow: ${({ $active }) => $active ? '0 0 8px 2px rgba(67,97,238,0.18)' : 'none'};
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
 `;
 
 export const NewChapterButton = styled.button`

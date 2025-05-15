@@ -415,12 +415,66 @@ export const DOMSpellCheckPlugin: React.FC<DOMSpellCheckPluginProps> = ({ checkI
     logDebug("Plugin inicializado");
     
     const handleDblClick = (e: Event) => {
-      logDebug("Handler dblclick chamado");
+      // Verificar se o evento ocorreu dentro do editor
+      if (!isEventInsideEditor(e)) {
+        logDebug("Evento de clique duplo ocorreu fora do editor - ignorando");
+        return;
+      }
+      
+      logDebug("Handler dblclick chamado dentro do editor");
       handleDoubleClick(e);
     };
     
     const handleOutsideClick = (e: Event) => {
       handleClickOutside(e);
+    };
+    
+    // Função para verificar se o evento ocorreu dentro do editor
+    const isEventInsideEditor = (e: Event): boolean => {
+      // Obter o elemento que recebeu o evento
+      const target = e.target as HTMLElement;
+      if (!target) return false;
+      
+      // Lista de classes e atributos que identificam o editor
+      const editorIndicators = [
+        '.editor-input', 
+        '.ContentEditable__root',
+        '[contenteditable=true]',
+        '.editor-container',
+        '.lexical-editor',
+        '.LexicalEditor-root'
+      ];
+      
+      // Verificar se o target ou qualquer um de seus pais corresponde a um dos indicadores do editor
+      for (const indicator of editorIndicators) {
+        // Verificar se é uma classe ou atributo
+        if (indicator.startsWith('.')) {
+          // É uma classe
+          const className = indicator.substring(1);
+          if (target.classList.contains(className) || target.closest(indicator)) {
+            return true;
+          }
+        } else if (indicator.startsWith('[')) {
+          // É um atributo como [contenteditable=true]
+          // Extrair apenas o nome do atributo e valor
+          const attrMatch = indicator.match(/\[(.*?)=(.*?)\]/);
+          if (attrMatch && attrMatch.length >= 3) {
+            const [_, attrName, attrValue] = attrMatch;
+            // Remover possíveis aspas
+            const cleanValue = attrValue.replace(/['"]/g, '');
+            if (target.getAttribute(attrName) === cleanValue || target.closest(indicator)) {
+              return true;
+            }
+          }
+        }
+      }
+      
+      // Verificação adicional: elemento pai com data-lexical-editor
+      if (target.closest('[data-lexical-editor]')) {
+        return true;
+      }
+      
+      return false;
     };
     
     // Tentar vários seletores para capturar o duplo clique no editor
@@ -435,8 +489,8 @@ export const DOMSpellCheckPlugin: React.FC<DOMSpellCheckPluginProps> = ({ checkI
     
     // Adicionar com um pequeno atraso para garantir que o editor está totalmente carregado
     setTimeout(() => {
-      // Registrar listener no documento principal
-      document.addEventListener('dblclick', handleDblClick);
+      // Registrar listener APENAS nos elementos do editor, NÃO no documento inteiro
+      // Comentado: document.addEventListener('dblclick', handleDblClick);
       
       // Adicionar a cada elemento do editor
       editorSelectors.forEach(selector => {
@@ -451,19 +505,32 @@ export const DOMSpellCheckPlugin: React.FC<DOMSpellCheckPluginProps> = ({ checkI
         });
       });
       
+      // Adicionar ao elemento especifico do Lexical, se existir
+      const lexicalEditors = document.querySelectorAll('[data-lexical-editor]');
+      lexicalEditors.forEach(el => {
+        logDebug('Adicionando listener no editor Lexical');
+        el.addEventListener('dblclick', handleDblClick);
+      });
+      
       // Listener para clicar fora
       document.addEventListener('mousedown', handleOutsideClick);
     }, 1000); // Pequeno delay para garantir que o editor está carregado
     
     // Limpar ao desmontar
     return () => {
-      document.removeEventListener('dblclick', handleDblClick);
+      // Comentado: document.removeEventListener('dblclick', handleDblClick);
       
       editorSelectors.forEach(selector => {
         const elements = document.querySelectorAll(selector);
         elements.forEach(el => {
           el.removeEventListener('dblclick', handleDblClick);
         });
+      });
+      
+      // Remover do elemento Lexical específico
+      const lexicalEditors = document.querySelectorAll('[data-lexical-editor]');
+      lexicalEditors.forEach(el => {
+        el.removeEventListener('dblclick', handleDblClick);
       });
       
       document.removeEventListener('mousedown', handleOutsideClick);

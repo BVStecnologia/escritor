@@ -3,6 +3,7 @@ import { Logo, BookTitle, HeaderContent, ThemeToggleButton, StatusIndicator, Act
 import { PenIcon, ArrowBackIcon } from '../../components/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 
 // Componente estilizado para a saudação - sem fundo
 const GreetingContainer = styled.div`
@@ -162,6 +163,7 @@ const Greeting: React.FC = () => {
   const [icon, setIcon] = useState('');
   const [motivational, setMotivational] = useState('');
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Nome do usuário (obtido dos metadados do usuário)
   const userName = user?.user_metadata?.name || 'Escritor';
@@ -233,6 +235,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [localTitle, setLocalTitle] = useState(bookTitle);
+  const navigate = useNavigate();
 
   const handleEditBookInfo = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -268,14 +271,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
     <Header>
       <HeaderContent>
         <LeftSection>
-          <Logo>
+          <Logo onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer', marginRight: '1.5rem' }}>
             Bookwriter
-            <svg width="0" height="0">
-              <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#8b5cf6" />
-              </linearGradient>
-            </svg>
           </Logo>
 
           <BookTitle onClick={handleEditBookInfo}>
