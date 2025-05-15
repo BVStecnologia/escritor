@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { assistantService } from '../../services/assistantService';
 import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon, CollapseRightIcon } from '../../components/icons';
+import { FiCheck, FiCopy } from 'react-icons/fi';
 import styled from 'styled-components';
 import { AIContainer } from './styles';
+import { dbService } from '../../services/dbService';
+import type { Personagem } from '../../services/dbService';
 
 const AIHeader = styled.div`
   padding: 1.5rem;
@@ -308,6 +311,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // Função para rolar para a última mensagem
   const scrollToBottom = () => {
@@ -321,11 +325,44 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
 
   // Adicionar uma mensagem de boas-vindas ao inicializar o componente
   useEffect(() => {
-    setMessages([{
-      role: 'assistant',
-      content: 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje? Você pode me perguntar sobre escrita criativa, desenvolvimento de personagens, revisão de texto, ou qualquer outro aspecto do seu projeto.'
-    }]);
-  }, []);
+    async function setMensagemInspiradora() {
+      let mensagem = '';
+      try {
+        if (bookId) {
+          const livro = await dbService.getLivroPorId(Number(bookId));
+          let infoLivro = '';
+          if (livro.sinopse) infoLivro += `\nSinopse: ${livro.sinopse}`;
+          if (livro.genero) infoLivro += `\nGênero: ${livro.genero}`;
+          if (livro.ambientacao) infoLivro += `\nAmbiente: ${livro.ambientacao}`;
+          if (livro.palavras_chave) infoLivro += `\nPalavras-chave: ${livro.palavras_chave}`;
+          let personagens: Personagem[] = [];
+          try {
+            personagens = await dbService.getPersonagens(String(livro.id));
+          } catch {}
+          if (personagens && personagens.length > 0) {
+            const nomes = personagens.slice(0, 3).map(p => p.nome).join(', ');
+            infoLivro += `\nPersonagens principais: ${nomes}${personagens.length > 3 ? ' e outros' : ''}`;
+          }
+          let notas = [];
+          try {
+            notas = await dbService.getNotas(String(livro.id));
+          } catch {}
+          if (chapterId) {
+            const capitulo = await dbService.getCapituloPorId(String(chapterId));
+            mensagem = `Pronto para continuar sua jornada em "${capitulo.titulo}"? Este é o capítulo ${capitulo.ordem || ''}${capitulo.palavras ? `, com ${capitulo.palavras} palavras` : ''}. Lembre-se: cada capítulo é uma nova oportunidade para surpreender o leitor.\n${infoLivro}`;
+          } else {
+            mensagem = `Bem-vindo ao seu livro "${livro.titulo || livro["Nome do livro"]}"!${infoLivro}\n${notas.length > 0 ? `Você tem ${notas.length} anotações para este livro.` : ''}\nComece a escrever sua história, ou peça sugestões criativas para dar o pontapé inicial!`;
+          }
+        } else {
+          mensagem = 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje? Você pode me pedir ideias, sugestões, revisão ou inspiração para começar.';
+        }
+      } catch (e) {
+        mensagem = 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje?';
+      }
+      setMessages([{ role: 'assistant', content: mensagem }]);
+    }
+    setMensagemInspiradora();
+  }, [bookId, chapterId]);
 
   // Efeito para simulação de digitação
   useEffect(() => {
@@ -395,16 +432,16 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
     setIsLoading(true);
     
     try {
-      console.log('Enviando prompt para o assistente:', {
-        input: aiPrompt,
-        bookId,
-        chapterId
-      });
-      
+      // Montar o histórico das últimas 8 mensagens (usuário e assistente)
+      const historico = [...messages, userMessage].slice(-8)
+        .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
+        .join('\n');
+
+      const systemPrompt = `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.\nSeja conciso, específico e útil.\n\nHistórico da conversa até aqui:\n${historico}\n\nResponda de forma natural, sem repetir o que já foi dito.`;
+
       const response = await assistantService.custom({
         input: aiPrompt,
-        systemPrompt: `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.
-Seja conciso, específico e útil.`,
+        systemPrompt,
         includeEmbeddings: true,
         maxEmbeddings: 5
       });
@@ -482,6 +519,18 @@ Seja conciso, específico e útil.`,
     </CollapsedAIActions>
   );
 
+  // Função para copiar texto
+  const handleCopy = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 1200);
+    } catch {
+      // fallback
+      alert('Não foi possível copiar para a área de transferência.');
+    }
+  };
+
   return (
     <AIContainer $isOpen={isOpen}>
       <AIHeader>
@@ -500,8 +549,31 @@ Seja conciso, específico e útil.`,
             {messages.length > 0 ? (
               <AIConversation>
                 {messages.map((message, index) => (
-                  <AIMessage key={index} $isUser={message.role === 'user'}>
+                  <AIMessage key={index} $isUser={message.role === 'user'} style={{ position: 'relative' }}>
                     {message.content}
+                    {message.role === 'assistant' && (
+                      <button
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 2,
+                          color: '#888',
+                          fontSize: 18
+                        }}
+                        title="Copiar resposta"
+                        onClick={() => handleCopy(message.fullContent || message.content, index)}
+                      >
+                        {copiedIndex === index ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                        )}
+                      </button>
+                    )}
                   </AIMessage>
                 ))}
                 {isLoading && (

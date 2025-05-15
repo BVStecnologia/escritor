@@ -23,6 +23,7 @@
     "@types/styled-components": "^5.1.34",
     "lexical": "^0.31.0",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.510.0",
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
