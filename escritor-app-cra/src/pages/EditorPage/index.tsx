@@ -251,6 +251,9 @@ const EditorPage: React.FC = () => {
     }
   };
 
+  // Verificar se existe um capítulo/parte selecionado
+  const hasSelectedChapter = Boolean(chapterId);
+
   if (loading) {
     return (
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
@@ -265,6 +268,45 @@ const EditorPage: React.FC = () => {
       <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
         {isDarkMode && <DarkThemeStyles />}
         <ErrorState error={erro} onBack={() => navigate('/dashboard')} />
+      </ThemeProvider>
+    );
+  }
+
+  // NOVO: Centralizar Sidebar quando não houver capítulo selecionado
+  if (!hasSelectedChapter) {
+    return (
+      <ThemeProvider theme={editorThemes[isDarkMode ? 'dark' : 'light']}>
+        {isDarkMode && <DarkThemeStyles />}
+        <EditorPageContainer style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', background: isDarkMode ? '#18181b' : '#f7fafc' }}>
+          <div style={{ width: '100vw', maxWidth: 'none', padding: 0 }}>
+            <EditorHeader
+              bookTitle={livro.titulo || livro["Nome do livro"] || "Sem título"}
+              saveStatus={saveStatus}
+              titleSaveStatus={titleSaveStatus}
+              isOnline={isOnline}
+              isDarkMode={isDarkMode}
+              onToggleTheme={() => {
+                console.log('Toggle tema no EditorPage, estado atual:', isDarkMode ? 'escuro' : 'claro');
+                toggleTheme();
+              }}
+              onBackToDashboard={() => navigate('/dashboard')}
+              onBookTitleChange={handleBookTitleChange}
+              onEditBookInfo={handleOpenEditModal}
+            />
+          </div>
+          <div style={{ width: '100vw', minWidth: 0, maxWidth: '100vw', boxShadow: '0 8px 32px rgba(0,0,0,0.10)', borderRadius: 24, background: isDarkMode ? '#23272f' : '#fff', padding: '3rem 2rem 2.5rem 2rem', margin: '32px auto 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Sidebar
+              chapters={capitulos}
+              activeChapterId={chapterId}
+              onChapterSelect={handleChapterSelect}
+              onNewChapter={handleNewChapter}
+              onDeleteChapter={handleDeleteChapter}
+              onChaptersReorder={handleChaptersReorder}
+              onChapterTitleChange={handleChapterTitleUpdate}
+              hideCollapseButton={true}
+            />
+          </div>
+        </EditorPageContainer>
       </ThemeProvider>
     );
   }
@@ -287,7 +329,6 @@ const EditorPage: React.FC = () => {
           onBookTitleChange={handleBookTitleChange}
           onEditBookInfo={handleOpenEditModal}
         />
-
         <MainLayout>
           <Sidebar
             chapters={capitulos}
@@ -297,8 +338,8 @@ const EditorPage: React.FC = () => {
             onDeleteChapter={handleDeleteChapter}
             onChaptersReorder={handleChaptersReorder}
             onChapterTitleChange={handleChapterTitleUpdate}
+            hideCollapseButton={false}
           />
-
           <EditorContent
             chapterTitle={chapterTitle}
             wordCount={wordCount}
@@ -313,14 +354,11 @@ const EditorPage: React.FC = () => {
             setSaveStatus={setSaveStatus}
             loadingChapter={loadingChapter}
           />
-          
           <AIAssistantFixed
             bookId={bookId}
             chapterId={chapterId}
           />
         </MainLayout>
-
-        {/* Modal de Edição do Livro */}
         <CreateBookModal
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}

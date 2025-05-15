@@ -22,7 +22,7 @@ const slideInFromRight = keyframes`
   }
 `;
 
-export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
+export const SidebarContainer = styled.aside<{ $isOpen: boolean; $isEmpty?: boolean }>`
   width: ${({ $isOpen }) => $isOpen ? '320px' : '80px'};
   background: ${({ theme }) => theme.colors.background.glass};
   backdrop-filter: blur(20px);
@@ -36,6 +36,7 @@ export const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   flex-shrink: 0;
   height: calc(100vh - 126px); /* Ajustado para alinhar com o editor */
   margin-top: 2px; /* Pequeno ajuste para alinhamento perfeito */
+  ${({ $isEmpty }) => $isEmpty ? `max-width: 600px; margin-left: auto; margin-right: auto; width: 100%;` : ''}
 
   @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
     -webkit-backdrop-filter: blur(20px);

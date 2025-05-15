@@ -335,6 +335,7 @@ interface SidebarProps {
   onDeleteChapter?: (chapterId: string) => void;
   onChaptersReorder?: (reorderedChapters: Capitulo[]) => void;
   onChapterTitleChange?: (chapterId: string, newTitle: string) => void;
+  hideCollapseButton?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -344,7 +345,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewChapter,
   onDeleteChapter,
   onChaptersReorder,
-  onChapterTitleChange
+  onChapterTitleChange,
+  hideCollapseButton
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -442,12 +444,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <SidebarContainer $isOpen={isOpen}>
+    <SidebarContainer $isOpen={isOpen} $isEmpty={filteredChapters.length === 0}>
       <SidebarHeader $isOpen={isOpen}>
         {isOpen && <SidebarTitle $isOpen={isOpen}>Partes</SidebarTitle>}
-        <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <CollapseLeftIcon /> : <CollapseRightIcon />}
-        </ToggleSidebarButton>
+        {!hideCollapseButton && (
+          <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <CollapseLeftIcon /> : <CollapseRightIcon />}
+          </ToggleSidebarButton>
+        )}
       </SidebarHeader>
 
       {isOpen && (
@@ -480,34 +484,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {provided.placeholder}
                     </>
                   ) : (
-                    <EmptyStateContainer>
-                      <EmptyStateIcon>📝</EmptyStateIcon>
-                      <EmptyStateTitle>Monte as partes do seu livro</EmptyStateTitle>
-                      <EmptyStateText>
-                        Crie partes para organizar o conteúdo do seu livro. 
-                        Você pode arrastar e soltar para reorganizá-las a qualquer momento.
-                      </EmptyStateText>
-                      
-                      <EmptyStateExample>
-                        <ExampleItem>
-                          <ExampleNumber>1</ExampleNumber>
-                          Capa
-                        </ExampleItem>
-                        <ExampleItem>
-                          <ExampleNumber>2</ExampleNumber>
-                          Introdução
-                        </ExampleItem>
-                        <ExampleItem>
-                          <ExampleNumber>3</ExampleNumber>
-                          Capítulo 1
-                        </ExampleItem>
-                      </EmptyStateExample>
-                      
-                      <NewChapterButton onClick={() => setShowPopup(true)}>
-                        <PlusIcon />
-                        Criar primeira parte
-                      </NewChapterButton>
-                    </EmptyStateContainer>
+                    !showPopup && (
+                      <EmptyStateContainer>
+                        <EmptyStateIcon>📝</EmptyStateIcon>
+                        <EmptyStateTitle>Monte as partes do seu livro</EmptyStateTitle>
+                        <EmptyStateText>
+                          Você pode começar escrevendo os capítulos, adicionar a capa e a introdução depois, ou, se preferir, montar a capa primeiro.<br />
+                          Organize as partes do seu livro do jeito que fizer mais sentido para você: arraste, solte e reordene quando quiser.<br />
+                          O importante é dar o primeiro passo na sua história!
+                        </EmptyStateText>
+                        <EmptyStateExample>
+                          <ExampleItem>
+                            <ExampleNumber>1</ExampleNumber>
+                            Capa
+                          </ExampleItem>
+                          <ExampleItem>
+                            <ExampleNumber>2</ExampleNumber>
+                            Introdução
+                          </ExampleItem>
+                          <ExampleItem>
+                            <ExampleNumber>3</ExampleNumber>
+                            Capítulo 1
+                          </ExampleItem>
+                        </EmptyStateExample>
+                        <NewChapterButton onClick={() => setShowPopup(true)}>
+                          <PlusIcon />
+                          {filteredChapters.length === 0 ? 'Criar primeira parte' : 'Nova Parte'}
+                        </NewChapterButton>
+                      </EmptyStateContainer>
+                    )
                   )}
                 </div>
               )}
@@ -539,10 +544,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {showPopup && (
         <PopupOverlay onClick={() => setShowPopup(false)}>
           <PopupContainer onClick={e => e.stopPropagation()}>
-            <PopupTitle>Nova Parte</PopupTitle>
+            <PopupTitle>{filteredChapters.length === 0 ? 'Primeira Parte' : 'Nova Parte'}</PopupTitle>
             <PopupInput
               autoFocus
-              placeholder="Título da nova parte"
+              placeholder={filteredChapters.length === 0 ? 'Título da primeira parte' : 'Título da nova parte'}
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               onKeyDown={e => {
