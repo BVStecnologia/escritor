@@ -5,6 +5,7 @@ import theme from './styles/theme';
 import GlobalStyles from './styles/globalStyles';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AutocompleteProvider } from './contexts/AutocompleteContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 import LandingPage from './pages/LandingPage';
@@ -23,7 +24,8 @@ const App: React.FC = () => {
       <Router>
         <AuthProvider>
           <ThemeProvider>
-            <Routes>
+            <AutocompleteProvider>
+              <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
@@ -56,6 +58,7 @@ const App: React.FC = () => {
                 <DiagnosticoPage />
               } />
             </Routes>
+            </AutocompleteProvider>
           </ThemeProvider>
         </AuthProvider>
       </Router>

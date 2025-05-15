@@ -37,6 +37,7 @@ import styled from 'styled-components';
 import {
   $patchStyleText
 } from '@lexical/selection';
+import { useAutocomplete } from '../../../contexts/AutocompleteContext';
 
 const Toolbar = styled.div`
   display: flex;
@@ -224,6 +225,13 @@ const ImageIcon = () => (
   </svg>
 );
 
+const AutocompleteIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 12h10M16 12h6M2 6h18M2 18h6M12 18h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M17.5 15.5l2.5 2.5l-2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
@@ -236,6 +244,7 @@ export const ToolbarPlugin = () => {
   const [fontFamily, setFontFamily] = useState<string>('inherit');
   const debouncedUpdateRef = useRef<any>(null);
   const initialLoadComplete = useRef<boolean>(false);
+  const { isAutocompleteEnabled, toggleAutocomplete } = useAutocomplete();
 
   // Função para detectar a fonte predominante no documento
   const detectInitialFont = useCallback(() => {
@@ -711,6 +720,17 @@ export const ToolbarPlugin = () => {
           title="Inserir imagem"
         >
           <ImageIcon />
+        </ToolButton>
+      </ToolbarSection>
+
+      {/* Nova seção para o botão de autocomplete */}
+      <ToolbarSection>
+        <ToolButton
+          $active={isAutocompleteEnabled}
+          onClick={toggleAutocomplete}
+          title={isAutocompleteEnabled ? "Desativar autocomplete" : "Ativar autocomplete"}
+        >
+          <AutocompleteIcon />
         </ToolButton>
       </ToolbarSection>
     </Toolbar>

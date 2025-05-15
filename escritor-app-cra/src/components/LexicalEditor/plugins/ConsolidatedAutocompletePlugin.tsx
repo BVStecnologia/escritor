@@ -27,6 +27,7 @@ import { editorTheme } from '../theme';
 import './ConsolidatedAutocompletePlugin.css'; // Para os estilos globais de spelling-error e suggestions-container
 import { setAutocompleteVisible, canShowAutocomplete } from './sharedPluginState';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useAutocomplete } from '../../../contexts/AutocompleteContext';
 
 // Dicionário e utilitários do autocomplete local
 // Copiado/adaptado do AutocompletePlugin
@@ -302,6 +303,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   const containerRef = useRef<HTMLDivElement>(null);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const { isDarkMode } = useTheme(); // Obter o estado do tema
+  const { isAutocompleteEnabled } = useAutocomplete(); // Obter preferência de autocomplete
 
   const [state, dispatch] = useReducer(autocompleteReducer, initialAutocompleteState);
   const { isVisible, suggestions, selectedIndex, position, anchor, isLoading, mode } = state;
@@ -426,7 +428,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   // Debounced autocomplete IA (sem delay extra)
   const debouncedGetSuggestions = useCallback(
     debounce((text: string, cursorPosition: number, anchor: { nodeKey: string; offset: number; wordStartOffset?: number }) => {
-      if (text.length < 10) return;
+      // Verificar se o autocomplete está ativado
+      if (!isAutocompleteEnabled || text.length < 10) return;
       dispatch({ type: 'SET_LOADING', payload: true });
       assistantService.autocomplete({
         input: text,
@@ -497,7 +500,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           dispatch({ type: 'SET_LOADING', payload: false });
         });
     }, 300),
-    [showSuggestions, livroId]
+    [showSuggestions, livroId, isAutocompleteEnabled]
   );
 
   // Sugestão local (dicionário) - DESATIVADA
@@ -835,6 +838,12 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
 
   // Renderização usando portal para o container de popups
   const renderSuggestions = () => {
+    // Verificar se o autocomplete está ativado nas preferências
+    if (!isAutocompleteEnabled) {
+      // Se o autocomplete está desativado, não mostrar nada
+      return null;
+    }
+    
     // Verificar estado compartilhado para garantir exclusão mútua
     if (!canShowAutocomplete()) {
       // Se o menu de seleção está visível, não mostrar o autocomplete
