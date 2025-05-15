@@ -12,7 +12,7 @@ export interface Capitulo {
   conteudo?: string;     // Campo mantido para compatibilidade com código existente
   livro_id: number;
   email_user?: string;
-  last_edit?: string;    // Timestamp da última edição
+  ultima_edicao?: string;    // Timestamp da última edição
   palavras?: number;
   ordem?: number;        // Campo para controlar a ordem dos capítulos
 }
@@ -363,7 +363,7 @@ export const dbService = {
         titulo: capituloData.titulo,
         texto,
         livro_id: livroId,
-        last_edit: new Date().toTimeString().split(' ')[0],
+        ultima_edicao: new Date().toISOString(),
         palavras,
         ordem: nextOrder
       };
@@ -449,9 +449,9 @@ export const dbService = {
       console.log('Usando contagem de palavras do customData:', updateData.palavras);
     }
 
-    // Adiciona horário de última edição (HH:MM:SS)
+    // Adiciona horário de última edição (data e hora completa)
     const now = new Date();
-    updateData.last_edit = now.toTimeString().split(' ')[0];
+    updateData.ultima_edicao = now.toISOString();
 
     console.log('Dados a serem enviados para atualização:', {
       id,
