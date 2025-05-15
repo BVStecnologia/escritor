@@ -362,14 +362,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleDeleteClick = (chapter: Capitulo, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Parte selecionada para exclusão:', chapter.titulo);
     setChapterToDelete(chapter);
     setShowDeletePopup(true);
   };
 
   const confirmDelete = () => {
     if (chapterToDelete && onDeleteChapter) {
-      console.log('Excluindo parte:', chapterToDelete.titulo);
       onDeleteChapter(chapterToDelete.id);
       setShowDeletePopup(false);
       setChapterToDelete(null);
@@ -434,7 +432,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               index={index}
               isActive={String(chapter.id) === activeChapterId}
               onClick={() => onChapterSelect(String(chapter.id))}
-              onDelete={onDeleteChapter && !isOpen ? (e) => handleDeleteClick(chapter, e) : undefined}
+              onDelete={(e) => handleDeleteClick(chapter, e)}
               onTitleChange={onChapterTitleChange}
             />
           </div>

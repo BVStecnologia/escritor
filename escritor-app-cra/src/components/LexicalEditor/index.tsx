@@ -41,20 +41,6 @@ const EditorContainer = styled.div`
     width: 100%;
     overflow-x: hidden; /* Prevenir barra de rolagem horizontal */
   }
-  
-  /* Remover sublinhados vermelhos em qualquer lugar */
-  .spelling-error,
-  [class*="spelling"],
-  [data-word],
-  span[style*="text-decoration"],
-  span[style*="wavy"],
-  span[style*="underline"] {
-    text-decoration: none !important;
-    border-bottom: none !important;
-    animation: none !important;
-    background-color: transparent !important;
-    display: inline !important;
-  }
 `;
 
 const EditorInner = styled.div`
@@ -187,8 +173,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         {/* <AutocompletePlugin /> */}
         <ConsolidatedAutocompletePlugin livroId={bookId} capituloId={chapterId} />
         <AIToolsSelectionPlugin livroId={bookId} capituloId={chapterId} />
-        {/* Desativado para evitar sublinhados vermelhos intermitentes */}
-        {/* <DOMSpellCheckPlugin checkInterval={5000} /> */}
+        <DOMSpellCheckPlugin checkInterval={5000} />
         
         {bookId && chapterId && (
           <AutoSavePlugin 
