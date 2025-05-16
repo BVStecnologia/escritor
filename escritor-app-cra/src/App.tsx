@@ -16,11 +16,15 @@ import EditorPage from './pages/EditorPage';
 import ProfilePage from './pages/ProfilePage';
 import DebugPage from './pages/DebugPage';
 import DiagnosticoPage from './pages/DiagnosticoPage';
+import AuthCallback from './pages/AuthCallback';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App: React.FC = () => {
   return (
     <StyledThemeProvider theme={theme}>
       <GlobalStyles />
+      <ToastContainer position="top-center" autoClose={4000} />
       <Router>
         <AuthProvider>
           <ThemeProvider>
@@ -57,6 +61,7 @@ const App: React.FC = () => {
               <Route path="/diagnostico" element={
                 <DiagnosticoPage />
               } />
+              <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>
             </AutocompleteProvider>
           </ThemeProvider>

@@ -181,5 +181,40 @@ export const authService = {
       console.error('Erro ao verificar autenticação:', error);
       return false;
     }
+  },
+
+  /**
+   * Login com Google (OAuth)
+   * Detecta ambiente (localhost ou produção) para redirectTo
+   * Exemplo de uso: await authService.loginComGoogle();
+   */
+  async loginComGoogle() {
+    try {
+      // Detecta ambiente para definir o redirectTo correto
+      const isLocalhost = window.location.hostname === 'localhost';
+      const redirectTo = isLocalhost
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://bookwriter.work/auth/callback';
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      });
+      if (error) {
+        // Se react-toastify estiver disponível, mostrar toast
+        if (typeof window !== 'undefined' && (window as any).toast) {
+          (window as any).toast.error('Erro ao iniciar login com Google: ' + error.message);
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      // Tratamento de erro global
+      if (typeof window !== 'undefined' && (window as any).toast) {
+        (window as any).toast.error('Erro ao iniciar login com Google: ' + error.message);
+      }
+      throw error;
+    }
   }
 };

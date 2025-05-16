@@ -15,6 +15,14 @@ primary_region = "gru"
 [experimental]
   auto_rollback = true
 
+[[http_service.domains]]
+  name = "bookwriter.work"
+  zone_id = ""
+
+[[http_service.domains]]
+  name = "www.bookwriter.work"
+  zone_id = ""
+
 [[services]]
   http_checks = []
   internal_port = 80

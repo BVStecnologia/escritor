@@ -446,9 +446,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <SidebarHeader $isOpen={isOpen}>
         {isOpen && <SidebarTitle $isOpen={isOpen}>Partes</SidebarTitle>}
         {!hideCollapseButton && (
-          <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <CollapseLeftIcon /> : <CollapseRightIcon />}
-          </ToggleSidebarButton>
+        <ToggleSidebarButton onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <CollapseLeftIcon /> : <CollapseRightIcon />}
+        </ToggleSidebarButton>
         )}
       </SidebarHeader>
 
@@ -483,33 +483,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </>
                   ) : (
                     !showPopup && (
-                      <EmptyStateContainer>
-                        <EmptyStateIcon>📝</EmptyStateIcon>
-                        <EmptyStateTitle>Monte as partes do seu livro</EmptyStateTitle>
-                        <EmptyStateText>
+                    <EmptyStateContainer>
+                      <EmptyStateIcon>📝</EmptyStateIcon>
+                      <EmptyStateTitle>Monte as partes do seu livro</EmptyStateTitle>
+                      <EmptyStateText>
                           Você pode começar escrevendo os capítulos, adicionar a capa e a introdução depois, ou, se preferir, montar a capa primeiro.<br />
                           Organize as partes do seu livro do jeito que fizer mais sentido para você: arraste, solte e reordene quando quiser.<br />
                           O importante é dar o primeiro passo na sua história!
-                        </EmptyStateText>
-                        <EmptyStateExample>
-                          <ExampleItem>
-                            <ExampleNumber>1</ExampleNumber>
-                            Capa
-                          </ExampleItem>
-                          <ExampleItem>
-                            <ExampleNumber>2</ExampleNumber>
-                            Introdução
-                          </ExampleItem>
-                          <ExampleItem>
-                            <ExampleNumber>3</ExampleNumber>
-                            Capítulo 1
-                          </ExampleItem>
-                        </EmptyStateExample>
-                        <NewChapterButton onClick={() => setShowPopup(true)}>
-                          <PlusIcon />
+                      </EmptyStateText>
+                      <EmptyStateExample>
+                        <ExampleItem>
+                          <ExampleNumber>1</ExampleNumber>
+                          Capa
+                        </ExampleItem>
+                        <ExampleItem>
+                          <ExampleNumber>2</ExampleNumber>
+                          Introdução
+                        </ExampleItem>
+                        <ExampleItem>
+                          <ExampleNumber>3</ExampleNumber>
+                          Capítulo 1
+                        </ExampleItem>
+                      </EmptyStateExample>
+                      <NewChapterButton onClick={() => setShowPopup(true)}>
+                        <PlusIcon />
                           {filteredChapters.length === 0 ? 'Criar primeira parte' : 'Nova Parte'}
-                        </NewChapterButton>
-                      </EmptyStateContainer>
+                      </NewChapterButton>
+                    </EmptyStateContainer>
                     )
                   )}
                 </div>

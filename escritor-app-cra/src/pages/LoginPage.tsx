@@ -4,6 +4,7 @@ import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
+import { toast } from 'react-toastify';
 
 // Tema profissional para autores
 const theme = {
@@ -516,17 +517,11 @@ const WriterPortalLogin: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
-
     try {
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`
-        }
-      });
-      // Não precisamos definir erro aqui, pois o redirecionamento acontecerá
-    } catch (err) {
-      setError('Erro ao conectar com Google. Tente novamente mais tarde.');
+      await authService.loginComGoogle(); // Redireciona automaticamente
+      // Não precisa setar loading false, pois haverá redirecionamento
+    } catch (err: any) {
+      toast.error('Erro ao conectar com Google. Tente novamente mais tarde.');
       setLoading(false);
     }
   };
