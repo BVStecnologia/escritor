@@ -284,18 +284,14 @@ export const authService = {
   async loginComGoogleDireto() {
     try {
       console.log('Iniciando processo de login com Google Identity Services');
-      
       // 1. Carregar a API do Google se ainda não estiver carregada
       if (!window.google) {
         console.log('Carregando script da API do Google');
-        // Adicionar o script do Google se ainda não estiver carregado
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
-        
-        // Esperar o script carregar
         await new Promise<void>((resolve) => {
           script.onload = () => {
             console.log('Script do Google carregado com sucesso');
@@ -304,95 +300,79 @@ export const authService = {
           script.onerror = () => {
             console.error('Erro ao carregar script do Google');
             toast.error('Erro ao carregar recursos do Google. Tente novamente.');
-            resolve(); // Resolve mesmo com erro para não travar a promessa
+            resolve();
           };
         });
       }
-      
-      // Verificar se o script foi carregado corretamente
       if (!window.google || !window.google.accounts || !window.google.accounts.id) {
         throw new Error('API do Google não foi carregada corretamente');
       }
-      
-      // 2. Gerar um nonce seguro
       const nonce = generateNonce();
-      
-      // 3. Usar a API google.accounts.id em vez de OAuth
-      console.log('Inicializando Google Identity Services com google.accounts.id');
-      
-      // Criar uma promessa que será resolvida quando o callback do Google for chamado
       return new Promise<void>((resolve, reject) => {
-        // Inicializar o cliente Google Identity Services
+        let loginFinalizado = false;
         window.google?.accounts?.id?.initialize({
           client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || '1018081357112-8uk47osqt9m54rdcrqncas76cn3or2f2.apps.googleusercontent.com',
           callback: async (response: GoogleCredentialResponse) => {
+            if (loginFinalizado) return;
             try {
-              // Verificar se recebemos um credential (id_token) do Google
               if (!response.credential) {
                 console.error('Resposta do Google sem credential (id_token):', response);
                 toast.error('Falha na autenticação: Token de ID não recebido do Google');
+                loginFinalizado = true;
                 reject(new Error('Credential não recebido do Google'));
                 return;
               }
-              
-              console.log('ID Token (credential) recebido com sucesso, iniciando autenticação no Supabase');
-              
-              // Usar o token para autenticar no Supabase
-              console.log('Tentando autenticar com Supabase usando id_token');
-              
-              // Método correto de acordo com a documentação mais recente do Supabase
               const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',
-                token: response.credential, // Este é o id_token do Google
+                token: response.credential,
                 nonce: nonce
               });
-              
-              // Se encontrarmos um erro com o ID token
               if (error) {
-                console.log('Erro ao autenticar com método direto:', error.message);
-                console.error('Erro detalhado do Supabase:', error);
-                
-                console.log('Tentando método tradicional de login como fallback');
-                
-                // Mostrar toast de erro apenas em desenvolvimento para depuração
-                if (process.env.NODE_ENV === 'development') {
-                  toast.error('Erro no método direto, tentando fallback: ' + error.message);
+                // Tentar fallback, mas só mostrar erro se ambos falharem
+                try {
+                  const fallbackResult = await authService.loginComGoogle();
+                  loginFinalizado = true;
+                  resolve(fallbackResult);
+                  return;
+                } catch (fallbackError: any) {
+                  loginFinalizado = true;
+                  toast.error('Erro ao autenticar com Google: ' + fallbackError.message);
+                  reject(fallbackError);
+                  return;
                 }
-                
-                // Tentar o método tradicional como fallback silenciosamente
-                await this.loginComGoogle();
-                resolve();
-                return;
               }
-              
               toast.success('Login com Google realizado com sucesso!');
-              
-              // O usuário está autenticado, redirecionar para o dashboard
+              loginFinalizado = true;
               window.location.href = '/dashboard';
               resolve();
             } catch (err: any) {
-              toast.error('Erro ao processar login com Google: ' + (err.message || 'Erro desconhecido'));
-              console.error('Erro durante autenticação com Google:', err);
-              reject(err);
+              if (!loginFinalizado) {
+                loginFinalizado = true;
+                toast.error('Erro ao processar login com Google: ' + (err.message || 'Erro desconhecido'));
+                reject(err);
+              }
             }
           },
           auto_select: false
         });
-        
-        // Iniciar o prompt do Google Identity Services
         window.google?.accounts?.id?.prompt((notification) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('O prompt do Google não foi exibido:', notification.getNotDisplayedReason() || notification.getSkippedReason());
-            // Fallback para o método tradicional se o prompt não for exibido
-            this.loginComGoogle().then(resolve).catch(reject);
+            if (!loginFinalizado) {
+              console.log('O prompt do Google não foi exibido:', notification.getNotDisplayedReason() || notification.getSkippedReason());
+              authService.loginComGoogle().then(() => {
+                loginFinalizado = true;
+                resolve();
+              }).catch((fallbackError) => {
+                loginFinalizado = true;
+                toast.error('Erro ao autenticar com Google: ' + fallbackError.message);
+                reject(fallbackError);
+              });
+            }
           }
         });
       });
     } catch (error: any) {
-      // Mensagem mais amigável para o usuário
       let mensagemErro = 'Erro ao iniciar login com Google';
-      
-      // Personalizar mensagens de erro específicas
       if (error.message && error.message.includes('API do Google não foi carregada')) {
         mensagemErro = 'Não foi possível carregar a API do Google. Verifique sua conexão com a internet.';
       } else if (error.message && error.message.includes('id_token required')) {
@@ -402,13 +382,8 @@ export const authService = {
       } else if (error.message) {
         mensagemErro += ': ' + error.message;
       }
-      
-      // Mostrar mensagem de erro para o usuário
       toast.error(mensagemErro);
-      
-      // Registrar detalhes técnicos no console para depuração
       console.error('Erro completo na autenticação com Google:', error);
-      
       throw error;
     }
   }

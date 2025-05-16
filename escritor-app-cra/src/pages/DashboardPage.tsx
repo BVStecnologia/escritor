@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Livro } from '../types/livro';
 import defaultTheme from '../styles/theme';
 import CreateBookModal from '../components/CreateBookModal';
+import { supabase } from '../services/supabaseClient';
 
 // Definição dos temas claro e escuro
 const lightTheme = {
@@ -1016,6 +1017,7 @@ const DashboardPage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [totalLivros, setTotalLivros] = useState(0);
   const maxBooks = 8;
+  const [variationData, setVariationData] = useState<any>(null);
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
@@ -1028,10 +1030,11 @@ const DashboardPage: React.FC = () => {
         for (const livro of livros) {
           const capitulos = await dbService.getCapitulosPorLivroId(livro.id);
           totalCapitulos += capitulos?.length || 0;
-          
           for (const capitulo of capitulos || []) {
-            if (capitulo.conteudo) {
-              totalPalavras += capitulo.conteudo.split(/\s+/).filter(Boolean).length;
+            if (typeof capitulo.palavras === 'number') {
+              totalPalavras += capitulo.palavras;
+            } else if (capitulo.texto) {
+              totalPalavras += capitulo.texto.split(/\s+/).filter(Boolean).length;
             }
           }
         }
@@ -1053,6 +1056,21 @@ const DashboardPage: React.FC = () => {
 
     carregarEstatisticas();
   }, []);
+
+  useEffect(() => {
+    // Buscar variação semanal
+    const fetchVariationData = async () => {
+      const user_email = user?.email || user?.user_metadata?.email;
+      if (!user_email) return;
+      const { data, error } = await supabase.rpc('calcular_variacao_semanal', { user_email });
+      if (error) {
+        console.error('Erro ao buscar variação semanal:', error);
+      } else {
+        setVariationData(data);
+      }
+    };
+    fetchVariationData();
+  }, [user]);
 
   const getUserInitial = () => {
     if (user?.user_metadata?.name) {
@@ -1091,6 +1109,23 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Erro ao buscar o último livro editado:', error);
     }
+  };
+
+  // Função utilitária para renderizar o indicador de variação
+  const renderVariation = (tipo: 'livros' | 'capitulos' | 'palavras' | 'dias_ativos') => {
+    if (!variationData || !variationData[tipo]) return null;
+    const v = variationData[tipo];
+    if (v.variacao_absoluta === 0 || v.variacao_absoluta === null || v.variacao_absoluta === undefined) return null;
+    const positivo = v.variacao_absoluta > 0;
+    const simbolo = positivo ? '↑' : '↓';
+    const cor = positivo ? '#10b981' : '#ef4444';
+    const abs = Math.abs(v.variacao_absoluta);
+    const perc = v.variacao_percentual !== null && v.variacao_percentual !== undefined ? `(${positivo ? '+' : '-'}${Math.abs(v.variacao_percentual)}%)` : '';
+    return (
+      <StatChange positive={positivo} style={{ color: cor }}>
+        <span>{simbolo}</span> {positivo ? '+' : '-'}{abs} esta semana {perc}
+      </StatChange>
+    );
   };
 
   return (
@@ -1182,9 +1217,7 @@ const DashboardPage: React.FC = () => {
                   </StatInfo>
                 </StatTop>
                 <StatBottom>
-                  <StatChange positive>
-                    <span>↑</span> +1 este mês
-                  </StatChange>
+                  {renderVariation('livros')}
                   <StatBar>
                     <StatBarFill width={75} color="#3b82f6" />
                   </StatBar>
@@ -1202,9 +1235,7 @@ const DashboardPage: React.FC = () => {
                   </StatInfo>
                 </StatTop>
                 <StatBottom>
-                  <StatChange positive>
-                    <span>↑</span> +3 esta semana
-                  </StatChange>
+                  {renderVariation('capitulos')}
                   <StatBar>
                     <StatBarFill width={60} color="#10b981" />
                   </StatBar>
@@ -1222,9 +1253,7 @@ const DashboardPage: React.FC = () => {
                   </StatInfo>
                 </StatTop>
                 <StatBottom>
-                  <StatChange positive>
-                    <span>↑</span> +2.458 hoje
-                  </StatChange>
+                  {renderVariation('palavras')}
                   <StatBar>
                     <StatBarFill width={85} color="#f59e0b" />
                   </StatBar>
@@ -1237,14 +1266,12 @@ const DashboardPage: React.FC = () => {
                 <StatTop>
                   <StatIcon color="#ef4444">🔥</StatIcon>
                   <StatInfo>
-                    <StatValue>7</StatValue>
-                    <StatLabel>Dias consecutivos</StatLabel>
+                    <StatValue>{stats.progresso}</StatValue>
+                    <StatLabel>Dias ativos</StatLabel>
                   </StatInfo>
                 </StatTop>
                 <StatBottom>
-                  <StatChange positive>
-                    <span>🎯</span> Meta semanal atingida!
-                  </StatChange>
+                  {renderVariation('dias_ativos')}
                   <StatBar>
                     <StatBarFill width={100} color="#ef4444" />
                   </StatBar>
