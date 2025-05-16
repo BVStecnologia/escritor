@@ -505,6 +505,7 @@ const WriterPortalLogin: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setError('');
     setLoading(true);
 
