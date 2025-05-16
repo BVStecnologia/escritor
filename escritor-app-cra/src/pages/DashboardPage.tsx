@@ -806,6 +806,22 @@ const ProgressLabel = styled.div`
   margin-top: 0.5rem;
 `;
 
+const ProgressBar = styled.div`
+  flex: 1;
+  height: 6px;
+  background: ${({ theme }) => theme.progressBackground};
+  border-radius: 3px;
+  overflow: hidden;
+`;
+
+const ProgressBarFill = styled.div<{ width: number; color: string }>`
+  height: 100%;
+  width: ${({ width }) => width}%;
+  background: ${({ color }) => color};
+  border-radius: 3px;
+  transition: width 0.5s ease;
+`;
+
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -902,22 +918,6 @@ const StatChange = styled.div<{ positive?: boolean }>`
   gap: 0.25rem;
   font-size: 0.875rem;
   color: ${({ positive }) => positive ? '#10b981' : '#ef4444'};
-`;
-
-const StatBar = styled.div`
-  flex: 1;
-  height: 6px;
-  background: ${({ theme }) => theme.progressBackground};
-  border-radius: 3px;
-  overflow: hidden;
-`;
-
-const StatBarFill = styled.div<{ width: number; color: string }>`
-  height: 100%;
-  width: ${({ width }) => width}%;
-  background: ${({ color }) => color};
-  border-radius: 3px;
-  transition: width 0.5s ease;
 `;
 
 const BooksSection = styled.section`
@@ -1018,6 +1018,7 @@ const DashboardPage: React.FC = () => {
   const [totalLivros, setTotalLivros] = useState(0);
   const maxBooks = 8;
   const [variationData, setVariationData] = useState<any>(null);
+  const [tempoEscrita, setTempoEscrita] = useState<any>(null);
 
   useEffect(() => {
     const carregarEstatisticas = async () => {
@@ -1070,6 +1071,21 @@ const DashboardPage: React.FC = () => {
       }
     };
     fetchVariationData();
+  }, [user]);
+
+  useEffect(() => {
+    // Buscar tempo de escrita
+    const fetchTempoEscrita = async () => {
+      const user_email = user?.email;
+      if (!user_email) return;
+      const { data, error } = await supabase.rpc('calcular_tempo_escrita', { user_email });
+      if (error) {
+        console.error('Erro ao buscar tempo de escrita:', error);
+      } else {
+        setTempoEscrita(data);
+      }
+    };
+    fetchTempoEscrita();
   }, [user]);
 
   const getUserInitial = () => {
@@ -1218,9 +1234,9 @@ const DashboardPage: React.FC = () => {
                 </StatTop>
                 <StatBottom>
                   {renderVariation('livros')}
-                  <StatBar>
-                    <StatBarFill width={75} color="#3b82f6" />
-                  </StatBar>
+                  <ProgressBar>
+                    <ProgressBarFill width={75} color="#3b82f6" />
+                  </ProgressBar>
                 </StatBottom>
               </StatContent>
             </StatCard>
@@ -1236,9 +1252,9 @@ const DashboardPage: React.FC = () => {
                 </StatTop>
                 <StatBottom>
                   {renderVariation('capitulos')}
-                  <StatBar>
-                    <StatBarFill width={60} color="#10b981" />
-                  </StatBar>
+                  <ProgressBar>
+                    <ProgressBarFill width={60} color="#10b981" />
+                  </ProgressBar>
                 </StatBottom>
               </StatContent>
             </StatCard>
@@ -1254,9 +1270,9 @@ const DashboardPage: React.FC = () => {
                 </StatTop>
                 <StatBottom>
                   {renderVariation('palavras')}
-                  <StatBar>
-                    <StatBarFill width={85} color="#f59e0b" />
-                  </StatBar>
+                  <ProgressBar>
+                    <ProgressBarFill width={85} color="#f59e0b" />
+                  </ProgressBar>
                 </StatBottom>
               </StatContent>
             </StatCard>
@@ -1272,9 +1288,9 @@ const DashboardPage: React.FC = () => {
                 </StatTop>
                 <StatBottom>
                   {renderVariation('dias_ativos')}
-                  <StatBar>
-                    <StatBarFill width={100} color="#ef4444" />
-                  </StatBar>
+                  <ProgressBar>
+                    <ProgressBarFill width={100} color="#ef4444" />
+                  </ProgressBar>
                 </StatBottom>
               </StatContent>
             </StatCard>
