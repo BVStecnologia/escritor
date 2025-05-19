@@ -1,6 +1,11 @@
 import { supabase } from './supabaseClient';
 import { Livro } from '../types/livro';
 
+// Atualizar a interface Livro para incluir o campo capa
+export interface LivroData extends Livro {
+  capa?: string;
+}
+
 // Serviço para interagir com as tabelas existentes no Supabase
 // Adaptaremos este serviço para corresponder à sua estrutura de banco de dados existente
 
@@ -127,7 +132,8 @@ export const dbService = {
     genero?: string, 
     personagens?: string, 
     ambientacao?: string,
-    palavras_chave?: string 
+    palavras_chave?: string,
+    capa?: string 
   }) {
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -155,7 +161,8 @@ export const dbService = {
           genero: livroData.genero || '',
           personagens: livroData.personagens || '',
           ambientacao: livroData.ambientacao || '',
-          palavras_chave: livroData.palavras_chave || ''
+          palavras_chave: livroData.palavras_chave || '',
+          capa: livroData.capa || ''
         }])
         .select();
 
@@ -179,7 +186,8 @@ export const dbService = {
     genero?: string,
     personagens?: string,
     ambientacao?: string,
-    palavras_chave?: string 
+    palavras_chave?: string,
+    capa?: string 
   }) {
     try {
       const { data, error } = await supabase
@@ -191,7 +199,8 @@ export const dbService = {
           genero: livroData.genero,
           personagens: livroData.personagens,
           ambientacao: livroData.ambientacao,
-          palavras_chave: livroData.palavras_chave
+          palavras_chave: livroData.palavras_chave,
+          capa: livroData.capa
         })
         .eq('id', id)
         .select();

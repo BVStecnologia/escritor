@@ -1,497 +1,87 @@
-// src/components/CreateBookModal.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import styled, { keyframes } from 'styled-components';
-import { dbService } from '../services/dbService';
+# Comandos Git - Guia de Referência
 
-// Animações
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
+## Fluxo Recomendado de Trabalho
 
-const slideUp = keyframes`
-  from { transform: translateY(50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-`;
+### 1. Antes de começar a trabalhar (atualizar repositório local)
 
-const bookOpen = keyframes`
-  0% { transform: rotateY(-90deg); }
-  100% { transform: rotateY(0deg); }
-`;
+```bash
+git fetch --all
+git merge origin/main
+```
+Essa abordagem é mais segura que `git reset --hard origin/main` porque não descarta suas alterações locais.
 
-const quillWrite = keyframes`
-  0% { transform: translateX(0) translateY(0) rotate(0deg); }
-  25% { transform: translateX(10px) translateY(2px) rotate(5deg); }
-  50% { transform: translateX(20px) translateY(0) rotate(0deg); }
-  75% { transform: translateX(30px) translateY(2px) rotate(-5deg); }
-  100% { transform: translateX(40px) translateY(0) rotate(0deg); }
-`;
+### 2. Durante o desenvolvimento (salvar alterações com frequência)
 
-// Styled Components
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: ${({ theme }) => theme.isDarkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: ${fadeIn} 0.3s ease-out;
-  backdrop-filter: blur(5px);
-`;
+```bash
+# Verificar status
+git status
 
-const ModalContainer = styled.div`
-  position: relative;
-  width: 600px;
-  max-width: 95%;
-  background: ${({ theme }) => theme.isDarkMode ? theme.cardBackground || '#1e293b' : theme.colors.background.paper};
-  border-radius: 16px;
-  padding: 3rem;
-  box-shadow: ${({ theme }) => theme.colors.shadow?.xl || theme.shadows.xl};
-  border: 1px solid ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : (theme.colors.border?.light || theme.colors.gray[200])};
-  animation: ${slideUp} 0.5s ease-out, ${bookOpen} 0.8s ease-out;
-  overflow: hidden;
+# Adicionar arquivos modificados
+git add .
 
-  @media (max-width: 768px) {
-    padding: 2rem;
-  }
-`;
+# Commit das alterações
+git commit -m "Descrição das alterações"
 
-const BookDecoration = styled.div`
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 150px;
-  height: 150px;
-  opacity: 0.05;
-  font-size: 8rem;
-  transform: rotate(15deg);
-  color: ${({ theme }) => theme.colors.primary};
-`;
+# Enviar para o GitHub
+git push
+```
 
-const ModalHeader = styled.div`
-  text-align: center;
-  margin-bottom: 2.5rem;
-  position: relative;
-`;
+### 3. Recuperação Segura (sem perder alterações)
 
-const QuillIcon = styled.div`
-  font-size: 3rem;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 1rem;
-  position: relative;
-  display: inline-block;
-  animation: ${quillWrite} 4s ease-in-out infinite;
-`;
+Se precisar reverter para o estado do repositório remoto:
 
-const Title = styled.h2`
-  font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  margin-bottom: 0.5rem;
+```bash
+# Salvar alterações locais em um stash
+git stash save "Salvando alterações locais"
 
-  @media (max-width: 768px) {
-    font-size: 2rem;
-  }
-`;
+# Atualizar com o remoto
+git pull
 
-const Subtitle = styled.p`
-  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.secondary};
-  font-size: 1.1rem;
-  font-weight: 500;
-`;
+# Recuperar alterações locais (se necessário)
+git stash apply
+```
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
+### 4. Trabalhando com Branches
 
-const FormGroup = styled.div`
-  position: relative;
-`;
+```bash
+# Criar e mudar para uma nova branch
+git checkout -b nome-da-nova-branch
 
-const Label = styled.label`
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  margin-bottom: 0.5rem;
-`;
+# Enviar a branch para o GitHub
+git push -u origin nome-da-nova-branch
 
-const Input = styled.input`
-  width: 100%;
-  padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
-  border-radius: 8px;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  transition: all 0.2s ease;
+# Juntar as alterações com o main
+git checkout main
+git merge nome-da-nova-branch
+git push
+```
 
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
-  }
+## Em Caso de Emergência (Recuperar após reset)
 
-  &::placeholder {
-    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
-  }
-`;
+Se você fez `git reset --hard` e perdeu alterações que já havia commitado:
 
-const Textarea = styled.textarea`
-  width: 100%;
-  padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
-  border-radius: 8px;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  min-height: 120px;
-  resize: vertical;
-  transition: all 0.2s ease;
-  font-family: ${({ theme }) => theme.fonts.body};
+```bash
+# Ver histórico de todas as ações (mesmo após reset)
+git reflog
 
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
-  }
+# Criar uma nova branch a partir de um commit perdido
+git branch recuperacao-branch HASH-DO-COMMIT
+```
 
-  &::placeholder {
-    color: ${({ theme }) => theme.isDarkMode ? '#a0aec0' : theme.colors.text.tertiary};
-  }
-`;
+## Dicas de Segurança
 
-const Select = styled.select`
-  width: 100%;
-  padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.light};
-  border: 2px solid ${({ theme }) => theme.isDarkMode ? '#4a5568' : (theme.colors.border?.light || theme.colors.gray[200])};
-  border-radius: 8px;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  transition: all 0.2s ease;
-  cursor: pointer;
+1. **NUNCA** use `git reset --hard` a menos que esteja 100% certo que quer descartar alterações locais
+2. Use `git stash` para guardar alterações não commitadas antes de operações arriscadas
+3. Commit frequentemente, mesmo se o código não estiver perfeito
+4. Push para o GitHub regularmente para ter backup
+5. Crie branches separadas para experimentos
 
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.primary}20;
-  }
+## Alias Útil para Evitar Reset Destrutivo
 
-  option {
-    background: ${({ theme }) => theme.isDarkMode ? '#2d3748' : theme.colors.background.paper};
-    color: ${({ theme }) => theme.isDarkMode ? theme.textPrimary || '#e2e8f0' : theme.colors.text.primary};
-  }
-`;
+Configure este alias para fazer stash automático antes de reset:
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  
-  @media (max-width: 468px) {
-    flex-direction: column;
-  }
-`;
+```bash
+git config --global alias.safe-reset "!f() { git stash save 'Auto-stash before reset' && git reset $@; }; f"
+```
 
-const Button = styled.button`
-  flex: 1;
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.primaryGradient || theme.colors.primary};
-  color: white;
-  border: none;
-  
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: ${({ theme }) => theme.colors.shadow?.lg || theme.shadows.lg};
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: transparent;
-  color: ${({ theme }) => theme.colors.primary};
-  border: 2px solid ${({ theme }) => theme.colors.primary};
-  
-  &:hover:not(:disabled) {
-    background: ${({ theme }) => theme.colors.primary}10;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  background: ${({ theme }) => theme.colors.danger}15;
-  border: 1px solid ${({ theme }) => theme.colors.danger}30;
-  color: ${({ theme }) => theme.colors.danger};
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-`;
-
-const SuccessMessage = styled.div`
-  background: ${({ theme }) => theme.colors.success}15;
-  border: 1px solid ${({ theme }) => theme.colors.success}30;
-  color: ${({ theme }) => theme.colors.success};
-  padding: 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  text-align: center;
-`;
-
-const ProgressBar = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: ${({ theme }) => theme.colors.gray[200]};
-  border-radius: 0 0 16px 16px;
-  overflow: hidden;
-`;
-
-const ProgressFill = styled.div<{ progress: number }>`
-  height: 100%;
-  width: ${({ progress }) => progress}%;
-  background: ${({ theme }) => theme.colors.primaryGradient || theme.colors.primary};
-  transition: width 0.3s ease;
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: ${({ theme }) => theme.isDarkMode ? '#374151' : theme.colors.background.light};
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: ${({ theme }) => theme.isDarkMode ? '#94a3b8' : theme.colors.text.secondary};
-  transition: all 0.3s ease;
-  font-size: 1.75rem;
-  z-index: 10;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-
-  &:hover {
-    background: ${({ theme }) => theme.isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)'};
-    color: #ef4444;
-    transform: rotate(90deg);
-  }
-
-  &:active {
-    transform: rotate(90deg) scale(0.9);
-  }
-`;
-
-// Genres list
-const GENRES = [
-  'Romance',
-  'Ficção Científica',
-  'Fantasia',
-  'Mistério',
-  'Thriller',
-  'Terror',
-  'Poesia',
-  'Biografia',
-  'Autoajuda',
-  'Infantil',
-  'Juvenil',
-  'História',
-  'Filosofia',
-  'Técnico',
-  'Outro'
-];
-
-interface CreateBookModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [titulo, setTitulo] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [genero, setGenero] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Resetar form quando modal abre
-  useEffect(() => {
-    if (isOpen) {
-      setTitulo('');
-      setDescricao('');
-      setGenero('');
-      setError('');
-      setSuccess(false);
-      setProgress(0);
-    }
-  }, [isOpen]);
-
-  // Atualizar barra de progresso
-  useEffect(() => {
-    let filled = 0;
-    if (titulo) filled += 33;
-    if (descricao) filled += 33;
-    if (genero) filled += 34;
-    setProgress(filled);
-  }, [titulo, descricao, genero]);
-
-  // Fechar ao clicar fora
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  // Fechar com Escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await dbService.criarLivro({
-        titulo,
-        autor: '', // Você pode adicionar um campo de autor se desejar
-        sinopse: descricao,
-        genero: genero
-      });
-
-      setSuccess(true);
-      
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1500);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar o livro. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <ModalOverlay onClick={handleOverlayClick}>
-      <ModalContainer ref={modalRef}>
-        <CloseButton
-          title="Fechar"
-          aria-label="Fechar modal"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-        >✕</CloseButton>
-        <BookDecoration>📚</BookDecoration>
-        
-        <ModalHeader>
-          <QuillIcon>✍️</QuillIcon>
-          <Title>Criar Novo Livro</Title>
-          <Subtitle>Dê vida à sua nova história</Subtitle>
-        </ModalHeader>
-
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="titulo">Título do Livro *</Label>
-            <Input
-              id="titulo"
-              type="text"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Digite o título da sua obra"
-              required
-              autoFocus
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="descricao">Sinopse</Label>
-            <Textarea
-              id="descricao"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Conte um pouco sobre sua história..."
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="genero">Gênero Literário</Label>
-            <Select
-              id="genero"
-              value={genero}
-              onChange={(e) => setGenero(e.target.value)}
-            >
-              <option value="">Selecione um gênero</option>
-              {GENRES.map(g => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </Select>
-          </FormGroup>
-
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>Livro criado com sucesso! ✨</SuccessMessage>}
-
-          <ButtonGroup>
-            <SecondaryButton
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancelar
-            </SecondaryButton>
-            <PrimaryButton
-              type="submit"
-              disabled={loading || !titulo}
-            >
-              {loading ? 'Criando...' : 'Criar Livro'}
-            </PrimaryButton>
-          </ButtonGroup>
-        </Form>
-
-        <ProgressBar>
-          <ProgressFill progress={progress} />
-        </ProgressBar>
-      </ModalContainer>
-    </ModalOverlay>
-  );
-};
-
-export default CreateBookModal;
+Depois use `git safe-reset --hard origin/main` em vez de `git reset --hard origin/main`.

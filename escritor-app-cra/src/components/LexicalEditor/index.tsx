@@ -14,7 +14,7 @@ import { LinkNode } from '@lexical/link';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 
-import { ToolbarPlugin } from './plugins/ToolbarPlugin';
+import { ToolbarWithModal } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
 import { InitialContentPlugin } from './plugins/InitialContentPlugin';
 import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
@@ -148,7 +148,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <EditorContainer className="editor-container">
-        <ToolbarPlugin />
+        <ToolbarWithModal />
         <EditorInner>
           <ContentEditableWrapper>
             <RichTextPlugin

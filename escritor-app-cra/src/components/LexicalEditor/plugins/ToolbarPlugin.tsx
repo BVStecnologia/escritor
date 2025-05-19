@@ -38,6 +38,8 @@ import {
   $patchStyleText
 } from '@lexical/selection';
 import { useAutocomplete } from '../../../contexts/AutocompleteContext';
+import ImageGenerationModal from '../../ImageGenerationModal';
+import { PromptContext } from '../../../services/imageService';
 
 const Toolbar = styled.div`
   display: flex;
@@ -566,16 +568,37 @@ export const ToolbarPlugin = () => {
     }
   };
 
+  // Estado para controlar o modal de geração de imagem
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageContext, setImageContext] = useState<PromptContext | undefined>(undefined);
+  
+  // Manipular inserção de imagem
   const insertImage = () => {
-    const url = prompt('Enter image URL');
-    if (url) {
-      // Usamos um evento personalizado já que não podemos importar o comando diretamente
-      // Isso será capturado pelo plugin de imagem
-      const insertImageEvent = new CustomEvent('lexical-insert-image', {
-        detail: { src: url, altText: 'Image' }
-      });
-      window.dispatchEvent(insertImageEvent);
+    // Abrir o modal de geração de imagem ao invés de usar prompt
+    const selection = editor.getEditorState().read($getSelection);
+    
+    // Capturar texto selecionado se houver para melhorar o prompt da imagem
+    let selectedText = '';
+    if ($isRangeSelection(selection)) {
+      selectedText = selection.getTextContent();
     }
+    
+    setImageContext({
+      texto: selectedText,
+      tipo: 'capitulo' as 'capitulo' | 'capa'
+    });
+    setIsGeneratingImage(true);
+  };
+  
+  // Selecionar imagem gerada
+  const handleSelectImage = (imageUrl: string) => {
+    // Usamos um evento personalizado já que não podemos importar o comando diretamente
+    // Isso será capturado pelo plugin de imagem
+    const insertImageEvent = new CustomEvent('lexical-insert-image', {
+      detail: { src: imageUrl, altText: 'Imagem gerada por IA' }
+    });
+    window.dispatchEvent(insertImageEvent);
+    setIsGeneratingImage(false);
   };
 
   const updateFontFamily = (fontFamily: string) => {
@@ -734,5 +757,32 @@ export const ToolbarPlugin = () => {
         </ToolButton>
       </ToolbarSection>
     </Toolbar>
+  );
+};
+
+// Componente separado para renderizar o modal fora do componente principal
+export const ToolbarWithModal = () => {
+  const [editor] = useLexicalComposerContext();
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageContext, setImageContext] = useState<PromptContext | undefined>(undefined);
+  
+  return (
+    <>
+      <ToolbarPlugin />
+      <ImageGenerationModal
+        isOpen={isGeneratingImage}
+        onClose={() => setIsGeneratingImage(false)}
+        onImageSelect={(url) => {
+          // Inserir imagem no editor
+          const insertImageEvent = new CustomEvent('lexical-insert-image', {
+            detail: { src: url, altText: 'Imagem gerada por IA' }
+          });
+          window.dispatchEvent(insertImageEvent);
+          setIsGeneratingImage(false);
+        }}
+        context={imageContext}
+        initialPrompt=""
+      />
+    </>
   );
 };

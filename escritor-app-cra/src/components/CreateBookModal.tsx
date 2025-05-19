@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { dbService } from '../services/dbService';
+import { imageService } from '../services/imageService';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import ImageGenerationModal from './ImageGenerationModal';
 
 // Animações
 const fadeIn = keyframes`
@@ -108,6 +110,75 @@ const BookDecoration = styled.div`
   transform: rotate(15deg);
   color: ${({ theme }) => theme.colors.primary};
   z-index: 1;
+`;
+
+const Button = styled.button`
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const BookCoverPreview = styled.div`
+  width: 100%;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: ${({ theme }) => theme.isDarkMode ? '#111' : '#f5f5f5'};
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+`;
+
+const CoverImage = styled.img`
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const EmptyCover = styled.div`
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.isDarkMode ? '#1a1a1a' : theme.colors.background.light};
+  color: ${({ theme }) => theme.isDarkMode ? theme.textSecondary || '#94a3b8' : theme.colors.text.tertiary};
+  font-size: 3rem;
+  border: 2px dashed ${({ theme }) => theme.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+  border-radius: 8px;
+`;
+
+const GenerateCoverButton = styled(Button)`
+  margin-top: 1rem;
+  width: 100%;
+  background: ${({ theme }) => theme.colors.primaryGradient || theme.colors.primary};
+  color: white;
+  border: none;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: ${({ theme }) => theme.colors.shadow?.lg || theme.shadows.lg};
+  }
 `;
 
 const ModalHeader = styled.div`
@@ -336,16 +407,6 @@ const ButtonGroup = styled.div`
   @media (max-width: 468px) {
     flex-direction: column;
   }
-`;
-
-const Button = styled.button`
-  flex: 1;
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
   
   &:disabled {
     opacity: 0.7;
@@ -496,6 +557,55 @@ const GENRES = [
   'Outro'
 ];
 
+// Componente para visualização da capa em tamanho completo
+const CoverViewerModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  opacity: 0;
+  animation: ${fadeIn} 0.3s ease-out forwards;
+`;
+
+const CoverImageFull = styled.img`
+  max-width: 90%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+`;
+
+const CloseViewerButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.8);
+    transform: rotate(90deg);
+  }
+`;
+
 interface CreateBookModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -514,10 +624,13 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
   const [personagens, setPersonagens] = useState('');
   const [ambientacao, setAmbientacao] = useState('');
   const [palavrasChave, setPalavrasChave] = useState('');
+  const [capa, setCapa] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+  const [viewingCoverFull, setViewingCoverFull] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Log para depuração quando o componente é renderizado
@@ -552,24 +665,25 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
         // Limpar os dados anteriores
         console.log('Preenchendo formulário com dados do livro:', livro);
         
-        // Preencher o formulário com os dados do livro - verificando cada propriedade cuidadosamente
-        setTitulo(livro.titulo || livro["Nome do livro"] || '');
-        setDescricao(livro.sinopse || '');
-        setGenero(livro.genero || '');
-        setAutor(livro.autor || livro["Autor"] || '');
-        setPersonagens(livro.personagens || '');
-        setAmbientacao(livro.ambientacao || '');
-        setPalavrasChave(livro.palavras_chave || '');
+        // Preencher o formulário com os dados do livro - verificando cada propriedade com todos os nomes possíveis
+        setTitulo(livro.titulo || livro["Nome do livro"] || livro["título"] || livro["Título"] || '');
+        setDescricao(livro.sinopse || livro.descricao || livro["Sinopse"] || livro["Descrição"] || '');
+        setGenero(livro.genero || livro["Gênero"] || livro["gênero"] || livro["Genero"] || '');
+        setAutor(livro.autor || livro["Autor"] || livro["author"] || '');
+        setPersonagens(livro.personagens || livro["Personagens"] || '');
+        setAmbientacao(livro.ambientacao || livro.ambientação || livro["Ambientação"] || livro["Ambientacao"] || '');
+        setPalavrasChave(livro.palavras_chave || livro.palavrasChave || livro["Palavras-chave"] || livro["Keywords"] || '');
+        setCapa(livro.capa || livro.cover || livro["Capa"] || '');
         
         // Calcular progresso após preencher os dados
         let filled = 0;
-        if (livro.titulo || livro["Nome do livro"]) filled += 25;
-        if (livro.sinopse) filled += 25;
-        if (livro.genero) filled += 25;
-        if (livro.autor || livro["Autor"]) filled += 6.25;
-        if (livro.personagens) filled += 6.25;
-        if (livro.ambientacao) filled += 6.25;
-        if (livro.palavras_chave) filled += 6.25;
+        if (titulo) filled += 25;
+        if (descricao) filled += 25;
+        if (genero) filled += 25;
+        if (autor) filled += 6.25;
+        if (personagens) filled += 6.25;
+        if (ambientacao) filled += 6.25;
+        if (palavrasChave) filled += 6.25;
         setProgress(Math.min(filled, 100));
       } else {
         // Resetar formulário
@@ -580,6 +694,7 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
         setPersonagens('');
         setAmbientacao('');
         setPalavrasChave('');
+        setCapa('');
         setProgress(0);
       }
       
@@ -640,7 +755,8 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
           sinopse: descricao,
           personagens: personagens,
           ambientacao: ambientacao,
-          palavras_chave: palavrasChave
+          palavras_chave: palavrasChave,
+          capa: capa
         });
 
         setSuccess(true);
@@ -659,7 +775,8 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
           genero,
           personagens,
           ambientacao,
-          palavras_chave: palavrasChave
+          palavras_chave: palavrasChave,
+          capa: capa
         });
 
         setSuccess(true);
@@ -680,6 +797,25 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
       setError(err.message || `Erro ao ${isEditMode ? 'atualizar' : 'criar'} o livro. Tente novamente.`);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Abrir modal para gerar capa
+  const handleGenerateCover = () => {
+    setIsGeneratingCover(true);
+  };
+  
+  // Selecionar imagem gerada como capa
+  const handleSelectCover = (imageUrl: string) => {
+    setCapa(imageUrl);
+    setIsGeneratingCover(false);
+  };
+
+  // Ver capa em tamanho completo
+  const handleViewCoverFull = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (capa) {
+      setViewingCoverFull(true);
     }
   };
 
@@ -727,6 +863,35 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
                 maxLength={100}
                 required={true}
               />
+            </FormGroup>
+
+            {/* Capa do Livro */}
+            <FormGroup>
+              <Label htmlFor="capa">
+                Capa do Livro
+                <Tooltip data-tooltip="Uma capa atrativa ajuda a visualizar seu livro e pode ser gerada automaticamente com IA. Clique na imagem para ver em tamanho completo.">
+                  💡
+                </Tooltip>
+              </Label>
+              
+              <BookCoverPreview>
+                {capa ? (
+                  <CoverImage 
+                    src={capa} 
+                    alt="Capa do livro"
+                    onClick={handleViewCoverFull}
+                  />
+                ) : (
+                  <EmptyCover onClick={handleGenerateCover}>📚</EmptyCover>
+                )}
+              </BookCoverPreview>
+              
+              <GenerateCoverButton
+                type="button"
+                onClick={handleGenerateCover}
+              >
+                {capa ? 'Alterar Capa' : 'Gerar Capa com IA'}
+              </GenerateCoverButton>
             </FormGroup>
 
             <FormGroup>
@@ -870,6 +1035,44 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
         <ProgressBar>
           <ProgressFill progress={progress} />
         </ProgressBar>
+        
+        {/* Modal para geração de capa */}
+        <ImageGenerationModal
+          isOpen={isGeneratingCover}
+          onClose={() => setIsGeneratingCover(false)}
+          onImageSelect={handleSelectCover}
+          context={{
+            livroId: isEditMode && livro ? livro.id : undefined,
+            titulo: titulo || "",
+            descricao: descricao || "",
+            genero: genero || "",
+            personagens: personagens || "",
+            ambientacao: ambientacao || "",
+            autor: autor || "",
+            palavrasChave: palavrasChave || "",
+            tipo: 'capa'
+          }}
+          initialPrompt={`Capa para livro "${titulo}" ${genero ? `de ${genero}` : ''} ${autor ? `por ${autor}` : ''}. 
+${descricao ? `Sinopse: ${descricao}` : ''}
+${personagens ? `Personagens: ${personagens}` : ''}
+${ambientacao ? `Ambientação: ${ambientacao}` : ''}
+${palavrasChave ? `Palavras-chave: ${palavrasChave}` : ''}`}
+        />
+        
+        {/* Modal para visualização da capa em tamanho completo */}
+        {viewingCoverFull && capa && (
+          <CoverViewerModal onClick={() => setViewingCoverFull(false)}>
+            <CoverImageFull src={capa} alt="Visualização completa da capa" />
+            <CloseViewerButton 
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewingCoverFull(false);
+              }}
+            >
+              ✕
+            </CloseViewerButton>
+          </CoverViewerModal>
+        )}
       </ModalContainer>
     </ModalOverlay>
   );
