@@ -463,6 +463,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [useAI, setUseAI] = useState(true);
   const [imageCount, setImageCount] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Resetar o estado quando o modal abre
   useEffect(() => {
@@ -529,10 +530,28 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   };
 
   // Confirmar seleção
-  const handleConfirmSelection = () => {
+  const handleConfirmSelection = async () => {
     if (selectedImage) {
-      onImageSelect(selectedImage);
-      onClose();
+      setIsSaving(true);
+      
+      try {
+        // Salvar a imagem antes de fechar
+        if (context?.livroId) {
+          await imageService.saveGeneratedImage(
+            [selectedImage], 
+            prompt, 
+            context
+          );
+        }
+        
+        onImageSelect(selectedImage);
+        onClose();
+      } catch (error) {
+        console.error('Erro ao salvar imagem:', error);
+        setError('Ocorreu um erro ao salvar a imagem. Tente novamente.');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -655,16 +674,16 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 <ButtonGroup>
                   <SecondaryButton
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || isSaving}
                   >
                     Gerar Novamente
                   </SecondaryButton>
                   <PrimaryButton
                     type="button"
                     onClick={handleConfirmSelection}
-                    disabled={!selectedImage}
+                    disabled={!selectedImage || isSaving}
                   >
-                    Usar Imagem Selecionada
+                    {isSaving ? 'Salvando...' : 'Usar Imagem Selecionada'}
                   </PrimaryButton>
                 </ButtonGroup>
               </>

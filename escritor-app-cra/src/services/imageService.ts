@@ -1,8 +1,5 @@
 import { supabase } from './supabaseClient';
 
-// Definição da API key para o Google Imagen
-const DEFAULT_API_KEY = 'AIzaSyBdOOV1fxo7B5ogOtIcxXkHu60UNXlEjeE';
-
 // Interface para o resultado da geração de imagem
 export interface ImageGenerationResult {
   success: boolean;
@@ -34,14 +31,12 @@ export const imageService = {
    * @param context Contexto do livro/capítulo para melhorar o prompt
    * @param sampleCount Número de imagens para gerar (1-4)
    * @param useAI Usar IA para melhorar ou gerar o prompt automaticamente
-   * @param customApiKey Chave de API personalizada (opcional)
    */
   async generateImage(
     prompt: string,
     context?: PromptContext,
     sampleCount: number = 1,
-    useAI: boolean = true,
-    customApiKey?: string
+    useAI: boolean = true
   ): Promise<ImageGenerationResult> {
     try {
       // Verificar se o prompt foi fornecido ou se devemos gerar um
@@ -63,10 +58,10 @@ export const imageService = {
       console.log('Gerando imagem com prompt:', finalPrompt);
       
       // Chamar a Edge Function para gerar a imagem
+      // A chave da API é gerenciada de forma segura pela função edge
       const { data, error } = await supabase.functions.invoke('Gera_imagem_goolgea', {
         body: JSON.stringify({
           prompt: finalPrompt,
-          apiKey: customApiKey || DEFAULT_API_KEY,
           sampleCount: Math.min(Math.max(sampleCount, 1), 4) // Limitar entre 1 e 4
         })
       });
@@ -79,10 +74,9 @@ export const imageService = {
         };
       }
       
-      // Salvar na tabela imagens_geradas se tivermos as URLs
+      // Não salvamos mais automaticamente, apenas retornamos o resultado
+      // O salvamento será feito quando o usuário confirmar a imagem
       if (data.success && data.imageUrls && data.imageUrls.length > 0) {
-        await this.saveGeneratedImage(data.imageUrls, finalPrompt, context);
-        
         return {
           success: true,
           imageUrls: data.imageUrls
@@ -130,7 +124,7 @@ export const imageService = {
       
       if (context.tipo === 'capa') {
         systemPrompt = `Crie um prompt detalhado para gerar uma imagem de capa para um livro. 
-O prompt deve ser em inglês (importante para melhores resultados) e deve descrever uma cena ou imagem impactante
+O prompt deve ser em português (para melhor compreensão do usuário) e deve descrever uma cena ou imagem impactante
 que represente bem o livro, baseado nas informações fornecidas. Use linguagem detalhada e descritiva.
 Adicione informações sobre estilo artístico, iluminação, composição e qualidade.
 NÃO inclua texto, títulos ou palavras na imagem. Apenas elementos visuais.
@@ -148,7 +142,7 @@ Destaque aspectos visuais que refletem o gênero literário e o tom da história
       } else {
         // Prompt para imagem de capítulo
         systemPrompt = `Crie um prompt detalhado para gerar uma imagem para ilustrar um capítulo ou cena de um livro.
-O prompt deve ser em inglês (importante para melhores resultados) e deve descrever uma cena específica
+O prompt deve ser em português (para melhor compreensão do usuário) e deve descrever uma cena específica
 que ilustre o conteúdo, baseado nas informações fornecidas. Use linguagem detalhada e descritiva.
 Adicione informações sobre estilo artístico, iluminação, composição e qualidade.
 NÃO inclua texto, títulos ou palavras na imagem. Apenas elementos visuais.
@@ -176,7 +170,8 @@ Enfatize elementos visuais que capturam o momento ou a emoção da cena.`;
           input: `Por favor, crie um prompt detalhado para gerar uma imagem usando a API Google Imagen.
 ${contextText}
 Use o contexto acima para criar um prompt detalhado, descritivo e visualmente impactante que represente bem a obra.
-Leve em consideração todos os dados fornecidos, especialmente título, autor, gênero e elementos da história.`,
+Leve em consideração todos os dados fornecidos, especialmente título, autor, gênero e elementos da história.
+O prompt deve estar em português para melhor compreensão do usuário.`,
           context: {
             system_prompt: systemPrompt,
             include_embeddings: false
@@ -189,18 +184,18 @@ Leve em consideração todos os dados fornecidos, especialmente título, autor, 
       if (error) {
         console.error('Erro ao gerar prompt melhorado:', error);
         // Se falhar, retornar o prompt original do usuário
-        return userPrompt || 'A detailed artistic image';
+        return userPrompt || 'Uma imagem artística detalhada';
       }
       
       // Extrair o texto da resposta
-      const enhancedPrompt = data?.content?.[0]?.text || userPrompt || 'A detailed artistic image';
+      const enhancedPrompt = data?.content?.[0]?.text || userPrompt || 'Uma imagem artística detalhada';
       
       console.log('Prompt melhorado gerado:', enhancedPrompt);
       return enhancedPrompt;
     } catch (error) {
       console.error('Erro ao gerar prompt melhorado:', error);
       // Em caso de erro, usar o prompt original
-      return userPrompt || 'A detailed artistic image';
+      return userPrompt || 'Uma imagem artística detalhada';
     }
   },
   

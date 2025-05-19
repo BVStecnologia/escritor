@@ -809,6 +809,46 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
   const handleSelectCover = (imageUrl: string) => {
     setCapa(imageUrl);
     setIsGeneratingCover(false);
+    
+    // Mostrar feedback de sucesso temporário
+    const successMessage = document.createElement('div');
+    successMessage.className = 'temporary-message';
+    successMessage.textContent = 'Imagem de capa salva com sucesso!';
+    successMessage.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-success, #10b981);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 9999;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease-out, fadeOut 0.3s ease-out 2.7s forwards;
+    `;
+    
+    // Adicionar estilos de animação
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translate(-50%, 0); }
+        to { opacity: 0; transform: translate(-50%, -20px); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Adicionar ao DOM e remover após 3 segundos
+    document.body.appendChild(successMessage);
+    setTimeout(() => {
+      document.body.removeChild(successMessage);
+      document.head.removeChild(style);
+    }, 3000);
   };
 
   // Ver capa em tamanho completo
