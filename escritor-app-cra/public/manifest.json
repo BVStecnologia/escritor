@@ -1,6 +1,6 @@
 {
-  "short_name": "Escritor",
-  "name": "Escritor - Seu assistente de escrita",
+  "short_name": "Book Writer",
+  "name": "Book Writer - Transforme suas ideias em livros profissionais",
   "icons": [
     {
       "src": "favicon.ico",
@@ -15,6 +15,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#3082f6",
+  "theme_color": "#4361ee",
   "background_color": "#ffffff"
 }

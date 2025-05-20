@@ -808,7 +808,7 @@ const EditorAvancado: React.FC<EditorProps> = ({ livroId, capituloId, onSaved, o
         </ToolsHeader>
 
         <ToolGroup>
-          <ToolGroupTitle>Assistente de IA Claude</ToolGroupTitle>
+          <ToolGroupTitle>Assistente Book Writer</ToolGroupTitle>
 
           <ToolButton
             variant="secondary"

@@ -20,7 +20,7 @@ git status
 git add .
 
 # Commit das alterações
-git commit -m "Atualização da função Edge para receber a chave API no corpo da requisição"
+git commit -m "Descrição das alterações"
 
 # Enviar para o GitHub
 git push

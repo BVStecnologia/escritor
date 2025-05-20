@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import SEO from '../components/SEO';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,11 +37,16 @@ const LandingPage: React.FC = () => {
 
   return (
     <PageWrapper>
+      <SEO 
+        title="Book Writer - Transforme suas ideias em livros profissionais com IA"
+        description="Transforme suas ideias em livros profissionais com Book Writer. Plataforma brasileira que usa IA avançada com memória contextual para escrever livros de qualidade."
+        canonicalUrl="https://bookwriter.com.br"
+      />
       {/* Navigation */}
       <NavBar>
         <Container>
           <NavContent>
-            <Logo>Bookwriter</Logo>
+            <Logo>Book Writer</Logo>
             <NavButtons>
               {isAuthenticated ? (
                 <DashboardButton to="/dashboard">Meu Painel</DashboardButton>
@@ -64,7 +70,7 @@ const LandingPage: React.FC = () => {
             </AttentionGrabber>
             
             <HeroHeadline>
-              Transforme Sua Paixão por Escrever em um <span>Negócio Lucrativo</span> com IA Claude
+              Transforme Sua Paixão por Escrever em <span>Histórias Profissionais</span> com Book Writer
             </HeroHeadline>
             
             <HeroSubheadline>
@@ -147,7 +153,7 @@ const LandingPage: React.FC = () => {
         <Container>
           <SectionTitle>Apresentando o Bookwriter</SectionTitle>
           <SectionSubtitle>
-            A ferramenta brasileira que usa IA Claude para transformar suas ideias em livros profissionais
+            A primeira ferramenta brasileira de IA que entende e mantém o contexto da sua história do início ao fim
           </SectionSubtitle>
 
           <SolutionGrid>
@@ -155,7 +161,7 @@ const LandingPage: React.FC = () => {
               <SolutionIcon>🚀</SolutionIcon>
               <SolutionTitle>Escreva 10x Mais Rápido</SolutionTitle>
               <SolutionText>
-                IA Claude gera textos profissionais instantaneamente. Termine capítulos em minutos, não horas.
+                Book Writer gera textos profissionais instantaneamente. Termine capítulos em minutos, não horas.
               </SolutionText>
             </SolutionCard>
 
@@ -166,20 +172,20 @@ const LandingPage: React.FC = () => {
                 Correção automática, melhorias de estilo e sugestões que transformam seu texto em obra-prima.
               </SolutionText>
             </SolutionCard>
-
+            
             <SolutionCard>
-              <SolutionIcon>📈</SolutionIcon>
-              <SolutionTitle>Otimizado para Amazon</SolutionTitle>
+              <SolutionIcon>🧠</SolutionIcon>
+              <SolutionTitle>Memória Contextual</SolutionTitle>
               <SolutionText>
-                Textos formatados e estruturados para maximizar suas vendas na plataforma KDP.
+                Nossa IA lembra de personagens, tramas e detalhes anteriores, garantindo textos coerentes e consistentes.
               </SolutionText>
             </SolutionCard>
-
+            
             <SolutionCard>
-              <SolutionIcon>🎯</SolutionIcon>
-              <SolutionTitle>Publicação Simplificada</SolutionTitle>
+              <SolutionIcon>🖼️</SolutionIcon>
+              <SolutionTitle>Geração de Imagens</SolutionTitle>
               <SolutionText>
-                Guias passo a passo para publicar seus livros e começar a vender imediatamente.
+                Crie capas e ilustrações únicas que combinam perfeitamente com o contexto da sua história.
               </SolutionText>
             </SolutionCard>
           </SolutionGrid>
@@ -252,7 +258,7 @@ const LandingPage: React.FC = () => {
         <Container>
           <SectionTitle>Escolha Seu Plano e Comece Hoje</SectionTitle>
           <SectionSubtitle>
-            Todos os planos incluem acesso completo à IA Claude e suporte em português
+            Todos os planos incluem acesso completo ao Book Writer e suporte em português
           </SectionSubtitle>
 
           <PricingGrid>
@@ -267,7 +273,7 @@ const LandingPage: React.FC = () => {
               </PricingHeader>
               
               <PlanFeatures>
-                <Feature>✓ IA Claude para escrita</Feature>
+                <Feature>✓ Book Writer para escrita</Feature>
                 <Feature>✓ 50.000 palavras/mês</Feature>
                 <Feature>✓ Editor profissional</Feature>
                 <Feature>✓ Corretor ortográfico</Feature>
@@ -305,6 +311,7 @@ const LandingPage: React.FC = () => {
                 <Feature>✓ Múltiplos livros simultâneos</Feature>
                 <Feature>✓ Melhorias de estilo avançadas</Feature>
                 <Feature>✓ Ideias criativas ilimitadas</Feature>
+                <Feature>✓ Geração de capas para livros</Feature>
                 <Feature>✓ Suporte prioritário</Feature>
               </PlanFeatures>
               
@@ -336,6 +343,8 @@ const LandingPage: React.FC = () => {
                 <Feature>✓ 200.000 palavras/mês</Feature>
                 <Feature>✓ Livros ilimitados</Feature>
                 <Feature>✓ Velocidade máxima de geração</Feature>
+                <Feature>✓ Geração ilimitada de imagens</Feature>
+                <Feature>✓ Memória contextual avançada</Feature>
                 <Feature>✓ Acesso prioritário a novidades</Feature>
                 <Feature>✓ Suporte VIP WhatsApp</Feature>
               </PlanFeatures>
@@ -373,7 +382,7 @@ const LandingPage: React.FC = () => {
             <FAQItem>
               <FAQQuestion>Preciso saber escrever bem para usar?</FAQQuestion>
               <FAQAnswer>
-                Não! A IA Claude escreve por você. Você só precisa ter ideias e revisar o conteúdo gerado.
+                Não! O Book Writer escreve por você. Você só precisa ter ideias e revisar o conteúdo gerado.
               </FAQAnswer>
             </FAQItem>
             
@@ -387,7 +396,7 @@ const LandingPage: React.FC = () => {
             <FAQItem>
               <FAQQuestion>Os livros gerados são 100% originais?</FAQQuestion>
               <FAQAnswer>
-                Sim! A IA cria conteúdo único baseado nas suas instruções. Nunca haverá plágio.
+                Sim! Nossa tecnologia cria conteúdo único baseado nas suas instruções. Nunca haverá plágio.
               </FAQAnswer>
             </FAQItem>
             
@@ -395,6 +404,20 @@ const LandingPage: React.FC = () => {
               <FAQQuestion>Posso cancelar quando quiser?</FAQQuestion>
               <FAQAnswer>
                 Sim, sem multas ou taxas. Cancele com 1 clique direto no painel.
+              </FAQAnswer>
+            </FAQItem>
+            
+            <FAQItem>
+              <FAQQuestion>Como funciona a memória contextual?</FAQQuestion>
+              <FAQAnswer>
+                Nossa tecnologia lembra personagens, tramas e detalhes do seu livro, garantindo que o texto permaneça coerente e consistente do início ao fim.
+              </FAQAnswer>
+            </FAQItem>
+            
+            <FAQItem>
+              <FAQQuestion>Meus textos estão seguros na plataforma?</FAQQuestion>
+              <FAQAnswer>
+                Absolutamente! Seu conteúdo é protegido com criptografia e você mantém 100% dos direitos autorais sobre todo material gerado.
               </FAQAnswer>
             </FAQItem>
             
@@ -460,7 +483,7 @@ const LandingPage: React.FC = () => {
         <Container>
           <FooterContent>
             <FooterColumn>
-              <FooterLogo>Bookwriter</FooterLogo>
+              <FooterLogo>Book Writer</FooterLogo>
               <FooterText>
                 A plataforma definitiva para autores que querem viver de seus livros.
               </FooterText>
@@ -482,7 +505,7 @@ const LandingPage: React.FC = () => {
           </FooterContent>
           
           <FooterBottom>
-            <p>© 2024 Bookwriter. Todos os direitos reservados.</p>
+            <p>© 2024 Book Writer. Todos os direitos reservados.</p>
             <PaymentBadge>
               <span>🔒 Pagamento 100% seguro</span>
             </PaymentBadge>
