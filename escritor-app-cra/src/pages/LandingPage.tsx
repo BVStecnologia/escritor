@@ -77,6 +77,26 @@ const LandingPage: React.FC = () => {
               Descubra como autores iniciantes estão publicando livros profissionais em tempo recorde e gerando renda passiva de R$ 3.000 a R$ 50.000 por mês na Amazon KDP
             </HeroSubheadline>
 
+            {/* Vídeo VSL */}
+            <VideoWrapper>
+              <VideoContainer>
+                <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  poster="/videos/video-thumbnail.jpg"
+                >
+                  <source src="/videos/vsl-dashboard-vendas.mp4" type="video/mp4" />
+                  Seu navegador não suporta vídeos.
+                </video>
+              </VideoContainer>
+              <VideoCaption>
+                <PlayIcon>▶️</PlayIcon>
+                Veja como nossos autores faturam 5 dígitos por mês
+              </VideoCaption>
+            </VideoWrapper>
+
             <HeroStats>
               <StatItem>
                 <StatNumber>R$ 362,8M</StatNumber>
@@ -660,6 +680,49 @@ const Guarantee = styled.div`
     justify-content: center;
     font-size: 14px;
   }
+`;
+
+// Video Components
+const VideoWrapper = styled.div`
+  margin: 40px 0;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const VideoContainer = styled.div`
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  
+  video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const VideoCaption = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 1.1rem;
+  color: #6c757d;
+  font-weight: 500;
+`;
+
+const PlayIcon = styled.span`
+  font-size: 1.2rem;
+  color: #4361ee;
 `;
 
 // Pain Section
