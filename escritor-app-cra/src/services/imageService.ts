@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { assistantService } from './assistantService';
 
 // Interface para o resultado da geração de imagem
 export interface ImageGenerationResult {
@@ -163,35 +164,56 @@ Enfatize elementos visuais que capturam o momento ou a emoção da cena.`;
         contextText += `\nDescrição fornecida pelo usuário: ${userPrompt}\n`;
       }
       
-      // Chamar a edge function do Claude para gerar o prompt melhorado
-      const { data, error } = await supabase.functions.invoke('claude-embeddings', {
-        body: {
-          mode: "custom",
-          input: `Por favor, crie um prompt detalhado para gerar uma imagem usando a API Google Imagen.
+      // Preparar input para geração de prompt melhorado
+      const input = `Por favor, crie um prompt detalhado para gerar uma imagem usando a API Google Imagen.
 ${contextText}
 Use o contexto acima para criar um prompt detalhado, descritivo e visualmente impactante que represente bem a obra.
 Leve em consideração todos os dados fornecidos, especialmente título, autor, gênero e elementos da história.
-O prompt deve estar em português para melhor compreensão do usuário.`,
-          context: {
-            system_prompt: systemPrompt,
-            include_embeddings: false
-          },
-          model: "claude-3-haiku-20240307",
-          max_tokens: 300
+O prompt deve estar em português para melhor compreensão do usuário.`;      
+
+      try {
+        // Usar assistantService.custom para aproveitar o sistema de embeddings
+        const data = await assistantService.custom({
+          input,
+          systemPrompt,
+          includeEmbeddings: true,  // Ativar o uso de embeddings para melhorar o contexto
+          maxEmbeddings: 5,  // Limitar a 5 embeddings mais relevantes
+          embeddingFilter: context.livroId ? `livro_id:${context.livroId}` : null  // Filtrar por livro atual
+        });
+        
+        // Extrair o texto da resposta
+        const enhancedPrompt = data?.content?.[0]?.text || userPrompt || 'Uma imagem artística detalhada';
+        console.log('Prompt melhorado gerado com embeddings:', enhancedPrompt);
+        return enhancedPrompt;
+      } catch (error) {
+      
+        console.error('Erro ao gerar prompt melhorado com embeddings:', error);
+        // Se falhar a abordagem com embeddings, tentar usar a padrão sem embeddings
+        try {
+          const { data, error } = await supabase.functions.invoke('claude-embeddings', {
+            body: {
+              mode: "custom",
+              input,
+              context: {
+                system_prompt: systemPrompt,
+                include_embeddings: false
+              },
+              model: "claude-3-haiku-20240307",
+              max_tokens: 300
+            }
+          });
+          
+          if (error) throw error;
+          
+          // Extrair o texto da resposta alternativa
+          const enhancedPrompt = data?.content?.[0]?.text || userPrompt || 'Uma imagem artística detalhada';
+          console.log('Prompt melhorado gerado pelo fallback:', enhancedPrompt);
+          return enhancedPrompt;
+        } catch (fallbackError) {
+          console.error('Erro no fallback de geração de prompt:', fallbackError);
+          return userPrompt || 'Uma imagem artística detalhada';
         }
-      });
-      
-      if (error) {
-        console.error('Erro ao gerar prompt melhorado:', error);
-        // Se falhar, retornar o prompt original do usuário
-        return userPrompt || 'Uma imagem artística detalhada';
       }
-      
-      // Extrair o texto da resposta
-      const enhancedPrompt = data?.content?.[0]?.text || userPrompt || 'Uma imagem artística detalhada';
-      
-      console.log('Prompt melhorado gerado:', enhancedPrompt);
-      return enhancedPrompt;
     } catch (error) {
       console.error('Erro ao gerar prompt melhorado:', error);
       // Em caso de erro, usar o prompt original

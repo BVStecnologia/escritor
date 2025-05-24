@@ -234,6 +234,20 @@ const AutocompleteIcon = () => (
   </svg>
 );
 
+// Ícone para o botão de geração de imagem por IA
+// Ícone para geração de imagem por IA - design mais intuitivo
+const AIImageIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+    <path d="M21 15L16 10L5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M14 7H14.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M17 7H17.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M20 7H20.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M17 4L19 2L21 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const ToolbarPlugin = () => {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
@@ -568,26 +582,77 @@ export const ToolbarPlugin = () => {
     }
   };
 
-  // Estado para controlar o modal de geração de imagem
+  // Estados para controlar recursos de IA
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageContext, setImageContext] = useState<PromptContext | undefined>(undefined);
   
   // Manipular inserção de imagem
   const insertImage = () => {
-    // Abrir o modal de geração de imagem ao invés de usar prompt
-    const selection = editor.getEditorState().read($getSelection);
-    
-    // Capturar texto selecionado se houver para melhorar o prompt da imagem
-    let selectedText = '';
-    if ($isRangeSelection(selection)) {
-      selectedText = selection.getTextContent();
-    }
-    
-    setImageContext({
-      texto: selectedText,
-      tipo: 'capitulo' as 'capitulo' | 'capa'
+    // IMPORTANTE: Tudo relacionado ao editor deve estar dentro de editor.read()
+    editor.getEditorState().read(() => {
+      try {
+        // Capturar texto selecionado e contexto para melhorar o prompt da imagem
+        const selection = $getSelection();
+        let selectedText = '';
+        if ($isRangeSelection(selection)) {
+          selectedText = selection.getTextContent();
+        }
+        
+        // Obter dados do livro e capítulo do DOM (esta função não depende do editor)
+        const bookInfo = getBookInfoFromDOM();
+        
+        // Obter texto ao redor do cursor, se necessário
+        let contextText = selectedText;
+        if (!selectedText && $isRangeSelection(selection)) {
+          // Solução mais segura para obter contexto sem chamar getContexSurroundingSelection
+          const anchorNode = selection.anchor.getNode();
+          if (anchorNode) {
+            // Tentar obter texto do nó atual e do nó pai
+            contextText = anchorNode.getTextContent();
+            const parent = anchorNode.getParent();
+            if (parent) {
+              const parentText = parent.getTextContent();
+              if (parentText.length > contextText.length) {
+                contextText = parentText;
+              }
+            }
+          }
+        }
+        
+        // Criar o contexto para a imagem
+        const contextData = {
+          texto: contextText,
+          tipo: 'capitulo' as 'capitulo' | 'capa',
+          livroId: bookInfo.livroId,
+          capituloId: bookInfo.capituloId,
+          titulo: bookInfo.capituloTitulo,
+          autor: bookInfo.autor,
+          genero: bookInfo.genero,
+          ambientacao: bookInfo.ambientacao,
+          personagens: bookInfo.personagens
+        };
+        
+        // Em vez de usar setState diretamente, disparamos um evento personalizado
+        const openModalEvent = new CustomEvent('lexical-open-image-modal', { 
+          detail: { context: contextData } 
+        });
+        window.dispatchEvent(openModalEvent);
+        
+        console.log('Disparando evento para abrir modal de imagem com contexto:', contextData);
+      } catch (error) {
+        console.error('Erro ao preparar contexto para geração de imagem:', error);
+        // Se houver erro, ainda tentamos abrir o modal com contexto mínimo
+        const openModalEvent = new CustomEvent('lexical-open-image-modal', { 
+          detail: { 
+            context: {
+              tipo: 'capitulo' as 'capitulo' | 'capa',
+              texto: ''
+            } 
+          } 
+        });
+        window.dispatchEvent(openModalEvent);
+      }
     });
-    setIsGeneratingImage(true);
   };
   
   // Selecionar imagem gerada
@@ -601,6 +666,158 @@ export const ToolbarPlugin = () => {
     setIsGeneratingImage(false);
   };
 
+  // Função para obter o contexto ao redor da seleção atual
+  // NOTA: Esta função deve ser chamada somente dentro de editor.read()
+  const getContexSurroundingSelection = (charCount: number = 300): string => {
+    try {
+      // Esta função só pode ser chamada dentro do contexto correto do editor
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) return '';
+      
+      // Obter o nó atual
+      const anchorNode = selection.anchor.getNode();
+      let contextText = '';
+      
+      // Obter o texto do nó atual
+      contextText = anchorNode.getTextContent() || '';
+      
+      // Se o texto for menor que o mínimo, buscar nos nós irmãos e pais
+      if (contextText.length < charCount) {
+        try {
+          // Tentar obter o elemento pai
+          const parent = anchorNode.getParent();
+          if (parent) {
+            // Obter texto de todos os irmãos
+            const siblings = parent.getChildren();
+            for (const sibling of siblings) {
+              if (sibling !== anchorNode) {
+                contextText += ' ' + (sibling.getTextContent() || '');
+              }
+            }
+            
+            // Se ainda for insuficiente, buscar no nível superior
+            if (contextText.length < charCount) {
+              const grandParent = parent.getParent();
+              if (grandParent) {
+                const uncles = grandParent.getChildren();
+                for (const uncle of uncles) {
+                  if (uncle !== parent) {
+                    contextText += ' ' + (uncle.getTextContent() || '');
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao obter contexto expandido:', e);
+        }
+      }
+      
+      // Limitar ao tamanho máximo e remover espaços em excesso
+      return contextText.substring(0, charCount).trim().replace(/\s+/g, ' ');
+    } catch (error) {
+      console.error('Erro ao obter contexto da seleção:', error);
+      return '';
+    }
+  };
+  
+  // Função para obter informações do livro e capítulo a partir do DOM
+  const getBookInfoFromDOM = () => {
+    // Tentativa de extrair IDs e títulos do DOM ou da URL
+    let livroId: number | undefined;
+    let capituloId: string | undefined;
+    let capituloTitulo: string = '';
+    let autor: string = '';
+    let genero: string = '';
+    let ambientacao: string = '';
+    let personagens: string = '';
+    
+    try {
+      // Tentar extrair da URL
+      const pathSegments = window.location.pathname.split('/');
+      if (pathSegments.length >= 4 && pathSegments[1] === 'editor') {
+        livroId = parseInt(pathSegments[2]);
+        capituloId = pathSegments[3];
+      }
+      
+      // Tentar extrair título do capítulo do DOM
+      const titleElement = document.querySelector('.chapter-title, [data-chapter-title]');
+      if (titleElement) {
+        capituloTitulo = titleElement.textContent || '';
+      }
+      
+      // Tentar extrair título do livro do DOM
+      const bookTitleElement = document.querySelector('.book-title, [data-book-title]');
+      if (bookTitleElement) {
+        autor = bookTitleElement.textContent || '';
+      }
+      
+      // Obter texto do editor - implementado de forma segura
+      let editorContent = '';
+      try {
+        // Usar a função read() do editor para obter o conteúdo de forma segura
+        editorContent = editor.getEditorState().read(() => {
+          return $getRoot().getTextContent();
+        });
+      } catch (error) {
+        console.error('Erro ao obter conteúdo do editor:', error);
+        // Fallback - buscar texto do elemento DOM do editor
+        const editorElement = document.querySelector('.editor-text-content, [contenteditable=true]');
+        if (editorElement) {
+          editorContent = editorElement.textContent || '';
+        }
+      }
+      
+      if (editorContent) {
+        // Extrair personagens com uma heurística simples (nomes com letra maiúscula)
+        const possibleCharacters = editorContent.match(/\b[A-Z][a-z]+\b/g) || [];
+        if (possibleCharacters.length > 0) {
+          // Filtrar por frequência para obter os nomes mais comuns
+          const charFrequency: Record<string, number> = {};
+          possibleCharacters.forEach(name => {
+            charFrequency[name] = (charFrequency[name] || 0) + 1;
+          });
+          
+          // Pegar os 5 nomes mais freqüentes
+          personagens = Object.entries(charFrequency)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name)
+            .join(', ');
+        }
+        
+        // Tentar extrair ambientação do texto (frases que descrevem locais)
+        const locationPatterns = [
+          /em\s+[^.]+\./gi,
+          /no\s+[^.]+\./gi,
+          /na\s+[^.]+\./gi, 
+          /localizado\s+[^.]+\./gi,
+          /ambiente\s+[^.]+\./gi
+        ];
+        
+        for (const pattern of locationPatterns) {
+          const matches = editorContent.match(pattern) || [];
+          if (matches.length > 0) {
+            ambientacao = matches.slice(0, 2).join(' ');
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao extrair informações do DOM:', e);
+    }
+    
+    return { 
+      livroId, 
+      capituloId, 
+      capituloTitulo, 
+      autor,
+      genero, 
+      ambientacao,
+      personagens 
+    };
+  };
+  
   const updateFontFamily = (fontFamily: string) => {
     editor.update(() => {
       const selection = $getSelection();
@@ -740,13 +957,13 @@ export const ToolbarPlugin = () => {
         </ToolButton>
         <ToolButton
           onClick={insertImage}
-          title="Inserir imagem"
+          title="Inserir imagem de URL"
         >
           <ImageIcon />
         </ToolButton>
       </ToolbarSection>
 
-      {/* Nova seção para o botão de autocomplete */}
+      {/* Seção para ferramentas de IA */}
       <ToolbarSection>
         <ToolButton
           $active={isAutocompleteEnabled}
@@ -754,6 +971,12 @@ export const ToolbarPlugin = () => {
           title={isAutocompleteEnabled ? "Desativar autocomplete" : "Ativar autocomplete"}
         >
           <AutocompleteIcon />
+        </ToolButton>
+        <ToolButton
+          onClick={insertImage}
+          title="Gerar imagem com IA"
+        >
+          <AIImageIcon />
         </ToolButton>
       </ToolbarSection>
     </Toolbar>
@@ -765,6 +988,58 @@ export const ToolbarWithModal = () => {
   const [editor] = useLexicalComposerContext();
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageContext, setImageContext] = useState<PromptContext | undefined>(undefined);
+  
+  // Adicionamos um useEffect para escutar o evento personalizado
+  useEffect(() => {
+    // Handler para abrir o modal de geração de imagem
+    const handleOpenImageModal = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.context) {
+        setImageContext(customEvent.detail.context);
+        setIsGeneratingImage(true);
+        console.log("Modal de imagem aberto via evento personalizado");
+      }
+    };
+    
+    // Registrar o event listener
+    window.addEventListener('lexical-open-image-modal', handleOpenImageModal as EventListener);
+    
+    // Limpar o event listener quando o componente for desmontado
+    return () => {
+      window.removeEventListener('lexical-open-image-modal', handleOpenImageModal as EventListener);
+    };
+  }, []);
+
+  // Adicionamos um handler para atalho de teclado para abrir o modal (Ctrl+Shift+I)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Verificar se é Ctrl+Shift+I (ou Cmd+Shift+I no Mac)
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'I') {
+        event.preventDefault();
+        // Disparar o mesmo evento que o botão dispara
+        editor.getEditorState().read(() => {
+          // Simular o clique no botão
+          const openModalEvent = new CustomEvent('lexical-open-image-modal', { 
+            detail: { 
+              context: {
+                tipo: 'capitulo' as 'capitulo' | 'capa',
+                texto: ''
+              } 
+            } 
+          });
+          window.dispatchEvent(openModalEvent);
+        });
+      }
+    };
+    
+    // Adicionar listener de teclado no documento
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Limpar quando o componente for desmontado
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor]);
   
   return (
     <>

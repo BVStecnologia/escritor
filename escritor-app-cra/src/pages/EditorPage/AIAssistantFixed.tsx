@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { assistantService } from '../../services/assistantService';
 import { AIBrainIcon, LightbulbIcon, SendIcon, CollapseLeftIcon, CollapseRightIcon } from '../../components/icons';
 import { FiCheck, FiCopy } from 'react-icons/fi';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { AIContainer } from './styles';
 import { dbService } from '../../services/dbService';
 import type { Personagem } from '../../services/dbService';
@@ -32,6 +32,41 @@ const AITitle = styled.h2<{ $isOpen: boolean }>`
     color: ${({ theme }) => theme.colors.secondary};
   }
 `;
+
+// Arrays de mensagens dinâmicas para tornar o assistente mais vivo
+const welcomeMessages = [
+  "Pronto para dar vida às suas palavras? 🌟 Vamos criar algo extraordinário juntos!",
+  "Que história incrível vamos contar hoje? Estou aqui para cada vírgula da jornada! ✨",
+  "Olá, escritor(a)! Mal posso esperar para ver onde sua imaginação nos levará hoje 🚀",
+  "É um prazer estar aqui! Vamos transformar suas ideias em páginas inesquecíveis? 📖",
+  "Preparado(a) para desbloquear sua criatividade? Estou aqui para ser seu parceiro literário! 🎨"
+];
+
+const loadingMessages = [
+  "Consultando as musas... 🎭",
+  "Organizando as palavras perfeitas... ✍️",
+  "Buscando inspiração no éter criativo... ✨",
+  "Tecendo ideias como um artesão de histórias... 🧵",
+  "Mergulhando no oceano da criatividade... 🌊",
+  "Lapidando pensamentos como diamantes... 💎",
+  "Capturando a essência da sua narrativa... 📸"
+];
+
+const errorMessages = {
+  timeout: "Ops! Demorei um pouco para pensar... Que tal tentar de novo? Prometo ser mais rápido! ⏱️",
+  connection: "Parece que estamos com problemas de conexão. Mas não desista da sua história! 🌐",
+  generic: "Algo não saiu como planejado, mas toda grande história tem seus desafios. Vamos tentar novamente? 💪"
+};
+
+const writingTips = [
+  "💡 Dica: Grandes escritores reescrevem. Não tenha medo de experimentar!",
+  "🌟 Lembre-se: Cada palavra que você escreve é um passo em direção ao seu sonho!",
+  "✨ Curiosidade: J.K. Rowling reescreveu o primeiro capítulo de Harry Potter 15 vezes!",
+  "🎯 Foco: Escrever 100 palavras ruins ainda é melhor que não escrever nada!",
+  "📚 Segredo: Os melhores diálogos são aqueles que revelam personalidade!",
+  "🎭 Técnica: Mostre, não conte. Deixe o leitor sentir a história!",
+  "🌈 Inspiração: Suas experiências únicas são seu maior tesouro criativo!"
+];
 
 const ToggleAIButton = styled.button`
   width: 36px;
@@ -74,10 +109,10 @@ const AIConversation = styled.div`
 `;
 
 const AIMessage = styled.div<{ $isUser?: boolean }>`
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   border-radius: 12px;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.9rem;
+  line-height: 1.6;
   max-width: 90%;
   align-self: ${({ $isUser }) => $isUser ? 'flex-end' : 'flex-start'};
   background: ${({ $isUser, theme }) => 
@@ -85,6 +120,58 @@ const AIMessage = styled.div<{ $isUser?: boolean }>`
   border: 1px solid ${({ $isUser, theme }) => 
     $isUser ? theme.colors.primary + '30' : theme.colors.border?.light || "rgba(0,0,0,0.1)"};
   color: ${({ theme }) => theme.colors.text.primary};
+  
+  /* Formatação melhorada para mensagens do assistente */
+  ${({ $isUser }) => !$isUser && `
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    p {
+      margin-bottom: 0.75rem;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    ul, ol {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+    
+    li {
+      margin-bottom: 0.4rem;
+      line-height: 1.6;
+    }
+    
+    strong {
+      font-weight: 600;
+      color: ${(props: any) => props.theme.colors.primary};
+    }
+    
+    em {
+      font-style: italic;
+      opacity: 0.9;
+    }
+    
+    code {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.85em;
+    }
+    
+    blockquote {
+      border-left: 3px solid ${(props: any) => props.theme.colors.primary};
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-style: italic;
+      opacity: 0.85;
+    }
+  `}
   
   /* Efeito de balão de diálogo */
   position: relative;
@@ -299,7 +386,111 @@ interface Message {
   content: string;
   isTyping?: boolean;
   fullContent?: string;
+  id?: number;
+  isLoading?: boolean;
 }
+
+// Componente para formatar mensagens com markdown simples
+const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
+  // Função para processar markdown simples
+  const formatContent = (text: string) => {
+    // Divide o texto em linhas
+    const lines = text.split('\n');
+    const elements: JSX.Element[] = [];
+    let listItems: string[] = [];
+    let inList = false;
+    
+    lines.forEach((line, index) => {
+      // Verifica se é um item de lista numerada
+      const numberedMatch = line.match(/^(\d+)\. (.+)/);
+      // Verifica se é um item de lista com marcador
+      const bulletMatch = line.match(/^[\*\-] (.+)/);
+      
+      if (numberedMatch || bulletMatch) {
+        // Se não estava em uma lista, cria uma nova
+        if (!inList) {
+          inList = true;
+          listItems = [];
+        }
+        listItems.push(bulletMatch ? bulletMatch[1] : numberedMatch![2]);
+      } else {
+        // Se estava em uma lista, renderiza ela primeiro
+        if (inList) {
+          elements.push(
+            <ul key={`list-${index}`} style={{ marginBottom: '0.75rem' }}>
+              {listItems.map((item, i) => (
+                <li key={i}>{processInlineFormatting(item)}</li>
+              ))}
+            </ul>
+          );
+          inList = false;
+          listItems = [];
+        }
+        
+        // Processa a linha atual
+        if (line.trim()) {
+          // Verifica se é um título
+          const headingMatch = line.match(/^#+\s+(.+)/);
+          if (headingMatch) {
+            const level = line.match(/^#+/)?.[0].length || 1;
+            const HeadingTag = `h${Math.min(level, 6)}` as keyof JSX.IntrinsicElements;
+            elements.push(
+              <HeadingTag key={index} style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
+                {processInlineFormatting(headingMatch[1])}
+              </HeadingTag>
+            );
+          } else {
+            elements.push(
+              <p key={index} style={{ marginBottom: '0.75rem' }}>
+                {processInlineFormatting(line)}
+              </p>
+            );
+          }
+        }
+      }
+    });
+    
+    // Se terminou com uma lista, renderiza ela
+    if (inList) {
+      elements.push(
+        <ul key="final-list" style={{ marginBottom: '0.75rem' }}>
+          {listItems.map((item, i) => (
+            <li key={i}>{processInlineFormatting(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+    
+    return elements;
+  };
+  
+  // Função para processar formatação inline (negrito, itálico)
+  const processInlineFormatting = (text: string): React.ReactNode => {
+    // Substitui **texto** por <strong>texto</strong>
+    let formatted = text.split(/\*\*(.+?)\*\*/g);
+    const result: React.ReactNode[] = [];
+    
+    formatted.forEach((part, i) => {
+      if (i % 2 === 1) {
+        result.push(<strong key={i}>{part}</strong>);
+      } else {
+        // Substitui *texto* por <em>texto</em>
+        const italicParts = part.split(/\*(.+?)\*/g);
+        italicParts.forEach((italicPart, j) => {
+          if (j % 2 === 1) {
+            result.push(<em key={`${i}-${j}`}>{italicPart}</em>);
+          } else {
+            result.push(italicPart);
+          }
+        });
+      }
+    });
+    
+    return result;
+  };
+  
+  return <div>{formatContent(content)}</div>;
+};
 
 export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   bookId,
@@ -312,6 +503,8 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [content, setContent] = useState<string>(''); // Estado para o conteúdo do capítulo
+  const theme = useTheme(); // Hook para acessar o tema
 
   // Função para rolar para a última mensagem
   const scrollToBottom = () => {
@@ -326,43 +519,36 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   // Adicionar uma mensagem de boas-vindas ao inicializar o componente
   useEffect(() => {
     async function setMensagemInspiradora() {
+      // Só adiciona mensagem inicial se ainda não tiver mensagens
+      if (messages.length > 0) return;
+      
       let mensagem = '';
+      
+      // Sempre usar uma das mensagens inspiradoras aleatórias
+      mensagem = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+      
+      // Adicionar contexto do livro/capítulo se disponível
       try {
-        if (bookId) {
+        if (bookId && chapterId) {
+          const capitulo = await dbService.getCapituloPorId(String(chapterId));
+          if (capitulo.titulo) {
+            mensagem += `\n\n📖 Você está no capítulo "${capitulo.titulo}"${capitulo.palavras ? ` (${capitulo.palavras} palavras)` : ''}. Como posso ajudar?`;
+          }
+        } else if (bookId) {
           const livro = await dbService.getLivroPorId(Number(bookId));
-          let infoLivro = '';
-          if (livro.sinopse) infoLivro += `\nSinopse: ${livro.sinopse}`;
-          if (livro.genero) infoLivro += `\nGênero: ${livro.genero}`;
-          if (livro.ambientacao) infoLivro += `\nAmbiente: ${livro.ambientacao}`;
-          if (livro.palavras_chave) infoLivro += `\nPalavras-chave: ${livro.palavras_chave}`;
-          let personagens: Personagem[] = [];
-          try {
-            personagens = await dbService.getPersonagens(String(livro.id));
-          } catch {}
-          if (personagens && personagens.length > 0) {
-            const nomes = personagens.slice(0, 3).map(p => p.nome).join(', ');
-            infoLivro += `\nPersonagens principais: ${nomes}${personagens.length > 3 ? ' e outros' : ''}`;
+          if (livro.titulo) {
+            mensagem += `\n\n📚 Trabalhando em "${livro.titulo}". Que tal começarmos?`;
           }
-          let notas = [];
-          try {
-            notas = await dbService.getNotas(String(livro.id));
-          } catch {}
-          if (chapterId) {
-            const capitulo = await dbService.getCapituloPorId(String(chapterId));
-            mensagem = `Pronto para continuar sua jornada em "${capitulo.titulo}"? Este é o capítulo ${capitulo.ordem || ''}${capitulo.palavras ? `, com ${capitulo.palavras} palavras` : ''}. Lembre-se: cada capítulo é uma nova oportunidade para surpreender o leitor.\n${infoLivro}`;
-          } else {
-            mensagem = `Bem-vindo ao seu livro "${livro.titulo || livro["Nome do livro"]}"!${infoLivro}\n${notas.length > 0 ? `Você tem ${notas.length} anotações para este livro.` : ''}\nComece a escrever sua história, ou peça sugestões criativas para dar o pontapé inicial!`;
-          }
-        } else {
-          mensagem = 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje? Você pode me pedir ideias, sugestões, revisão ou inspiração para começar.';
         }
       } catch (e) {
-        mensagem = 'Olá! Sou seu assistente de escrita. Como posso ajudar com seu livro hoje?';
+        // Se falhar ao buscar informações, usa apenas a mensagem inspiradora
+        console.log('Erro ao buscar informações do livro/capítulo:', e);
       }
+      
       setMessages([{ role: 'assistant', content: mensagem }]);
     }
     setMensagemInspiradora();
-  }, [bookId, chapterId]);
+  }, []); // Removido bookId e chapterId das dependências para executar apenas uma vez
 
   // Efeito para simulação de digitação
   useEffect(() => {
@@ -404,13 +590,70 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
     };
   }, [messages]);
 
-  const aiSuggestions = [
-    { icon: <LightbulbIcon />, text: "Melhorar a descrição desta cena" },
-    { icon: <LightbulbIcon />, text: "Adicionar mais diálogo" },
-    { icon: <LightbulbIcon />, text: "Desenvolver conflito" },
-    { icon: <LightbulbIcon />, text: "Expandir caracterização" },
-    { icon: <LightbulbIcon />, text: "Revisar ritmo narrativo" }
-  ];
+  // Buscar conteúdo do capítulo quando o componente montar ou quando mudar o capítulo
+  useEffect(() => {
+    async function fetchChapterContent() {
+      if (chapterId) {
+        try {
+          const capitulo = await dbService.getCapituloPorId(String(chapterId));
+          // O serviço retorna conteudo (compatibilidade) ou texto (campo real do banco)
+          setContent((capitulo as any).conteudo || (capitulo as any).texto || '');
+        } catch (error) {
+          console.error('Erro ao buscar conteúdo do capítulo:', error);
+          setContent('');
+        }
+      }
+    }
+    fetchChapterContent();
+  }, [chapterId]);
+
+  // Gerar sugestões contextuais baseadas no conteúdo
+  const generateContextualSuggestions = () => {
+    const suggestions = [];
+    const wordCount = content?.split(' ').length || 0;
+    
+    // Sugestões baseadas no tamanho do conteúdo
+    if (wordCount < 100) {
+      suggestions.push(
+        { icon: <LightbulbIcon />, text: "Que tal começar com uma cena impactante? 💥" },
+        { icon: <LightbulbIcon />, text: "Introduzir o protagonista de forma memorável 🌟" }
+      );
+    } else if (wordCount < 500) {
+      suggestions.push(
+        { icon: <LightbulbIcon />, text: "Desenvolver o ambiente da cena 🏞️" },
+        { icon: <LightbulbIcon />, text: "Adicionar detalhes sensoriais 👃" }
+      );
+    }
+    
+    // Sugestões baseadas em palavras-chave
+    if (content?.includes('diálogo') || content?.includes('disse')) {
+      suggestions.push(
+        { icon: <LightbulbIcon />, text: "Adicionar gestos e pausas ao diálogo 🗣️" },
+        { icon: <LightbulbIcon />, text: "Revelar personalidade através da fala 🎭" }
+      );
+    }
+    
+    // Sugestões gerais criativas
+    const generalSuggestions = [
+      { icon: <LightbulbIcon />, text: "Adicionar uma reviravolta inesperada 🌪️" },
+      { icon: <LightbulbIcon />, text: "Criar tensão com prazo limite ⏰" },
+      { icon: <LightbulbIcon />, text: "Introduzir um mistério intrigante 🔍" },
+      { icon: <LightbulbIcon />, text: "Mostrar em vez de contar 👁️" },
+      { icon: <LightbulbIcon />, text: "Adicionar humor ou leveza 😊" }
+    ];
+    
+    // Completar com sugestões aleatórias
+    while (suggestions.length < 5) {
+      const randomSuggestion = generalSuggestions[Math.floor(Math.random() * generalSuggestions.length)];
+      if (!suggestions.find(s => s.text === randomSuggestion.text)) {
+        suggestions.push(randomSuggestion);
+      }
+    }
+    
+    return suggestions;
+  };
+  
+  const aiSuggestions = generateContextualSuggestions();
 
   const aiActions = [
     { icon: <LightbulbIcon />, name: "Aprimorar" },
@@ -431,13 +674,41 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
     setAiPrompt('');
     setIsLoading(true);
     
+    // Adicionar mensagem de loading aleatória
+    const randomLoading = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+    const tempId = Date.now();
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: randomLoading, 
+      id: tempId, 
+      isLoading: true 
+    }]);
+    
     try {
       // Montar o histórico das últimas 8 mensagens (usuário e assistente)
       const historico = [...messages, userMessage].slice(-8)
         .map(m => `${m.role === 'user' ? 'Usuário' : 'Assistente'}: ${m.content}`)
         .join('\n');
 
-      const systemPrompt = `Você é um assistente de escrita criativa especializado em ajudar autores a melhorarem seus textos.\nSeja conciso, específico e útil.\n\nHistórico da conversa até aqui:\n${historico}\n\nResponda de forma natural, sem repetir o que já foi dito.`;
+      // Sistema de mensagens do chat aprimorado
+      const timeOfDay = new Date().getHours();
+      const greeting = timeOfDay < 12 ? "Bom dia!" : timeOfDay < 18 ? "Boa tarde!" : "Boa noite!";
+      
+      const systemPrompt = `Você é Luna, uma assistente de escrita apaixonada e criativa, especializada em ajudar autores a desenvolver suas histórias.
+
+Características da sua personalidade:
+- Entusiasta e encorajadora, sempre celebrando o progresso do escritor
+- Usa metáforas literárias e referências culturais apropriadas
+- Oferece feedback construtivo com delicadeza e positividade
+- Adapta o tom baseado no contexto da conversa
+- Sempre termina com uma pergunta ou sugestão para manter o escritor engajado
+- Usa emojis com moderação mas efetivamente para adicionar personalidade
+- Varia suas respostas para evitar repetição
+
+Histórico da conversa até aqui:
+${historico}
+
+Responda de forma natural, sem repetir o que já foi dito. Lembre-se: você não está apenas corrigindo texto, está nutrindo sonhos e ajudando a criar mundos!`;
 
       const response = await assistantService.custom({
         input: aiPrompt,
@@ -473,33 +744,42 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
         console.error('Não foi possível extrair o conteúdo da resposta:', response);
       }
       
-      // Iniciar com apenas os primeiros caracteres e definir isTyping como true
-      const assistantMessage: Message = { 
-        role: 'assistant', 
-        content: assistantContent.substring(0, 1), // Começa com apenas o primeiro caractere
-        fullContent: assistantContent, // Guarda o conteúdo completo
-        isTyping: true
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      // Remover mensagem de loading e adicionar resposta com efeito de digitação
+      setMessages(prev => {
+        // Remove a mensagem de loading
+        const filteredMessages = prev.filter(msg => msg.id !== tempId);
+        
+        // Adiciona a nova mensagem com efeito de digitação
+        const assistantMessage: Message = { 
+          role: 'assistant', 
+          content: assistantContent.substring(0, 1), // Começa com apenas o primeiro caractere
+          fullContent: assistantContent, // Guarda o conteúdo completo
+          isTyping: true
+        };
+        
+        return [...filteredMessages, assistantMessage];
+      });
     } catch (error: any) {
       console.error('Erro ao enviar prompt:', error);
       console.log('Detalhes completos do erro:', JSON.stringify(error, null, 2));
       
-      // Criar mensagem de erro mais amigável
-      let errorContent = 'Desculpe, não foi possível obter resposta do assistente. ';
+      // Criar mensagem de erro personalizada
+      let errorContent = errorMessages.generic;
       
       if (error.message?.includes('Failed to send a request')) {
-        errorContent += 'Não foi possível conectar com o serviço de IA. Por favor, verifique sua conexão com a internet e tente novamente.';
+        errorContent = errorMessages.connection;
       } else if (error.message?.includes('timeout')) {
-        errorContent += 'O tempo de resposta esgotou. O serviço pode estar sobrecarregado no momento. Tente novamente mais tarde.';
+        errorContent = errorMessages.timeout;
       } else if (error.message?.includes('CORS')) {
-        errorContent += 'Erro de permissão de acesso ao servidor. Entre em contato com o suporte.';
-      } else if (error instanceof Error) {
-        errorContent += error.message;
+        errorContent = "Hmm, parece que há um problema técnico... Mas não se preocupe, sua história está segura! 🔧";
       }
       
-      const errorMessage: Message = { role: 'assistant', content: errorContent };
-      setMessages(prev => [...prev, errorMessage]);
+      // Remover mensagem de loading e adicionar mensagem de erro
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => msg.id !== tempId);
+        const errorMessage: Message = { role: 'assistant', content: errorContent };
+        return [...filteredMessages, errorMessage];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -542,6 +822,20 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
           {isOpen ? <CollapseRightIcon /> : <CollapseLeftIcon />}
         </ToggleAIButton>
       </AIHeader>
+      
+      {/* Dica de escrita aleatória quando fechado */}
+      {!isOpen && messages.length > 0 && (
+        <div style={{ 
+          padding: '0.75rem', 
+          fontSize: '0.75rem', 
+          color: theme.colors.text.secondary,
+          borderTop: `1px solid ${theme.colors.border?.light || 'rgba(0,0,0,0.1)'}`,
+          textAlign: 'center',
+          fontStyle: 'italic'
+        }}>
+          {writingTips[Math.floor(Math.random() * writingTips.length)]}
+        </div>
+      )}
 
       {!isOpen ? renderCollapsed() : (
         <>
@@ -550,8 +844,12 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
               <AIConversation>
                 {messages.map((message, index) => (
                   <AIMessage key={index} $isUser={message.role === 'user'} style={{ position: 'relative' }}>
-                    {message.content}
-                    {message.role === 'assistant' && (
+                    {message.isLoading ? (
+                      <span style={{ fontStyle: 'italic', opacity: 0.8 }}>{message.content}</span>
+                    ) : (
+                      <FormattedMessage content={message.content} />
+                    )}
+                    {message.role === 'assistant' && !message.isLoading && (
                       <button
                         style={{
                           position: 'absolute',
@@ -576,11 +874,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
                     )}
                   </AIMessage>
                 ))}
-                {isLoading && (
-                  <AIMessage>
-                    Pensando...
-                  </AIMessage>
-                )}
+                {/* Removido - agora usamos mensagem de loading personalizada nas mensagens */}
                 <div ref={messagesEndRef} />
               </AIConversation>
             ) : (
@@ -614,7 +908,7 @@ export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
           <AIFooter $isOpen={isOpen}>
             <AIInputForm onSubmit={handleSubmit}>
               <AIInput
-                placeholder="Peça ajuda com seu texto..."
+                placeholder={isOpen ? "Digite sua pergunta ou peça sugestões criativas... ✍️" : "Peça ajuda com seu texto..."}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />

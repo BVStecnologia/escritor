@@ -90,4 +90,4 @@ Contribuições são bem-vindas! Abra uma issue para discutir novos recursos ou 
 
 ## Licença
 
-Este projeto está licenciado sob a [Licença MIT](LICENSE).
+Este projeto está licenciado sob a [Licença MIT](LICENSE). 

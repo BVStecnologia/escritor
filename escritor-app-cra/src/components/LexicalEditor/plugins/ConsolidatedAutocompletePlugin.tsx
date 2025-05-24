@@ -310,12 +310,21 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
 
   // Criar e limpar o container do portal
   useEffect(() => {
-    const portalContainer = document.createElement('div');
-    portalContainer.className = 'autocomplete-portal-container';
-    document.body.appendChild(portalContainer);
-    portalRef.current = portalContainer;
+    // Usar o container existente em vez de criar um novo
+    const existingContainer = document.getElementById('editor-popups');
+    if (existingContainer) {
+      portalRef.current = existingContainer as HTMLDivElement;
+    } else {
+      const portalContainer = document.createElement('div');
+      portalContainer.className = 'autocomplete-portal-container';
+      document.body.appendChild(portalContainer);
+      portalRef.current = portalContainer;
+    }
     return () => {
-      if (portalRef.current && document.body.contains(portalRef.current)) {
+      // Não remover o container se ele for o editor-popups existente
+      if (portalRef.current && 
+          portalRef.current.className === 'autocomplete-portal-container' && 
+          document.body.contains(portalRef.current)) {
         document.body.removeChild(portalRef.current);
       }
       portalRef.current = null;
@@ -331,8 +340,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) return;
         const node = selection.anchor.getNode();
-        if (!(node instanceof window.Text)) return;
-        text = node.textContent || '';
+        if (!$isTextNode(node)) return;
+        text = node.getTextContent() || '';
         cursorPosition = selection.anchor.offset;
       });
       return { text, cursorPosition };
@@ -350,7 +359,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
   }, []);
 
   // Função para calcular a posição absoluta dentro do editor
-  const calculatePosition = () => {
+  const calculatePosition = useCallback(() => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
     const range = selection.getRangeAt(0);
@@ -359,63 +368,52 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     if (!editorElement) return null;
     const editorRect = editorElement.getBoundingClientRect();
     
-    // Obter a altura da linha para garantir que o menu fique abaixo do texto
-    const lineHeight = parseFloat(window.getComputedStyle(editorElement).lineHeight) || 24;
-    const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-    
-    // Localizar o container de popups (o elemento pai onde o popup será renderizado)
+    // Localizar o container de popups
     const popupsContainer = document.getElementById('editor-popups');
     
     if (popupsContainer) {
-      // Quando renderizamos no container de popups, precisamos converter as coordenadas
-      // para serem relativas a este container
       const popupsRect = popupsContainer.getBoundingClientRect();
       
-      // Posição abaixo do texto, considerando o scrollY
-      // Queremos que o popup apareça ABAIXO do texto, nunca acima
-      // Mas NÃO adicionamos lineHeight extra para evitar o salto quando o usuário interage
-      let top = rect.bottom - popupsRect.top + scrollY + 8; // Apenas um pequeno espaçamento fixo
+      // Posição fixa abaixo do cursor com espaçamento consistente
+      let top = rect.bottom - popupsRect.top + 8;
       let left = rect.left - popupsRect.left;
       
       // Garantir largura mínima do popup
       const width = Math.max(480, rect.width * 1.5);
       
-      // Verificar se o popup sairia pela direita e ajustar
+      // Ajustes para manter dentro dos limites
       if (left + width > popupsRect.width) {
         left = Math.max(10, popupsRect.width - width - 10);
       }
-      
-      // Evitar que saia pela esquerda
       left = Math.max(10, left);
       
       return { top, left, width };
     } else {
-      // Fallback: calcular posição relativa ao editor se o container de popups não existe
-      // Garantir que fique abaixo do texto com espaçamento consistente
-      let top = rect.bottom - editorRect.top + scrollY + 8; // Mesmo espaçamento fixo que acima
+      // Fallback: posição relativa ao editor
+      let top = rect.bottom - editorRect.top + 8;
       let left = rect.left - editorRect.left;
       
-      // Verificar se o popup sairia pela direita e ajustar
       const width = Math.max(480, rect.width * 1.5);
       if (left + width > editorRect.width) {
         left = Math.max(10, editorRect.width - width - 10);
       }
-      
-      // Evitar que saia pela esquerda
       left = Math.max(10, left);
       
       return { top, left, width };
     }
-  };
+  }, []);
 
-  // Atualizar a função updatePosition para usar handlePositioning
-  const updatePosition = useCallback(() => {
-    if (!isVisible) return;
-    const pos = calculatePosition();
-    if (pos) {
-      dispatch({ type: 'UPDATE_POSITION', payload: pos });
-    }
-  }, [calculatePosition, isVisible]);
+  // Função throttled para atualizar posição
+  const updatePosition = useCallback(
+    throttle(() => {
+      if (!isVisible) return;
+      const pos = calculatePosition();
+      if (pos) {
+        dispatch({ type: 'UPDATE_POSITION', payload: pos });
+      }
+    }, 100),
+    [calculatePosition, isVisible]
+  );
 
   // Atualizar showSuggestions para usar handlePositioning
   const showSuggestions = useCallback((suggestions: string[], anchor: { nodeKey: string; offset: number; wordStartOffset?: number }, mode: 'ia' | 'local') => {
@@ -503,16 +501,10 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     [showSuggestions, livroId, isAutocompleteEnabled]
   );
 
-  // Sugestão local (dicionário) - DESATIVADA
+  // Sugestão local (dicionário)
   const fetchSuggestionsLocal = useCallback(
     throttle((word: string, anchor: { nodeKey: string; offset: number; wordStartOffset?: number }) => {
-      // Desativando o autocomplete local completamente
-      reset();
-      return;
-      
-      // Código original comentado abaixo
-      /*
-      if (!word || word.length < 2) {
+      if (!word || word.length < 2 || !isAutocompleteEnabled) {
         reset();
         return;
       }
@@ -532,9 +524,8 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       } else {
         reset();
       }
-      */
     }, 200),
-    [reset, showSuggestions, editor]
+    [reset, showSuggestions, editor, isAutocompleteEnabled]
   );
 
   // Função para aplicar sugestão
@@ -640,17 +631,30 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             return;
           }
           
+          // Verificar estado compartilhado
+          if (!canShowAutocomplete()) {
+            reset();
+            return;
+          }
+          
           const root = $getRoot();
           const text = root.getTextContent();
+          const node = selection.anchor.getNode();
+          
+          if (!$isTextNode(node)) {
+            reset();
+            return;
+          }
+          
+          const nodeText = node.getTextContent();
           const cursorOffset = selection.anchor.offset;
+          
           if (text !== currentText || cursorOffset !== cursorPosition) {
             setCurrentText(text);
             setCursorPosition(cursorOffset);
-            if (text.length >= 10) {
+            if (text.length >= 10 && isAutocompleteEnabled) {
               // Para IA autocomplete também incluímos o início da palavra atual
               // Calcular onde começa a palavra atual
-              const node = selection.anchor.getNode();
-              const nodeText = node.getTextContent && node.getTextContent() || '';
               let startPos = cursorOffset;
               while (startPos > 0 && !/\s/.test(nodeText.charAt(startPos - 1))) {
                 startPos--;
@@ -673,19 +677,10 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       });
     });
     return updateListener;
-  }, [editor, debouncedGetSuggestions, reset, currentText, cursorPosition]);
+  }, [editor, debouncedGetSuggestions, reset, currentText, cursorPosition, isAutocompleteEnabled]);
 
-  // Monitor de seleção para autocomplete local - DESATIVADO
+  // Monitor de seleção para autocomplete local
   useEffect(() => {
-    // Desativando completamente o autocomplete local
-    // Não adicionamos os event listeners para evitar processamento desnecessário
-    
-    return () => {
-      // Cleanup vazio
-    };
-    
-    // Código original comentado abaixo
-    /*
     const handleSelectionChange = () => {
       // Verificar primeiro se há qualquer seleção global no DOM
       const domSelection = window.getSelection();
@@ -701,7 +696,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         if ($isRangeSelection(selection) && selection.isCollapsed()) {
           // O texto "selecionado" aqui é na verdade a palavra atual onde o cursor está
           const currentNode = selection.anchor.getNode();
-          if (currentNode.getTextContent) {
+          if ($isTextNode(currentNode)) {
             // Verificação adicional: garantir que não há texto selecionado em outro lugar
             if (document.getSelection()?.toString().trim()) {
               reset();
@@ -753,38 +748,42 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       document.removeEventListener('selectionchange', handleSelectionChange);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-    */
   }, [editor, fetchSuggestionsLocal, reset]);
 
   // Event listener global para navegação por teclado
   useEffect(() => {
+    if (!isVisible || suggestions.length === 0) return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isVisible) return;
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
+          e.stopPropagation();
           dispatch({ type: 'SELECT_SUGGESTION', payload: (selectedIndex + 1) % suggestions.length });
           break;
         case 'ArrowUp':
           e.preventDefault();
+          e.stopPropagation();
           dispatch({ type: 'SELECT_SUGGESTION', payload: (selectedIndex - 1 + suggestions.length) % suggestions.length });
           break;
         case 'Tab':
         case 'Enter':
-          if (suggestions.length > 0) {
-            e.preventDefault();
-            applySuggestion(suggestions[selectedIndex]);
-          }
+          e.preventDefault();
+          e.stopPropagation();
+          applySuggestion(suggestions[selectedIndex]);
           break;
         case 'Escape':
           e.preventDefault();
+          e.stopPropagation();
           reset();
           break;
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
+    
+    // Usar capture phase para garantir prioridade
+    document.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [isVisible, suggestions, selectedIndex, applySuggestion, reset]);
 
@@ -805,15 +804,18 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
     };
   }, [reset]);
 
-  // Reposicionamento em resize/scroll
+  // Reposicionamento em resize/scroll - throttled
   useEffect(() => {
-    const updateSuggestionPosition = () => {
+    const updateSuggestionPosition = throttle(() => {
       if (!state.isVisible || !state.anchor) return;
       updatePosition();
-    };
+    }, 100);
+    
     window.addEventListener('resize', updateSuggestionPosition);
     window.addEventListener('scroll', updateSuggestionPosition, true);
+    
     return () => {
+      updateSuggestionPosition.cancel();
       window.removeEventListener('resize', updateSuggestionPosition);
       window.removeEventListener('scroll', updateSuggestionPosition, true);
     };
@@ -873,7 +875,7 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           top: `${position.top}px`,
           left: `${position.left}px`,
           width: `${position.width}px`,
-          zIndex: 9998, // Usar z-index menor que as ferramentas de seleção (9999)
+          zIndex: 10000, // Z-index alto para garantir que fique acima de outros elementos
           minWidth: 480,
           padding: 12,
           borderRadius: 6,
