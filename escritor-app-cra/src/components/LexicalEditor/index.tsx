@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { $getRoot, $getSelection, EditorState } from 'lexical';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { $getRoot, $getSelection, EditorState, $isRangeSelection, $createRangeSelection, $setSelection, $createTextNode, $createParagraphNode } from 'lexical';
 import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -13,10 +13,12 @@ import { CodeNode } from '@lexical/code';
 import { LinkNode } from '@lexical/link';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
 import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 
 import { ToolbarWithModal } from './plugins/ToolbarPlugin';
 import { AutoSavePlugin } from './plugins/AutoSavePlugin';
 import { InitialContentPlugin } from './plugins/InitialContentPlugin';
+// import { InsertContentPlugin } from './plugins/InsertContentPlugin';
 import ImagePlugin, { ImageNode } from './plugins/ImagePlugin';
 import { editorTheme } from './theme';
 import styled from 'styled-components';
@@ -83,6 +85,8 @@ interface LexicalEditorProps {
   chapterId?: string;
   onWordCountChanged?: (wordCount: number) => void;
   setSaveStatus?: (status: 'saving' | 'saved' | 'error' | 'unsaved') => void;
+  pendingInsertContent?: string;
+  onContentInserted?: () => void;
 }
 
 // Configuração inicial do editor
@@ -101,13 +105,75 @@ const initialConfig: InitialConfigType = {
   ]
 };
 
+// Componente simples para inserir conteúdo
+const InsertContentComponent: React.FC<{ 
+  pendingContent?: string; 
+  onContentInserted?: () => void 
+}> = ({ pendingContent, onContentInserted }) => {
+  const [editor] = useLexicalComposerContext();
+  const hasInsertedRef = useRef(false);
+  
+  useEffect(() => {
+    if (pendingContent && editor && !hasInsertedRef.current) {
+      console.log('InsertContentComponent: Tentando inserir conteúdo:', pendingContent);
+      
+      // Marcar como inserido para evitar duplicação
+      hasInsertedRef.current = true;
+      
+      // Primeiro focar o editor
+      editor.focus();
+      
+      // Aguardar um pequeno delay para garantir que o foco foi aplicado
+      setTimeout(() => {
+        editor.update(() => {
+          const selection = $getSelection();
+          console.log('InsertContentComponent: Seleção atual:', selection);
+          
+          if ($isRangeSelection(selection)) {
+            // Se já houver uma seleção válida, inserir o texto
+            console.log('InsertContentComponent: Inserindo texto na seleção existente');
+            selection.insertText(pendingContent);
+          } else {
+            // Se não houver seleção, adicionar um novo parágrafo com o texto
+            console.log('InsertContentComponent: Sem seleção, criando novo parágrafo');
+            const root = $getRoot();
+            const paragraph = $createParagraphNode();
+            const textNode = $createTextNode(pendingContent);
+            paragraph.append(textNode);
+            root.append(paragraph);
+            
+            // Mover o cursor para o final do texto inserido
+            const newSelection = $createRangeSelection();
+            newSelection.anchor.set(textNode.getKey(), pendingContent.length, 'text');
+            newSelection.focus.set(textNode.getKey(), pendingContent.length, 'text');
+            $setSelection(newSelection);
+          }
+        });
+        
+        // Notificar que o conteúdo foi inserido
+        console.log('InsertContentComponent: Notificando inserção completa');
+        onContentInserted?.();
+      }, 100);
+    }
+    
+    // Reset quando o conteúdo mudar para vazio
+    if (!pendingContent) {
+      hasInsertedRef.current = false;
+    }
+  }, [pendingContent, editor, onContentInserted]);
+  
+  return null;
+};
+
 export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   initialContent,
   onChange,
   bookId,
   chapterId,
   onWordCountChanged,
-  setSaveStatus
+  setSaveStatus,
+  pendingInsertContent,
+  onContentInserted
 }) => {
   // Função para calcular a contagem de palavras diretamente a partir do texto
   const calculateWordCount = useCallback((text: string): number => {
@@ -167,6 +233,12 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
         <LinkPlugin />
         <ImagePlugin />
         <InitialContentPlugin initialContent={initialContent} />
+        
+        {/* Plugin para inserir conteúdo do assistente */}
+        <InsertContentComponent 
+          pendingContent={pendingInsertContent} 
+          onContentInserted={onContentInserted} 
+        />
         
         {/* Plugins de IA baseados em DOM */}
         {/* <AIAutocompletePlugin livroId={bookId} capituloId={chapterId} /> */}

@@ -114,6 +114,7 @@ const EditorPage: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [pendingInsertContent, setPendingInsertContent] = useState<string>('');
 
   const {
     livro,
@@ -353,10 +354,40 @@ const EditorPage: React.FC = () => {
             isOnline={isOnline}
             setSaveStatus={setSaveStatus}
             loadingChapter={loadingChapter}
+            pendingInsertContent={pendingInsertContent}
+            onContentInserted={() => setPendingInsertContent('')}
           />
           <AIAssistantFixed
             bookId={bookId}
             chapterId={chapterId}
+            onInsertContent={(content) => {
+              // Define o conteúdo pendente para ser inserido
+              setPendingInsertContent(content);
+              
+              // Mostrar notificação visual
+              const notification = document.createElement('div');
+              notification.style.position = 'fixed';
+              notification.style.bottom = '30px';
+              notification.style.left = '50%';
+              notification.style.transform = 'translateX(-50%)';
+              notification.style.padding = '12px 20px';
+              notification.style.backgroundColor = '#3b82f6';
+              notification.style.color = 'white';
+              notification.style.borderRadius = '8px';
+              notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+              notification.style.zIndex = '9999';
+              notification.style.transition = 'all 0.3s ease';
+              notification.textContent = 'Conteúdo inserido no editor!';
+              
+              document.body.appendChild(notification);
+              
+              setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                  document.body.removeChild(notification);
+                }, 300);
+              }, 2000);
+            }}
           />
         </MainLayout>
         <CreateBookModal

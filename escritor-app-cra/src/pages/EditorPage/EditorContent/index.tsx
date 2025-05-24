@@ -25,6 +25,8 @@ interface EditorContentProps {
   isOnline: boolean;
   setSaveStatus?: (status: 'saving' | 'saved' | 'error' | 'unsaved') => void;
   loadingChapter: boolean;
+  pendingInsertContent?: string;
+  onContentInserted?: () => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -39,7 +41,9 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   saveStatus,
   isOnline,
   setSaveStatus,
-  loadingChapter
+  loadingChapter,
+  pendingInsertContent,
+  onContentInserted
 }) => {
   // Usando chapterId como chave para forçar recriação completa
   // do componente quando mudar de capítulo
@@ -81,6 +85,8 @@ export const EditorContent: React.FC<EditorContentProps> = ({
               chapterId={chapterId}
               onWordCountChanged={onWordCountChanged}
               setSaveStatus={setSaveStatus}
+              pendingInsertContent={pendingInsertContent}
+              onContentInserted={onContentInserted}
             />
           </EditorContainer>
           {/* Contador de palavras flutuante */}

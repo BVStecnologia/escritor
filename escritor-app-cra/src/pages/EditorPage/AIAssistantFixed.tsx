@@ -379,6 +379,7 @@ const AIAssistantPanel = styled.div<{ $active: boolean }>`
 interface AIAssistantFixedProps {
   bookId?: string;
   chapterId?: string;
+  onInsertContent?: (content: string) => void;
 }
 
 interface Message {
@@ -390,8 +391,63 @@ interface Message {
   isLoading?: boolean;
 }
 
+// Componente para botão de inserir conteúdo
+const InsertButton = styled.button<{ theme?: any }>`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  margin-right: 0.5rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+`;
+
 // Componente para formatar mensagens com markdown simples
-const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
+const FormattedMessage: React.FC<{ content: string; onInsert?: (text: string) => void }> = ({ content, onInsert }) => {
+  // Detectar blocos de código ou conteúdo para inserção
+  const extractCodeBlocks = (text: string) => {
+    const codeBlocks: { content: string; type: string }[] = [];
+    
+    // Detecta blocos de código com ```
+    const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+    let match;
+    while ((match = codeBlockRegex.exec(text)) !== null) {
+      codeBlocks.push({
+        content: match[2].trim(),
+        type: match[1] || 'text'
+      });
+    }
+    
+    // Detecta sugestões de texto entre aspas duplas longas
+    const suggestionRegex = /"([^"]{50,})"/g;
+    while ((match = suggestionRegex.exec(text)) !== null) {
+      codeBlocks.push({
+        content: match[1],
+        type: 'suggestion'
+      });
+    }
+    
+    return codeBlocks;
+  };
+  
+  const codeBlocks = extractCodeBlocks(content);
+  
   // Função para processar markdown simples
   const formatContent = (text: string) => {
     // Divide o texto em linhas
@@ -489,12 +545,33 @@ const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
     return result;
   };
   
-  return <div>{formatContent(content)}</div>;
+  return (
+    <div>
+      {formatContent(content)}
+      {onInsert && codeBlocks.length > 0 && (
+        <div style={{ marginTop: '0.75rem' }}>
+          {codeBlocks.map((block, index) => (
+            <InsertButton
+              key={index}
+              onClick={() => onInsert(block.content)}
+              title={`Inserir ${block.type === 'suggestion' ? 'sugestão' : 'código'} no editor`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Inserir {block.type === 'suggestion' ? 'sugestão' : block.type}
+            </InsertButton>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const AIAssistantFixed: React.FC<AIAssistantFixedProps> = ({
   bookId,
-  chapterId
+  chapterId,
+  onInsertContent
 }) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isOpen, setIsOpen] = useState(true);
@@ -704,6 +781,8 @@ Características da sua personalidade:
 - Sempre termina com uma pergunta ou sugestão para manter o escritor engajado
 - Usa emojis com moderação mas efetivamente para adicionar personalidade
 - Varia suas respostas para evitar repetição
+- Quando o usuário pedir sugestões de texto, coloque-as entre três crases (\\\`\\\`\\\`) ou entre aspas duplas se for um parágrafo
+- Identifique quando o usuário quer inserir conteúdo no editor e formate adequadamente
 
 Histórico da conversa até aqui:
 ${historico}
@@ -847,7 +926,10 @@ Responda de forma natural, sem repetir o que já foi dito. Lembre-se: você não
                     {message.isLoading ? (
                       <span style={{ fontStyle: 'italic', opacity: 0.8 }}>{message.content}</span>
                     ) : (
-                      <FormattedMessage content={message.content} />
+                      <FormattedMessage 
+                        content={message.content} 
+                        onInsert={onInsertContent}
+                      />
                     )}
                     {message.role === 'assistant' && !message.isLoading && (
                       <button
