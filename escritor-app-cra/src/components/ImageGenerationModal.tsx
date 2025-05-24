@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { imageService, estimateImageCost } from '../services/imageService';
 import { Button } from './styled/Button';
 import { Spinner } from './styled/Spinner';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ImageGenerationModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   context,
   initialPrompt = ''
 }) => {
+  const { theme } = useTheme();
   const [prompt, setPrompt] = useState(initialPrompt);
   const [quality, setQuality] = useState('medium');
   const [sampleCount, setSampleCount] = useState(1);
@@ -84,30 +86,31 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
 
   return (
     <ModalOverlay onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <ModalHeader>
+      <ModalContent $isDarkMode={theme.isDarkMode} onClick={(e) => e.stopPropagation()}>
+        <ModalHeader $isDarkMode={theme.isDarkMode}>
           <h2>🎨 Gerar Imagem com IA</h2>
-          <CloseButton onClick={onClose}>×</CloseButton>
+          <CloseButton $isDarkMode={theme.isDarkMode} onClick={onClose}>×</CloseButton>
         </ModalHeader>
 
         <ModalBody>
           {!generatedImages.length ? (
             <>
               <FormGroup>
-                <Label>Descrição da Imagem (opcional)</Label>
+                <Label $isDarkMode={theme.isDarkMode}>Descrição da Imagem (opcional)</Label>
                 <TextArea
+                  $isDarkMode={theme.isDarkMode}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Descreva a imagem que deseja gerar ou deixe em branco para gerar automaticamente..."
                   rows={4}
                 />
-                <Hint>Nossa IA pode criar uma descrição baseada no contexto do seu livro</Hint>
+                <Hint $isDarkMode={theme.isDarkMode}>Nossa IA pode criar uma descrição baseada no contexto do seu livro</Hint>
               </FormGroup>
 
               <FormRow>
                 <FormGroup>
-                  <Label>Qualidade</Label>
-                  <Select value={quality} onChange={(e) => setQuality(e.target.value)}>
+                  <Label $isDarkMode={theme.isDarkMode}>Qualidade</Label>
+                  <Select $isDarkMode={theme.isDarkMode} value={quality} onChange={(e) => setQuality(e.target.value)}>
                     <option value="low">Baixa (rápida)</option>
                     <option value="medium">Média</option>
                     <option value="high">Alta (detalhada)</option>
@@ -115,8 +118,8 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 </FormGroup>
 
                 <FormGroup>
-                  <Label>Quantidade</Label>
-                  <Select value={sampleCount} onChange={(e) => setSampleCount(Number(e.target.value))}>
+                  <Label $isDarkMode={theme.isDarkMode}>Quantidade</Label>
+                  <Select $isDarkMode={theme.isDarkMode} value={sampleCount} onChange={(e) => setSampleCount(Number(e.target.value))}>
                     <option value="1">1 imagem</option>
                     <option value="2">2 imagens</option>
                     <option value="3">3 imagens</option>
@@ -125,12 +128,12 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 </FormGroup>
               </FormRow>
 
-              <CostEstimate>
+              <CostEstimate $isDarkMode={theme.isDarkMode}>
                 <CostIcon>💰</CostIcon>
                 <CostInfo>
-                  <CostLabel>Custo estimado:</CostLabel>
+                  <CostLabel $isDarkMode={theme.isDarkMode}>Custo estimado:</CostLabel>
                   <CostValue>{estimatedCost} créditos</CostValue>
-                  <CostNote>Será contabilizado para cobrança futura</CostNote>
+                  <CostNote $isDarkMode={theme.isDarkMode}>Será contabilizado para cobrança futura</CostNote>
                 </CostInfo>
               </CostEstimate>
 
@@ -171,6 +174,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                     <Thumbnail
                       key={index}
                       $active={index === selectedImage}
+                      $isDarkMode={theme.isDarkMode}
                       onClick={() => setSelectedImage(index)}
                     >
                       <img src={url} alt={`Opção ${index + 1}`} />
@@ -180,7 +184,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
               )}
 
               {processingTime && (
-                <ProcessingInfo>
+                <ProcessingInfo $isDarkMode={theme.isDarkMode}>
                   ⚡ Gerado em {(processingTime / 1000).toFixed(1)}s
                 </ProcessingInfo>
               )}
@@ -221,8 +225,8 @@ const ModalOverlay = styled.div`
   z-index: 1000;
 `;
 
-const ModalContent = styled.div`
-  background: white;
+const ModalContent = styled.div<{ $isDarkMode: boolean }>`
+  background: ${props => props.$isDarkMode ? '#1e1e1e' : '#ffffff'};
   border-radius: 12px;
   max-width: 600px;
   width: 90%;
@@ -230,27 +234,28 @@ const ModalContent = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border: 1px solid ${props => props.$isDarkMode ? '#333' : '#e0e0e0'};
 `;
 
-const ModalHeader = styled.div`
+const ModalHeader = styled.div<{ $isDarkMode: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid ${props => props.$isDarkMode ? '#333' : '#e0e0e0'};
 
   h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #333;
+    color: ${props => props.$isDarkMode ? '#fff' : '#333'};
   }
 `;
 
-const CloseButton = styled.button`
+const CloseButton = styled.button<{ $isDarkMode: boolean }>`
   background: none;
   border: none;
   font-size: 2rem;
-  color: #666;
+  color: ${props => props.$isDarkMode ? '#aaa' : '#666'};
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -260,7 +265,7 @@ const CloseButton = styled.button`
   justify-content: center;
 
   &:hover {
-    color: #000;
+    color: ${props => props.$isDarkMode ? '#fff' : '#000'};
   }
 `;
 
@@ -280,21 +285,23 @@ const FormRow = styled.div`
   margin-bottom: 20px;
 `;
 
-const Label = styled.label`
+const Label = styled.label<{ $isDarkMode: boolean }>`
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #333;
+  color: ${props => props.$isDarkMode ? '#fff' : '#333'};
 `;
 
-const TextArea = styled.textarea`
+const TextArea = styled.textarea<{ $isDarkMode: boolean }>`
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.$isDarkMode ? '#444' : '#ddd'};
   border-radius: 8px;
   font-size: 1rem;
   resize: vertical;
   font-family: inherit;
+  background: ${props => props.$isDarkMode ? '#2a2a2a' : '#fff'};
+  color: ${props => props.$isDarkMode ? '#fff' : '#333'};
 
   &:focus {
     outline: none;
@@ -302,34 +309,41 @@ const TextArea = styled.textarea`
   }
 `;
 
-const Select = styled.select`
+const Select = styled.select<{ $isDarkMode: boolean }>`
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.$isDarkMode ? '#444' : '#ddd'};
   border-radius: 8px;
   font-size: 1rem;
-  background: white;
+  background: ${props => props.$isDarkMode ? '#2a2a2a' : '#fff'};
+  color: ${props => props.$isDarkMode ? '#fff' : '#333'};
 
   &:focus {
     outline: none;
     border-color: #4361ee;
   }
+  
+  option {
+    background: ${props => props.$isDarkMode ? '#2a2a2a' : '#fff'};
+    color: ${props => props.$isDarkMode ? '#fff' : '#333'};
+  }
 `;
 
-const Hint = styled.p`
+const Hint = styled.p<{ $isDarkMode: boolean }>`
   margin-top: 5px;
   font-size: 0.875rem;
-  color: #666;
+  color: ${props => props.$isDarkMode ? '#aaa' : '#666'};
 `;
 
-const CostEstimate = styled.div`
+const CostEstimate = styled.div<{ $isDarkMode: boolean }>`
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 15px;
-  background: #f0f7ff;
+  background: ${props => props.$isDarkMode ? 'rgba(67, 97, 238, 0.1)' : '#f0f7ff'};
   border-radius: 8px;
   margin-bottom: 20px;
+  border: 1px solid ${props => props.$isDarkMode ? 'rgba(67, 97, 238, 0.3)' : 'transparent'};
 `;
 
 const CostIcon = styled.div`
@@ -340,9 +354,9 @@ const CostInfo = styled.div`
   flex: 1;
 `;
 
-const CostLabel = styled.div`
+const CostLabel = styled.div<{ $isDarkMode: boolean }>`
   font-size: 0.875rem;
-  color: #666;
+  color: ${props => props.$isDarkMode ? '#aaa' : '#666'};
 `;
 
 const CostValue = styled.div`
@@ -351,9 +365,9 @@ const CostValue = styled.div`
   color: #4361ee;
 `;
 
-const CostNote = styled.div`
+const CostNote = styled.div<{ $isDarkMode: boolean }>`
   font-size: 0.75rem;
-  color: #666;
+  color: ${props => props.$isDarkMode ? '#999' : '#666'};
   font-style: italic;
 `;
 
@@ -391,13 +405,13 @@ const ImageThumbnails = styled.div`
   justify-content: center;
 `;
 
-const Thumbnail = styled.div<{ $active: boolean }>`
+const Thumbnail = styled.div<{ $active: boolean; $isDarkMode: boolean }>`
   width: 80px;
   height: 80px;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  border: 3px solid ${props => props.$active ? '#4361ee' : '#ddd'};
+  border: 3px solid ${props => props.$active ? '#4361ee' : (props.$isDarkMode ? '#444' : '#ddd')};
   transition: all 0.2s;
 
   &:hover {
@@ -412,9 +426,9 @@ const Thumbnail = styled.div<{ $active: boolean }>`
   }
 `;
 
-const ProcessingInfo = styled.div`
+const ProcessingInfo = styled.div<{ $isDarkMode: boolean }>`
   text-align: center;
-  color: #666;
+  color: ${props => props.$isDarkMode ? '#aaa' : '#666'};
   font-size: 0.875rem;
   margin-bottom: 20px;
 `;
