@@ -276,21 +276,55 @@ const autocompleteReducer = (state: AutocompleteState, action: AutocompleteActio
 // Esta função determina se o texto na posição atual deve ser capitalizado
 const shouldCapitalizeText = (text: string, position: number): boolean => {
   // Início de texto sempre capitaliza
-  if (position === 0) return true;
+  if (position === 0 || text.trim().length === 0) return true;
   
-  // Verificar o texto antes da posição atual (sem trim!)
+  // Verificar o texto antes da posição atual
   const textBefore = text.substring(0, position);
   
-  // Padrão exato: ponto/exclamação/interrogação seguido por espaço(s)
-  return /[.!?]\s+$/.test(textBefore);
+  // Padrão para fim de frase: ponto/exclamação/interrogação seguido por espaço(s)
+  if (/[.!?]\s+$/.test(textBefore)) {
+    return true;
+  }
+  
+  // Verificar também se o texto inteiro antes termina com pontuação de fim de frase
+  // (para casos onde o cursor está logo após um espaço)
+  const trimmedTextBefore = textBefore.trimEnd();
+  if (trimmedTextBefore.length > 0 && /[.!?]$/.test(trimmedTextBefore)) {
+    return true;
+  }
+  
+  // Verificar se é início de parágrafo (após quebra de linha)
+  if (/\n\s*$/.test(textBefore)) {
+    return true;
+  }
+  
+  return false;
 };
 
 // Função para aplicar capitalização se necessário
 const capitalizeIfNeeded = (text: string, shouldCapitalize: boolean): string => {
-  if (shouldCapitalize && text.length > 0) {
+  if (!text || text.length === 0) return text;
+  
+  if (shouldCapitalize) {
+    // Capitalizar primeira letra, mantendo o resto do texto inalterado
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
   return text;
+};
+
+// Função para processar sugestões da IA
+const processSuggestion = (suggestion: string, textBefore: string, startPos: number): string => {
+  // Remover espaços no início da sugestão se já houver espaço antes
+  let processed = suggestion;
+  if (textBefore.endsWith(' ') && processed.startsWith(' ')) {
+    processed = processed.trimStart();
+  }
+  
+  // Aplicar capitalização se necessário
+  const needsCaps = shouldCapitalizeText(textBefore, startPos);
+  processed = capitalizeIfNeeded(processed, needsCaps);
+  
+  return processed;
 };
 
 // Comando Lexical customizado
@@ -476,17 +510,26 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
             
             // Só mostrar se houver sugestões reais após a filtragem
             if (filteredSuggestions.length > 0) {
-              // Mostrar sugestões como estão - a capitalização será aplicada na função applySuggestion
               editor.update(() => {
                 const selection = $getSelection();
                 if (!$isRangeSelection(selection)) return;
+                
+                // Processar as sugestões para garantir que começam corretamente
+                const processedSuggestions = filteredSuggestions.map((sugg: string) => {
+                  // Remover espaços duplos no início
+                  let processed = sugg.replace(/^\s+/, ' ');
+                  
+                  // Se a sugestão começa com letra minúscula após pontuação,
+                  // será corrigida na aplicação
+                  return processed;
+                });
                 
                 // Mostrar sugestões - a capitalização ocorrerá na aplicação
                 const domSelection = window.getSelection();
                 if (!domSelection || domSelection.rangeCount === 0) return;
                 const range = domSelection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                showSuggestions(filteredSuggestions, anchor, 'ia');
+                showSuggestions(processedSuggestions, anchor, 'ia');
               });
             }
           }
@@ -535,12 +578,31 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
       const selection = $getSelection();
       if (!$isRangeSelection(selection)) return;
       
+      // Obter o texto completo do documento para análise de contexto
+      const root = $getRoot();
+      const fullText = root.getTextContent();
+      
       // Obter nó atual e texto
       const node = selection.anchor.getNode();
       if (!node.getTextContent) return;
       
-      const text = node.getTextContent();
+      const nodeText = node.getTextContent();
       const cursorOffset = selection.anchor.offset;
+      
+      // Calcular posição absoluta no texto completo
+      let absoluteOffset = 0;
+      let foundNode = false;
+      
+      root.getChildren().forEach(child => {
+        if (!foundNode) {
+          if (child.getKey() === node.getKey()) {
+            absoluteOffset += cursorOffset;
+            foundNode = true;
+          } else {
+            absoluteOffset += (child.getTextContent()?.length || 0) + 1; // +1 para quebra de linha
+          }
+        }
+      });
       
       // Usar o startPos da âncora se disponível, senão calcular
       let startPos = anchor.wordStartOffset !== undefined 
@@ -548,44 +610,45 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
         : (() => {
             // Calcular como fallback
             let pos = cursorOffset;
-            while (pos > 0 && !/\s/.test(text.charAt(pos - 1))) {
+            while (pos > 0 && !/\s/.test(nodeText.charAt(pos - 1))) {
               pos--;
             }
             return pos;
           })();
       
+      // Calcular posição absoluta do início da palavra
+      const absoluteStartPos = absoluteOffset - (cursorOffset - startPos);
+      
       // Obter a palavra parcial atual que o usuário já digitou
-      const currentWordPart = text.substring(startPos, cursorOffset);
+      const currentWordPart = nodeText.substring(startPos, cursorOffset);
       
-      // Usar a função utilitária centralizada para verificar se devemos capitalizar
-      const needsCapitalization = shouldCapitalizeText(text, startPos);
+      // Usar o texto completo para verificar capitalização
+      const needsCapitalization = shouldCapitalizeText(fullText, absoluteStartPos);
       
-      // Logs de depuração
-      console.log("Debug capitalização:", {
-        startPos,
-        textBeforeEnd: text.substring(0, startPos).slice(-10), // Últimos 10 caracteres antes da posição
-        needsCapitalization
-      });
+      // Processar a sugestão considerando o contexto
+      const textBefore = fullText.substring(0, absoluteStartPos);
+      let finalSuggestion = processSuggestion(suggestion, textBefore, absoluteStartPos);
       
-      // Aplicar capitalização usando o utilitário centralizado
-      const finalSuggestion = capitalizeIfNeeded(suggestion, needsCapitalization);
-      
-      // Log para debug (remover em produção)
-      console.log('Autocomplete debug:', {
-        textBefore: text.substring(Math.max(0, startPos - 10), startPos), // Últimos 10 caracteres antes da posição
-        needsCapitalization,
-        originalSuggestion: suggestion,
-        finalSuggestion,
-        currentWordPart
-      });
-      
-      if (needsCapitalization) {
-        console.log('Capitalizando sugestão:', suggestion, '→', finalSuggestion);
+      // Para sugestões locais (palavras do dicionário), verificar se devemos manter
+      // a primeira letra como maiúscula se a palavra parcial já começava com maiúscula
+      if (mode === 'local' && currentWordPart.length > 0 && /^[A-Z]/.test(currentWordPart)) {
+        finalSuggestion = capitalizeIfNeeded(finalSuggestion, true);
       }
       
-      // Se a sugestão já inclui o que o usuário digitou, remover a palavra parcial primeiro
-      if (currentWordPart.length > 0) {
-        // Mover o cursor para o início da palavra 
+      // Verificar se a sugestão já começa com a palavra parcial digitada
+      const suggestionStartsWithPartial = finalSuggestion.toLowerCase().startsWith(currentWordPart.toLowerCase());
+      
+      // Debug logs
+      console.log('Aplicando sugestão:', {
+        currentWordPart,
+        originalSuggestion: suggestion,
+        finalSuggestion,
+        suggestionStartsWithPartial,
+        mode
+      });
+      
+      if (currentWordPart.length > 0 && !suggestionStartsWithPartial) {
+        // A sugestão NÃO inclui a palavra parcial, então precisamos removê-la primeiro
         const node = selection.anchor.getNode();
         
         // Verificar se é um TextNode antes de usar setTextNodeRange
@@ -599,20 +662,31 @@ export function ConsolidatedAutocompletePlugin({ livroId, capituloId }: Consolid
           }
         } else {
           // Se não for um TextNode, apenas inserir no ponto atual
-          // Isso é raro, mas pode acontecer se o cursor estiver em um nó de elemento
           console.warn('Autocomplete: não é possível remover texto parcial, o nó não é um TextNode');
         }
+        
+        // Inserir a sugestão completa
+        selection.insertText(finalSuggestion);
+      } else if (suggestionStartsWithPartial) {
+        // A sugestão já inclui a palavra parcial, então inserir apenas a parte restante
+        const remainingSuggestion = finalSuggestion.substring(currentWordPart.length);
+        selection.insertText(remainingSuggestion);
+      } else {
+        // Caso padrão: inserir a sugestão completa
+        selection.insertText(finalSuggestion);
       }
       
-      // Inserir a sugestão completa (possivelmente capitalizada)
-      selection.insertText(finalSuggestion);
+      // Adicionar espaço após a sugestão se for uma palavra completa
+      if (mode === 'local' && !finalSuggestion.endsWith(' ')) {
+        selection.insertText(' ');
+      }
       
       setTimeout(() => {
         editor.focus();
       }, 0);
     });
     reset();
-  }, [editor, anchor, selectedIndex, reset]);
+  }, [editor, anchor, selectedIndex, reset, mode]);
 
   // Monitor de alterações no texto para autocomplete IA
   useEffect(() => {
