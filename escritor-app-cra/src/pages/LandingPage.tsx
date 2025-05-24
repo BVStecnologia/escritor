@@ -157,14 +157,14 @@ const LandingPage: React.FC = () => {
               </ul>
             </ShowcaseContent>
             <ShowcaseImage>
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.57.57.png" alt="Editor limpo do Bookwriter" />
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.49.39.png" alt="Editor limpo do Bookwriter" />
             </ShowcaseImage>
           </ShowcaseGrid>
           
           {/* Step 2: AI Autocomplete */}
           <ShowcaseGrid>
             <ShowcaseImage className="float-animation">
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.58.30.png" alt="Autocomplete IA em ação" />
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.49.39.png" alt="Autocomplete IA em ação" />
             </ShowcaseImage>
             <ShowcaseContent>
               <h3>2. IA Escreve <span>Junto com Você</span></h3>
@@ -184,7 +184,7 @@ const LandingPage: React.FC = () => {
           <FeatureHighlight>
             <h3>Múltiplas Opções, Você Escolhe!</h3>
             <ShowcaseImage>
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.59.53.png" alt="Várias sugestões de autocomplete" />
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.50.37.png" alt="Várias sugestões de autocomplete" />
             </ShowcaseImage>
             <p style={{ marginTop: '30px', fontSize: '1.2rem', color: '#6c757d' }}>
               Receba várias sugestões e escolha a que melhor se encaixa na sua narrativa
