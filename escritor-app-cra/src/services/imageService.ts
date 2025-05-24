@@ -55,13 +55,13 @@ export async function getImageGenerationHistory(limit: number = 10) {
 
 // Função para obter estatísticas de uso
 export async function getImageGenerationStats() {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) return null;
   
   const { data, error } = await supabase
     .from('user_image_generation_stats')
     .select('*')
-    .eq('user_id', user.user.id)
+    .eq('user_id', userData.user.id)
     .single();
     
   if (error) {

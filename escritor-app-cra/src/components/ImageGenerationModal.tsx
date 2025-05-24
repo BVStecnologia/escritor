@@ -7,7 +7,8 @@ import { Spinner } from './styled/Spinner';
 interface ImageGenerationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageGenerated: (imageUrl: string) => void;
+  onImageGenerated?: (imageUrl: string) => void;
+  onImageSelect?: (imageUrl: string) => void; // Alias para compatibilidade
   context?: any;
   initialPrompt?: string;
 }
@@ -16,6 +17,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   isOpen,
   onClose,
   onImageGenerated,
+  onImageSelect, // Suporte para ambos os nomes
   context,
   initialPrompt = ''
 }) => {
@@ -67,7 +69,13 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
 
   const handleConfirm = () => {
     if (generatedImages[selectedImage]) {
-      onImageGenerated(generatedImages[selectedImage]);
+      // Suportar ambos os callbacks
+      if (onImageGenerated) {
+        onImageGenerated(generatedImages[selectedImage]);
+      }
+      if (onImageSelect) {
+        onImageSelect(generatedImages[selectedImage]);
+      }
       onClose();
     }
   };
