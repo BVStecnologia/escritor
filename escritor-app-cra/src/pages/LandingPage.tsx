@@ -77,7 +77,7 @@ const LandingPage: React.FC = () => {
               Descubra como autores iniciantes estão publicando livros profissionais em tempo recorde e gerando renda passiva de R$ 3.000 a R$ 50.000 por mês na Amazon KDP
             </HeroSubheadline>
 
-            {/* Vídeo VSL */}
+            {/* Vídeo VSL - Opção 1: Vídeo único menor */}
             <VideoWrapper>
               <VideoContainer>
                 <video 
@@ -96,6 +96,13 @@ const LandingPage: React.FC = () => {
                 Veja como nossos autores faturam 5 dígitos por mês
               </VideoCaption>
             </VideoWrapper>
+
+            {/* Alternativa: Se preferir GIF ou imagem estática
+            <DemoImageWrapper>
+              <img src="/videos/dashboard-demo.gif" alt="Dashboard de vendas" />
+              <DemoCaption>Dashboard real de um autor faturando R$ 10.543/mês</DemoCaption>
+            </DemoImageWrapper>
+            */}
 
             <HeroStats>
               <StatItem>
@@ -130,10 +137,109 @@ const LandingPage: React.FC = () => {
         </Container>
       </HeroSection>
 
+      {/* App Showcase Section - Jornada Completa */}
+      <AppShowcaseSection>
+        <Container>
+          <SectionTitle>Veja Como É Fácil Escrever com Bookwriter</SectionTitle>
+          
+          {/* Step 1: Editor Limpo */}
+          <ShowcaseGrid>
+            <ShowcaseContent>
+              <h3>1. Comece com um <span>Editor Limpo e Intuitivo</span></h3>
+              <p>
+                Interface profissional sem distrações. Foque apenas no que importa: sua história.
+              </p>
+              <ul>
+                <li>Editor profissional estilo Word</li>
+                <li>Salvamento automático em nuvem</li>
+                <li>Assistente IA sempre disponível</li>
+                <li>Organização por capítulos</li>
+              </ul>
+            </ShowcaseContent>
+            <ShowcaseImage>
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.57.57.png" alt="Editor limpo do Bookwriter" />
+            </ShowcaseImage>
+          </ShowcaseGrid>
+          
+          {/* Step 2: AI Autocomplete */}
+          <ShowcaseGrid>
+            <ShowcaseImage className="float-animation">
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.58.30.png" alt="Autocomplete IA em ação" />
+            </ShowcaseImage>
+            <ShowcaseContent>
+              <h3>2. IA Escreve <span>Junto com Você</span></h3>
+              <p>
+                Nunca mais fique travado! Nossa IA sugere continuações inteligentes em tempo real.
+              </p>
+              <ul>
+                <li>Sugestões contextuais instantâneas</li>
+                <li>Mantém seu estilo de escrita</li>
+                <li>Acelera sua produção em 10x</li>
+                <li>Aprende com suas preferências</li>
+              </ul>
+            </ShowcaseContent>
+          </ShowcaseGrid>
+          
+          {/* Feature Highlight */}
+          <FeatureHighlight>
+            <h3>Múltiplas Opções, Você Escolhe!</h3>
+            <ShowcaseImage>
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 14.59.53.png" alt="Várias sugestões de autocomplete" />
+            </ShowcaseImage>
+            <p style={{ marginTop: '30px', fontSize: '1.2rem', color: '#6c757d' }}>
+              Receba várias sugestões e escolha a que melhor se encaixa na sua narrativa
+            </p>
+          </FeatureHighlight>
+          
+          {/* Step 3: Book Customization */}
+          <ShowcaseGrid>
+            <ShowcaseContent>
+              <h3>3. Personalize <span>Capas Profissionais</span></h3>
+              <p>
+                Crie capas que vendem! Interface simples para personalizar e visualizar em tempo real.
+              </p>
+              <ul>
+                <li>Gerador de capas com IA</li>
+                <li>Templates profissionais</li>
+                <li>Pré-visualização instantânea</li>
+                <li>Export para Amazon KDP</li>
+              </ul>
+            </ShowcaseContent>
+            <ShowcaseImage>
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 15.16.14.png" alt="Editor de capas Bookwriter" />
+            </ShowcaseImage>
+          </ShowcaseGrid>
+          
+          {/* Step 4: Track Progress */}
+          <ShowcaseGrid>
+            <ShowcaseImage className="float-animation">
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 15.16.32.png" alt="Dashboard de progresso" />
+            </ShowcaseImage>
+            <ShowcaseContent>
+              <h3>4. Acompanhe seu <span>Progresso em Tempo Real</span></h3>
+              <p>
+                Dashboard motivacional que mostra sua evolução diária e mantém você produtivo.
+              </p>
+              <ul>
+                <li>Contadores de palavras e capítulos</li>
+                <li>Metas diárias personalizadas</li>
+                <li>Histórico de produção</li>
+                <li>Sistema de recompensas</li>
+              </ul>
+            </ShowcaseContent>
+          </ShowcaseGrid>
+        </Container>
+      </AppShowcaseSection>
+
       {/* Seção de Problemas/Dores */}
       <PainSection>
         <Container>
           <SectionTitle>Você Se Identifica Com Alguma Dessas Situações?</SectionTitle>
+          
+          {/* Imagem Antes/Depois */}
+          <TransformationImage>
+            <img src="/Imagens/OpenAI Playground 2025-05-24 at 14.33.09.png" alt="Transformação de escritor frustrado para autor de sucesso" />
+          </TransformationImage>
           
           <PainGrid>
             <PainCard>
@@ -217,6 +323,18 @@ const LandingPage: React.FC = () => {
         <Container>
           <SectionTitle>Veja os Resultados de Quem Já Usa</SectionTitle>
           
+          {/* Imagem Dashboard com Royalties */}
+          <LifestyleImage>
+            <img src="/Imagens/OpenAI Playground 2025-05-24 at 14.32.15.png" alt="Dashboard mostrando ganhos de royalties" />
+            <ImageCaption>💰 Dashboard real mostrando R$ 10.543 em royalties - nossos autores faturam de verdade!</ImageCaption>
+          </LifestyleImage>
+          
+          {/* Imagem de Lifestyle */}
+          <LifestyleImage>
+            <img src="/Imagens/OpenAI Playground 2025-05-24 at 14.32.57.png" alt="Autor trabalhando na praia recebendo royalties" />
+            <ImageCaption>🏖️ Trabalhe de qualquer lugar enquanto os royalties entram automaticamente</ImageCaption>
+          </LifestyleImage>
+          
           <ResultsGrid>
             <ResultCard>
               <ResultContent>
@@ -270,6 +388,12 @@ const LandingPage: React.FC = () => {
             </CalculatorGrid>
             <small>*Baseado no preço médio de R$ 35 por livro com 70% de royalties</small>
           </IncomeCalculator>
+          
+          {/* Imagem da Coleção de Livros */}
+          <BooksShowcase>
+            <img src="/Imagens/OpenAI Playground 2025-05-24 at 14.32.35.png" alt="Coleção de livros publicados" />
+            <ShowcaseCaption>Alguns dos livros publicados por nossos autores</ShowcaseCaption>
+          </BooksShowcase>
         </Container>
       </ResultsSection>
 
@@ -542,6 +666,112 @@ const PageWrapper = styled.div`
   overflow-x: hidden;
 `;
 
+// New components for showcasing the app
+const AppShowcaseSection = styled.section`
+  padding: 80px 0;
+  background: white;
+`;
+
+const ShowcaseGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  margin: 60px 0;
+  
+  @media (max-width: 968px) {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+`;
+
+const ShowcaseContent = styled.div`
+  h3 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+    
+    span {
+      color: #4361ee;
+    }
+  }
+  
+  p {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: #6c757d;
+    margin-bottom: 30px;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    
+    li {
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      font-size: 1.1rem;
+      color: #495057;
+      
+      &:before {
+        content: "✓";
+        background: #28a745;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+      }
+    }
+  }
+`;
+
+const ShowcaseImage = styled.div`
+  position: relative;
+  
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(67, 97, 238, 0.1);
+  }
+  
+  &.float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+  }
+`;
+
+const FeatureHighlight = styled.div`
+  background: linear-gradient(135deg, #f8f9ff 0%, #e7f0ff 100%);
+  padding: 60px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin: 60px 0;
+  
+  h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 30px;
+    background: linear-gradient(90deg, #4361ee, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+`;
+
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -579,7 +809,10 @@ const HeroHeadline = styled.h1`
   color: #1a1a1a;
   
   span {
-    color: #4361ee;
+    background: linear-gradient(90deg, #4361ee, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     display: block;
   }
   
@@ -684,10 +917,14 @@ const Guarantee = styled.div`
 
 // Video Components
 const VideoWrapper = styled.div`
-  margin: 40px 0;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 40px auto;
+  max-width: 600px; /* Reduzido de 800px para 600px */
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    max-width: 100%;
+    margin: 30px auto;
+  }
 `;
 
 const VideoContainer = styled.div`
@@ -695,9 +932,17 @@ const VideoContainer = styled.div`
   width: 100%;
   padding-top: 56.25%; /* 16:9 Aspect Ratio */
   background: #000;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(67, 97, 238, 0.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+    border-color: rgba(67, 97, 238, 0.4);
+    transform: translateY(-2px);
+  }
   
   video {
     position: absolute;
@@ -705,7 +950,23 @@ const VideoContainer = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* Mudado de cover para contain para não cortar */
+    background: #000;
+  }
+  
+  /* Indicador de qualidade HD */
+  &::after {
+    content: "HD";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
   }
 `;
 
@@ -723,6 +984,60 @@ const VideoCaption = styled.div`
 const PlayIcon = styled.span`
   font-size: 1.2rem;
   color: #4361ee;
+`;
+
+// Image Components
+const TransformationImage = styled.div`
+  max-width: 800px;
+  margin: 0 auto 60px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+`;
+
+const LifestyleImage = styled.div`
+  max-width: 900px;
+  margin: 0 auto 60px;
+  text-align: center;
+  
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const ImageCaption = styled.p`
+  margin-top: 20px;
+  font-size: 1.1rem;
+  color: #6c757d;
+  font-style: italic;
+`;
+
+const BooksShowcase = styled.div`
+  max-width: 700px;
+  margin: 60px auto 0;
+  text-align: center;
+  
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ShowcaseCaption = styled.p`
+  margin-top: 16px;
+  font-size: 1rem;
+  color: #6c757d;
 `;
 
 // Pain Section
