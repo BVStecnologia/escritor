@@ -22,7 +22,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   context,
   initialPrompt = ''
 }) => {
-  const { theme } = useTheme();
+  const { isDarkMode } = useTheme();
   const [prompt, setPrompt] = useState(initialPrompt);
   const [quality, setQuality] = useState('medium');
   const [sampleCount, setSampleCount] = useState(1);
@@ -86,31 +86,31 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
 
   return (
     <ModalOverlay onClick={onClose}>
-      <ModalContent $isDarkMode={theme.isDarkMode} onClick={(e) => e.stopPropagation()}>
-        <ModalHeader $isDarkMode={theme.isDarkMode}>
+      <ModalContent $isDarkMode={isDarkMode} onClick={(e) => e.stopPropagation()}>
+        <ModalHeader $isDarkMode={isDarkMode}>
           <h2>🎨 Gerar Imagem com IA</h2>
-          <CloseButton $isDarkMode={theme.isDarkMode} onClick={onClose}>×</CloseButton>
+          <CloseButton $isDarkMode={isDarkMode} onClick={onClose}>×</CloseButton>
         </ModalHeader>
 
         <ModalBody>
           {!generatedImages.length ? (
             <>
               <FormGroup>
-                <Label $isDarkMode={theme.isDarkMode}>Descrição da Imagem (opcional)</Label>
+                <Label $isDarkMode={isDarkMode}>Descrição da Imagem (opcional)</Label>
                 <TextArea
-                  $isDarkMode={theme.isDarkMode}
+                  $isDarkMode={isDarkMode}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Descreva a imagem que deseja gerar ou deixe em branco para gerar automaticamente..."
                   rows={4}
                 />
-                <Hint $isDarkMode={theme.isDarkMode}>Nossa IA pode criar uma descrição baseada no contexto do seu livro</Hint>
+                <Hint $isDarkMode={isDarkMode}>Nossa IA pode criar uma descrição baseada no contexto do seu livro</Hint>
               </FormGroup>
 
               <FormRow>
                 <FormGroup>
-                  <Label $isDarkMode={theme.isDarkMode}>Qualidade</Label>
-                  <Select $isDarkMode={theme.isDarkMode} value={quality} onChange={(e) => setQuality(e.target.value)}>
+                  <Label $isDarkMode={isDarkMode}>Qualidade</Label>
+                  <Select $isDarkMode={isDarkMode} value={quality} onChange={(e) => setQuality(e.target.value)}>
                     <option value="low">Baixa (rápida)</option>
                     <option value="medium">Média</option>
                     <option value="high">Alta (detalhada)</option>
@@ -118,8 +118,8 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 </FormGroup>
 
                 <FormGroup>
-                  <Label $isDarkMode={theme.isDarkMode}>Quantidade</Label>
-                  <Select $isDarkMode={theme.isDarkMode} value={sampleCount} onChange={(e) => setSampleCount(Number(e.target.value))}>
+                  <Label $isDarkMode={isDarkMode}>Quantidade</Label>
+                  <Select $isDarkMode={isDarkMode} value={sampleCount} onChange={(e) => setSampleCount(Number(e.target.value))}>
                     <option value="1">1 imagem</option>
                     <option value="2">2 imagens</option>
                     <option value="3">3 imagens</option>
@@ -128,12 +128,12 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 </FormGroup>
               </FormRow>
 
-              <CostEstimate $isDarkMode={theme.isDarkMode}>
+              <CostEstimate $isDarkMode={isDarkMode}>
                 <CostIcon>💰</CostIcon>
                 <CostInfo>
-                  <CostLabel $isDarkMode={theme.isDarkMode}>Custo estimado:</CostLabel>
+                  <CostLabel $isDarkMode={isDarkMode}>Custo estimado:</CostLabel>
                   <CostValue>{estimatedCost} créditos</CostValue>
-                  <CostNote $isDarkMode={theme.isDarkMode}>Será contabilizado para cobrança futura</CostNote>
+                  <CostNote $isDarkMode={isDarkMode}>Será contabilizado para cobrança futura</CostNote>
                 </CostInfo>
               </CostEstimate>
 
@@ -174,7 +174,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                     <Thumbnail
                       key={index}
                       $active={index === selectedImage}
-                      $isDarkMode={theme.isDarkMode}
+                      $isDarkMode={isDarkMode}
                       onClick={() => setSelectedImage(index)}
                     >
                       <img src={url} alt={`Opção ${index + 1}`} />
@@ -184,7 +184,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
               )}
 
               {processingTime && (
-                <ProcessingInfo $isDarkMode={theme.isDarkMode}>
+                <ProcessingInfo $isDarkMode={isDarkMode}>
                   ⚡ Gerado em {(processingTime / 1000).toFixed(1)}s
                 </ProcessingInfo>
               )}
