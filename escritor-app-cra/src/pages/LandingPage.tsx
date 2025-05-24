@@ -213,18 +213,18 @@ const LandingPage: React.FC = () => {
           {/* Step 4: Track Progress */}
           <ShowcaseGrid>
             <ShowcaseImage className="float-animation">
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 15.16.32.png" alt="Dashboard de progresso" />
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.56.01.png" alt="Dashboard de progresso com múltiplos livros" />
             </ShowcaseImage>
             <ShowcaseContent>
               <h3>4. Acompanhe seu <span>Progresso em Tempo Real</span></h3>
               <p>
-                Dashboard motivacional que mostra sua evolução diária e mantém você produtivo.
+                Dashboard motivacional que mostra sua evolução diária e mantém você produtivo. Veja como nossos autores já criaram múltiplos livros!
               </p>
               <ul>
-                <li>Contadores de palavras e capítulos</li>
-                <li>Metas diárias personalizadas</li>
-                <li>Histórico de produção</li>
-                <li>Sistema de recompensas</li>
+                <li>Biblioteca visual com todos seus livros</li>
+                <li>Métricas detalhadas de progresso</li>
+                <li>Acompanhamento semanal de produtividade</li>
+                <li>Motivação através de conquistas</li>
               </ul>
             </ShowcaseContent>
           </ShowcaseGrid>
