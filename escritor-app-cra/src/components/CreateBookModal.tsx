@@ -1092,11 +1092,53 @@ const CreateBookModal: React.FC<CreateBookModalProps> = ({ isOpen, onClose, onSu
             palavrasChave: palavrasChave || "",
             tipo: 'capa'
           }}
-          initialPrompt={`Capa para livro "${titulo}" ${genero ? `de ${genero}` : ''} ${autor ? `por ${autor}` : ''}. 
-${descricao ? `Sinopse: ${descricao}` : ''}
-${personagens ? `Personagens: ${personagens}` : ''}
-${ambientacao ? `Ambientação: ${ambientacao}` : ''}
-${palavrasChave ? `Palavras-chave: ${palavrasChave}` : ''}`}
+          initialPrompt={(() => {
+            const parts = [];
+            
+            // Sempre incluir título se disponível
+            if (titulo) {
+              parts.push(`Capa para livro "${titulo}"`);
+            } else {
+              parts.push('Capa para livro');
+            }
+            
+            // Adicionar gênero
+            if (genero) {
+              parts.push(`Gênero: ${genero}`);
+            }
+            
+            // Adicionar autor
+            if (autor) {
+              parts.push(`Autor: ${autor}`);
+            }
+            
+            // Adicionar sinopse
+            if (descricao) {
+              parts.push(`Sinopse: ${descricao}`);
+            }
+            
+            // Adicionar personagens
+            if (personagens) {
+              parts.push(`Personagens principais: ${personagens}`);
+            }
+            
+            // Adicionar ambientação
+            if (ambientacao) {
+              parts.push(`Ambientação: ${ambientacao}`);
+            }
+            
+            // Adicionar palavras-chave
+            if (palavrasChave) {
+              parts.push(`Palavras-chave: ${palavrasChave}`);
+            }
+            
+            // Se não houver nenhuma informação, retornar string vazia para usar IA
+            if (parts.length === 1 && parts[0] === 'Capa para livro') {
+              return '';
+            }
+            
+            return parts.join('\n');
+          })()}
         />
         
         {/* Modal para visualização da capa em tamanho completo */}

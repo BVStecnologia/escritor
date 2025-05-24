@@ -23,7 +23,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   initialPrompt = ''
 }) => {
   const { isDarkMode } = useTheme();
-  const [prompt, setPrompt] = useState(initialPrompt);
+  const [prompt, setPrompt] = useState(initialPrompt || '');
   const [quality, setQuality] = useState('medium');
   const [sampleCount, setSampleCount] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,6 +38,13 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
     const cost = estimateImageCost(quality, sampleCount);
     setEstimatedCost(cost);
   }, [quality, sampleCount]);
+  
+  // Atualizar prompt quando o modal abrir com novo initialPrompt
+  useEffect(() => {
+    if (isOpen && initialPrompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [isOpen, initialPrompt]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
