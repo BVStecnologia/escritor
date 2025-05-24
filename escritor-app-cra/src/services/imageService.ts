@@ -6,6 +6,8 @@ export interface ImageGenerationResult {
   success: boolean;
   imageUrls?: string[];
   error?: string;
+  estimatedCredits?: number;
+  processingTimeMs?: number;
 }
 
 // Interface para o contexto usado para melhorar o prompt
@@ -24,9 +26,55 @@ export interface PromptContext {
 }
 
 // Serviço para geração de imagens
+// Função para estimar custo antes de gerar
+export function estimateImageCost(quality: string = 'medium', sampleCount: number = 1): number {
+  const costs = {
+    low: 50,
+    medium: 100,
+    high: 200
+  };
+  
+  return (costs[quality as keyof typeof costs] || 100) * sampleCount;
+}
+
+// Função para obter histórico de gerações
+export async function getImageGenerationHistory(limit: number = 10) {
+  const { data, error } = await supabase
+    .from('image_generations')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+    
+  if (error) {
+    console.error('Erro ao buscar histórico:', error);
+    return [];
+  }
+  
+  return data || [];
+}
+
+// Função para obter estatísticas de uso
+export async function getImageGenerationStats() {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data, error } = await supabase
+    .from('user_image_generation_stats')
+    .select('*')
+    .eq('user_id', user.user.id)
+    .single();
+    
+  if (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    return null;
+  }
+  
+  return data;
+}
+
 export const imageService = {
   /**
-   * Gera uma imagem usando a API Google Imagen através da Edge Function
+   * Gera uma imagem usando a API OpenAI GPT-Image-1 através da Edge Function
    * 
    * @param prompt Descrição da imagem a ser gerada (pode ser vazio se useAI=true)
    * @param context Contexto do livro/capítulo para melhorar o prompt
@@ -58,13 +106,21 @@ export const imageService = {
 
       console.log('Gerando imagem com prompt:', finalPrompt);
       
+      // Determinar tipo e qualidade baseado no contexto
+      const type = context?.tipo === 'capa' ? 'book-cover' : 'square';
+      const quality = context?.tipo === 'capa' ? 'high' : 'medium';
+      
       // Chamar a Edge Function para gerar a imagem
-      // A chave da API é gerenciada de forma segura pela função edge
-      const { data, error } = await supabase.functions.invoke('Gera_imagem_goolgea', {
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('gerar-imagem', {
+        body: {
           prompt: finalPrompt,
-          sampleCount: Math.min(Math.max(sampleCount, 1), 4) // Limitar entre 1 e 4
-        })
+          sampleCount: Math.min(Math.max(sampleCount, 1), 4), // Limitar entre 1 e 4
+          type: type,
+          quality: quality
+        },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
       });
       
       if (error) {
@@ -75,26 +131,17 @@ export const imageService = {
         };
       }
       
-      // Não salvamos mais automaticamente, apenas retornamos o resultado
-      // O salvamento será feito quando o usuário confirmar a imagem
       if (data.success && data.imageUrls && data.imageUrls.length > 0) {
         return {
           success: true,
-          imageUrls: data.imageUrls
-        };
-      } else if (data.warning) {
-        // Erro parcial (não conseguiu salvar no Storage, mas temos as imagens)
-        console.warn('Aviso na geração de imagem:', data.warning);
-        
-        return {
-          success: true,
-          imageUrls: data.images || [],
-          error: 'As imagens foram geradas mas não foram salvas corretamente.'
+          imageUrls: data.imageUrls,
+          estimatedCredits: data.estimatedCredits,
+          processingTimeMs: data.processingTimeMs
         };
       } else {
         return {
           success: false,
-          error: 'Não foi possível gerar as imagens. Tente novamente.'
+          error: data.errors?.join(', ') || 'Não foi possível gerar as imagens. Tente novamente.'
         };
       }
     } catch (error: any) {
