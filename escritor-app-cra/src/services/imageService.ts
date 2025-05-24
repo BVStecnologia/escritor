@@ -110,18 +110,13 @@ export const imageService = {
       const type = context?.tipo === 'capa' ? 'book-cover' : 'square';
       const quality = context?.tipo === 'capa' ? 'high' : 'medium';
       
-      // TODO: Quando a nova função 'gerar-imagem' estiver deployed, usar:
-      // const { data, error } = await supabase.functions.invoke('gerar-imagem', {
-      //   body: { prompt: finalPrompt, sampleCount, type, quality },
-      //   headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` }
-      // });
-      
-      // Por enquanto, usar a função antiga sem os novos parâmetros
-      const { data, error } = await supabase.functions.invoke('Gera_imagem_goolgea', {
+      // Chamar a nova Edge Function
+      const { data, error } = await supabase.functions.invoke('gerar-imagem', {
         body: {
           prompt: finalPrompt,
-          sampleCount: Math.min(Math.max(sampleCount, 1), 4) // Limitar entre 1 e 4
-          // type e quality não são suportados pela função antiga
+          sampleCount: Math.min(Math.max(sampleCount, 1), 4), // Limitar entre 1 e 4
+          type: type,
+          quality: quality
         }
       });
       
