@@ -340,9 +340,10 @@ export const AIToolsSelectionPlugin = ({
       
       // Padrões de cabeçalhos a remover (mas continuar processando)
       const headerPatterns = [
-        /^#\s*Texto\s+(Expandido|Revisado|Reescrito):?\s*$/i,
-        /^Texto\s+(Expandido|Revisado|Reescrito):?\s*$/i,
-        /^🔍.*$/
+        /^#\s*Texto\s+(expandido|revisado|reescrito|Expandido|Revisado|Reescrito).*$/i,
+        /^Texto\s+(expandido|revisado|reescrito|Expandido|Revisado|Reescrito).*$/i,
+        /^🔍.*$/,
+        /^(Expandido|Revisado|Reescrito|expandido|revisado|reescrito):?\s*$/i
       ];
       
       for (const line of lines) {
@@ -365,6 +366,9 @@ export const AIToolsSelectionPlugin = ({
       
       // Juntar as linhas e limpar espaços extras
       let mainContent = resultLines.join('\n').trim();
+      
+      // Verificar se o conteúdo começa com variações de "Texto revisado", etc.
+      mainContent = mainContent.replace(/^(Texto\s+)?(expandido|revisado|reescrito|Expandido|Revisado|Reescrito):?\s*/i, '');
       
       // Se ainda contém estruturas de comentário no meio do texto, tentar uma abordagem diferente
       if (!foundSeparator && mainContent.includes('**') && mainContent.includes(':')) {
