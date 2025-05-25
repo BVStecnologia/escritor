@@ -19,9 +19,13 @@ const ModalGlobalStyle = createGlobalStyle`
   }
   
   /* Garante máximo z-index para os modais */
-  [data-modal-overlay],
-  [data-fullimage-overlay] {
+  [data-modal-overlay] {
     z-index: 9999999 !important;
+    position: fixed !important;
+  }
+  
+  [data-fullimage-overlay] {
+    z-index: 9999999999 !important;
     position: fixed !important;
   }
   
@@ -232,8 +236,8 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
             </>
           ) : (
             <>
-              <ImageContainer $isDarkMode={isDarkMode} $isCover={context?.tipo === 'capa'}>
-                <ImagePreview onClick={() => setShowFullImage(true)}>
+              <ImageContainer $isDarkMode={isDarkMode} $isCover={context?.tipo === 'capa'} $isChapter={context?.tipo === 'capitulo'}>
+                <ImagePreview onClick={() => setShowFullImage(true)} $isChapter={context?.tipo === 'capitulo'}>
                   <img 
                     src={generatedImages[selectedImage]} 
                     alt="Imagem gerada"
@@ -544,17 +548,18 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
 `;
 
-const ImageContainer = styled.div<{ $isDarkMode: boolean; $isCover?: boolean }>`
+const ImageContainer = styled.div<{ $isDarkMode: boolean; $isCover?: boolean; $isChapter?: boolean }>`
   background: ${props => props.$isDarkMode ? '#2a2a2a' : '#f0f0f0'};
-  padding: 20px;
+  padding: ${props => props.$isChapter ? '0' : '20px'};
   border-radius: 8px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  min-height: ${props => props.$isChapter ? 'auto' : '400px'};
+  position: relative;
   
-  /* Mensagem sobre proporção */
+  /* Mensagem sobre proporção - apenas para capas */
   &::after {
     content: ${props => props.$isCover ? '"Nota: A imagem deveria ter proporção 2:3 para capa"' : '""'};
     position: absolute;
@@ -565,18 +570,26 @@ const ImageContainer = styled.div<{ $isDarkMode: boolean; $isCover?: boolean }>`
   }
 `;
 
-const ImagePreview = styled.div`
+const ImagePreview = styled.div<{ $isChapter?: boolean }>`
   position: relative;
   cursor: pointer;
   display: inline-block;
   
   img {
     display: block;
-    /* Permite que a imagem defina seu próprio tamanho */
-    max-width: 400px;
-    max-height: 500px;
-    width: auto;
-    height: auto;
+    /* Para capítulos: ocupar todo o espaço disponível */
+    ${props => props.$isChapter ? `
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      border-radius: 8px;
+    ` : `
+      /* Para capas: manter tamanho controlado */
+      max-width: 400px;
+      max-height: 500px;
+      width: auto;
+      height: auto;
+    `}
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }
@@ -654,16 +667,16 @@ const ExpandIcon = styled.div`
 `;
 
 const FullImageOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   background: rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2147483647;
+  z-index: 9999999999 !important;
   cursor: zoom-out;
   padding: 20px;
   isolation: isolate;
@@ -676,7 +689,7 @@ const FullImageContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2147483647;
+  z-index: 9999999999 !important;
 `;
 
 const FullImage = styled.img`
