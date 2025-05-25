@@ -1,9 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import ReactDOM from 'react-dom';
+import styled, { createGlobalStyle } from 'styled-components';
 import { imageService, estimateImageCost } from '../services/imageService';
 import { Button } from './styled/Button';
 import { Spinner } from './styled/Spinner';
 import { useTheme } from '../contexts/ThemeContext';
+import LoadingAnimation from './LoadingAnimation';
+
+// Global style para garantir que o modal fique acima de tudo
+const ModalGlobalStyle = createGlobalStyle`
+  body.modal-open {
+    overflow: hidden;
+    
+    /* Force todos elementos para trás */
+    & > *:not([data-modal-overlay]):not([data-fullimage-overlay]) {
+      z-index: 1 !important;
+    }
+  }
+  
+  /* Garante máximo z-index para os modais */
+  [data-modal-overlay],
+  [data-fullimage-overlay] {
+    z-index: 9999999 !important;
+    position: fixed !important;
+  }
+  
+  [data-modal-content] {
+    z-index: 9999999 !important;
+  }
+`;
 
 interface ImageGenerationModalProps {
   isOpen: boolean;
@@ -33,6 +58,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [processingTime, setProcessingTime] = useState<number | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState('');
+  const [showFullImage, setShowFullImage] = useState(false);
 
   useEffect(() => {
     // Atualizar custo estimado quando mudar qualidade ou quantidade
@@ -46,6 +72,20 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
       setPrompt(initialPrompt);
     }
   }, [isOpen, initialPrompt]);
+  
+  // Adicionar/remover classe do body quando o modal abrir/fechar
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    
+    // Cleanup
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isOpen]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -107,16 +147,24 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <ModalOverlay onClick={onClose}>
-      <ModalContent $isDarkMode={isDarkMode} onClick={(e) => e.stopPropagation()}>
-        <ModalHeader $isDarkMode={isDarkMode}>
-          <h2>🎨 Gerar Imagem com IA</h2>
-          <CloseButton $isDarkMode={isDarkMode} onClick={onClose}>×</CloseButton>
-        </ModalHeader>
+  return ReactDOM.createPortal(
+    <>
+      <ModalGlobalStyle />
+      <ModalOverlay onClick={onClose} data-modal-overlay>
+        <ModalContent $isDarkMode={isDarkMode} onClick={(e) => e.stopPropagation()} data-modal-content>
+          <ModalHeader $isDarkMode={isDarkMode}>
+            <h2>🎨 Gerar Imagem com IA</h2>
+            <CloseButton $isDarkMode={isDarkMode} onClick={onClose}>×</CloseButton>
+          </ModalHeader>
 
         <ModalBody>
-          {!generatedImages.length ? (
+          {isGenerating ? (
+            <LoadingAnimation 
+              estimatedTime={quality === 'high' ? 40 : 30}
+              isDarkMode={isDarkMode}
+              quality={quality}
+            />
+          ) : !generatedImages.length ? (
             <>
               <FormGroup>
                 <Label $isDarkMode={isDarkMode}>Descrição da Imagem (opcional)</Label>
@@ -134,9 +182,9 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                 <FormGroup>
                   <Label $isDarkMode={isDarkMode}>Qualidade</Label>
                   <Select $isDarkMode={isDarkMode} value={quality} onChange={(e) => setQuality(e.target.value)}>
-                    <option value="low">Baixa (rápida)</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta (detalhada)</option>
+                    <option value="low">Baixa (~15s)</option>
+                    <option value="medium">Média (~25s)</option>
+                    <option value="high">Alta (~40s)</option>
                   </Select>
                 </FormGroup>
 
@@ -159,6 +207,13 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                   <CostNote $isDarkMode={isDarkMode}>Será contabilizado para cobrança futura</CostNote>
                 </CostInfo>
               </CostEstimate>
+              
+              {quality === 'high' && (
+                <TimeHint $isDarkMode={isDarkMode}>
+                  <TimeIcon>⏱️</TimeIcon>
+                  Alta qualidade pode levar até 40s
+                </TimeHint>
+              )}
 
               {error && <ErrorMessage>{error}</ErrorMessage>}
 
@@ -171,25 +226,29 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                   onClick={handleGenerate}
                   disabled={isGenerating}
                 >
-                  {isGenerating ? (
-                    <>
-                      <Spinner size="small" />
-                      Gerando...
-                    </>
-                  ) : (
-                    'Gerar Imagem'
-                  )}
+                  Gerar Imagem
                 </Button>
               </ButtonGroup>
             </>
           ) : (
             <>
-              <ImagePreview>
-                <img 
-                  src={generatedImages[selectedImage]} 
-                  alt="Imagem gerada"
-                />
-              </ImagePreview>
+              <ImageContainer $isDarkMode={isDarkMode} $isCover={context?.tipo === 'capa'}>
+                <ImagePreview onClick={() => setShowFullImage(true)}>
+                  <img 
+                    src={generatedImages[selectedImage]} 
+                    alt="Imagem gerada"
+                    onLoad={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      console.log('Dimensões da imagem:', {
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                        ratio: img.naturalWidth / img.naturalHeight
+                      });
+                    }}
+                  />
+                  <ExpandIcon title="Clique para ver em tamanho real">🔍</ExpandIcon>
+                </ImagePreview>
+              </ImageContainer>
 
               {generatedImages.length > 1 && (
                 <ImageThumbnails>
@@ -262,21 +321,39 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
         </ModalBody>
       </ModalContent>
     </ModalOverlay>
+    
+    {/* Modal de visualização completa */}
+    {showFullImage && (
+      <FullImageOverlay onClick={() => setShowFullImage(false)} data-fullimage-overlay>
+        <FullImageContainer onClick={(e) => e.stopPropagation()}>
+          <CloseFullImageButton onClick={() => setShowFullImage(false)}>✕</CloseFullImageButton>
+          <FullImage 
+            src={generatedImages[selectedImage]} 
+            alt="Imagem em tamanho completo"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </FullImageContainer>
+      </FullImageOverlay>
+    )}
+    </>,
+    document.body
   );
 };
 
 // Styled Components
 const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999999999 !important;
+  isolation: isolate;
 `;
 
 const ModalContent = styled.div<{ $isDarkMode: boolean }>`
@@ -289,6 +366,10 @@ const ModalContent = styled.div<{ $isDarkMode: boolean }>`
   display: flex;
   flex-direction: column;
   border: 1px solid ${props => props.$isDarkMode ? '#333' : '#e0e0e0'};
+  position: relative;
+  z-index: 999999999 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  margin: auto;
 `;
 
 const ModalHeader = styled.div<{ $isDarkMode: boolean }>`
@@ -326,6 +407,7 @@ const CloseButton = styled.button<{ $isDarkMode: boolean }>`
 const ModalBody = styled.div`
   padding: 20px;
   overflow-y: auto;
+  flex: 1;
 `;
 
 const FormGroup = styled.div`
@@ -425,6 +507,29 @@ const CostNote = styled.div<{ $isDarkMode: boolean }>`
   font-style: italic;
 `;
 
+const TimeHint = styled.div<{ $isDarkMode: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: ${props => props.$isDarkMode ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 193, 7, 0.08)'};
+  border: 1px solid ${props => props.$isDarkMode ? 'rgba(255, 193, 7, 0.3)' : 'rgba(255, 193, 7, 0.2)'};
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: ${props => props.$isDarkMode ? '#ffd93d' : '#f59e0b'};
+  margin-bottom: 15px;
+  animation: fadeIn 0.3s ease-in;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`;
+
+const TimeIcon = styled.span`
+  font-size: 1rem;
+`;
+
 const ErrorMessage = styled.div`
   padding: 10px;
   background: #fee;
@@ -439,16 +544,41 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
 `;
 
-const ImagePreview = styled.div`
-  width: 100%;
+const ImageContainer = styled.div<{ $isDarkMode: boolean; $isCover?: boolean }>`
+  background: ${props => props.$isDarkMode ? '#2a2a2a' : '#f0f0f0'};
+  padding: 20px;
   border-radius: 8px;
-  overflow: hidden;
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  
+  /* Mensagem sobre proporção */
+  &::after {
+    content: ${props => props.$isCover ? '"Nota: A imagem deveria ter proporção 2:3 para capa"' : '""'};
+    position: absolute;
+    bottom: 10px;
+    font-size: 0.75rem;
+    color: ${props => props.$isDarkMode ? '#999' : '#666'};
+    font-style: italic;
+  }
+`;
 
+const ImagePreview = styled.div`
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  
   img {
-    width: 100%;
-    height: auto;
     display: block;
+    /* Permite que a imagem defina seu próprio tamanho */
+    max-width: 400px;
+    max-height: 500px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }
 `;
 
@@ -502,6 +632,86 @@ const LinkButton = styled.button`
   
   &:hover {
     color: #2c4bce;
+  }
+`;
+
+const ExpandIcon = styled.div`
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  ${ImagePreview}:hover & {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+  }
+`;
+
+const FullImageOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  cursor: zoom-out;
+  padding: 20px;
+  isolation: isolate;
+`;
+
+const FullImageContainer = styled.div`
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+`;
+
+const FullImage = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+  display: block;
+`;
+
+const CloseFullImageButton = styled.button`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 2147483647;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
   }
 `;
 

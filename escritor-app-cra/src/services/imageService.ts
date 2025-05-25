@@ -110,10 +110,16 @@ export const imageService = {
       const type = context?.tipo === 'capa' ? 'book-cover' : 'landscape';
       const quality = context?.tipo === 'capa' ? 'high' : 'medium';
       
-      // Chamar a Edge Function gerar-imagem
-      const { data, error } = await supabase.functions.invoke('gerar-imagem', {
+      // TEMPORÁRIO: Adicionar informação de proporção ao prompt para forçar geração correta
+      let adjustedPrompt = finalPrompt;
+      if (context?.tipo === 'capa') {
+        adjustedPrompt = `${finalPrompt}. IMPORTANT: Generate in portrait/vertical format for book cover, 2:3 aspect ratio`;
+      }
+      
+      // Chamar a Edge Function gerar_imagem
+      const { data, error } = await supabase.functions.invoke('gerar_imagem', {
         body: {
-          prompt: finalPrompt,
+          prompt: adjustedPrompt,
           sampleCount: Math.min(Math.max(sampleCount, 1), 4), // Limitar entre 1 e 4
           type: type,
           quality: quality
@@ -168,13 +174,15 @@ export const imageService = {
       let contextText = '';
       
       if (context.tipo === 'capa') {
-        systemPrompt = `Crie um prompt detalhado para gerar uma imagem de capa para um livro. 
-O prompt deve ser em português (para melhor compreensão do usuário) e deve descrever uma cena ou imagem impactante
-que represente bem o livro, baseado nas informações fornecidas. Use linguagem detalhada e descritiva.
-Adicione informações sobre estilo artístico, iluminação, composição e qualidade.
-NÃO inclua texto, títulos ou palavras na imagem. Apenas elementos visuais.
-O prompt não deve ter mais que 3 frases.
-Destaque aspectos visuais que refletem o gênero literário e o tom da história.`;
+        systemPrompt = `Create a detailed prompt for generating a professional book cover image. 
+The prompt should use English commands but keep the title and author name in Portuguese as provided.
+IMPORTANT: The image MUST include:
+- The title "${context.titulo}" prominently displayed and clearly legible
+- The author name "${context.autor}" in smaller size
+- Design appropriate for the ${context.genero || 'book'} genre
+Use detailed language about artistic style, lighting, composition and typography.
+The prompt should be no more than 3 sentences.
+Describe a professional editorial book cover with clear text hierarchy.`;
 
         // Sempre incluir todos os campos, mesmo que vazios
         contextText += `Título do livro: ${context.titulo ?? ''}\n`;
@@ -185,14 +193,14 @@ Destaque aspectos visuais que refletem o gênero literário e o tom da história
         contextText += `Ambientação: ${context.ambientacao ?? ''}\n`;
         contextText += `Palavras-chave: ${context.palavrasChave ?? ''}\n`;
       } else {
-        // Prompt para imagem de capítulo
-        systemPrompt = `Crie um prompt detalhado para gerar uma imagem para ilustrar um capítulo ou cena de um livro.
-O prompt deve ser em português (para melhor compreensão do usuário) e deve descrever uma cena específica
-que ilustre o conteúdo, baseado nas informações fornecidas. Use linguagem detalhada e descritiva.
-Adicione informações sobre estilo artístico, iluminação, composição e qualidade.
-NÃO inclua texto, títulos ou palavras na imagem. Apenas elementos visuais.
-O prompt não deve ter mais que 3 frases.
-Enfatize elementos visuais que capturam o momento ou a emoção da cena.`;
+        // Prompt para imagem de capítulo - SEM TEXTO
+        systemPrompt = `Create a detailed prompt for generating an artistic illustration for a book chapter.
+The prompt should use English commands and describe a specific visual scene
+that illustrates the content based on the provided information. Use detailed and descriptive language.
+Add information about artistic style, lighting, composition and atmosphere.
+IMPORTANT: DO NOT include any text in the image. Only visual elements.
+The prompt should be no more than 3 sentences.
+Emphasize visual elements that capture the moment, emotion and atmosphere of the scene.`;
 
         contextText += `Título do capítulo: ${context.titulo ?? ''}\n`;
         contextText += `Autor: ${context.autor ?? ''}\n`;
@@ -209,11 +217,14 @@ Enfatize elementos visuais que capturam o momento ou a emoção da cena.`;
       }
       
       // Preparar input para geração de prompt melhorado
-      const input = `Por favor, crie um prompt detalhado para gerar uma imagem usando a API Google Imagen.
+      const input = `Please create a detailed prompt for generating an image using OpenAI GPT-Image-1 API.
 ${contextText}
-Use o contexto acima para criar um prompt detalhado, descritivo e visualmente impactante que represente bem a obra.
-Leve em consideração todos os dados fornecidos, especialmente título, autor, gênero e elementos da história.
-O prompt deve estar em português para melhor compreensão do usuário.`;      
+Use the context above to create a detailed, descriptive and visually impactful prompt.
+${context.tipo === 'capa' ? 
+  `IMPORTANT: The prompt MUST specify that the title "${context.titulo}" and author "${context.autor}" appear clearly on the book cover. Keep these texts in Portuguese.` : 
+  'IMPORTANT: The prompt should NOT include any text in the image, only visual elements.'}
+Consider all provided data to create an appropriate composition.
+The prompt should use English for commands and descriptions, but keep any book titles or author names in Portuguese.`;      
 
       try {
         // Usar assistantService.custom para aproveitar o sistema de embeddings

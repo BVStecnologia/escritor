@@ -1,90 +1,90 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar com código neste repositório.
 
-## Project Overview
+## Visão Geral do Projeto
 
-This is Escritor App (BookWriter), a cloud-based writing platform for authors with AI-powered assistance. It's a React SPA deployed on Fly.io with Supabase backend.
+Este é o Escritor App (BookWriter), uma plataforma de escrita baseada em nuvem para autores com assistência de IA. É uma SPA React implantada no Fly.io com backend Supabase.
 
-## Common Development Commands
+## Comandos de Desenvolvimento Comuns
 
 ```bash
-# Development
-npm start              # Start dev server on localhost:3000
-npm run build         # Create production build
-npm test              # Run tests
+# Desenvolvimento
+npm start              # Inicia servidor dev em localhost:3000
+npm run build         # Cria build de produção
+npm test              # Executa testes
 
-# Deployment (from escritor-app-cra directory)
-fly deploy            # Deploy to Fly.io production
+# Deploy (do diretório escritor-app-cra)
+fly deploy            # Deploy para produção no Fly.io
 ```
 
-## Architecture & Key Components
+## Arquitetura e Componentes Principais
 
-### Frontend Stack
-- **React 18** with TypeScript and Create React App
-- **Lexical Editor**: Facebook's text editor framework for rich text editing
-- **Styled Components**: CSS-in-JS for styling with theme support
-- **React Router v6**: Client-side routing
+### Stack Frontend
+- **React 18** com TypeScript e Create React App
+- **Lexical Editor**: Framework de editor de texto do Facebook para edição rich text
+- **Styled Components**: CSS-in-JS para estilização com suporte a temas
+- **React Router v6**: Roteamento client-side
 
-### Backend & Services
-- **Supabase**: PostgreSQL database + Auth + Edge Functions
+### Backend e Serviços
+- **Supabase**: Banco de dados PostgreSQL + Auth + Edge Functions
 - **Edge Functions**: 
-  - `claude-embeddings`: AI text generation/autocomplete
-  - `gerar-imagem`: Image generation using OpenAI
+  - `Claude_embebedings`: Geração de texto/autocomplete com IA
+  - `gerar-imagem`: Geração de imagens usando OpenAI
 
-### Key Services (src/services/)
-- `authService.ts`: User authentication and session management
-- `dbService.ts`: CRUD operations for books, chapters, characters, notes
-- `assistantService.ts`: AI integration for text generation/improvement
-- `imageService.ts`: Image generation with automatic registration to prevent deletion
+### Serviços Principais (src/services/)
+- `authService.ts`: Autenticação de usuário e gerenciamento de sessão
+- `dbService.ts`: Operações CRUD para livros, capítulos, personagens, notas
+- `assistantService.ts`: Integração IA para geração/melhoria de texto
+- `imageService.ts`: Geração de imagens com registro automático para evitar deleção
 
-### Database Schema
-- `perfis`: User profiles
-- `Livros`: Books/projects (note capital L)
-- `capitulos`: Book chapters with content
-- `personagens`: Characters
-- `notas`: Notes/research
-- `imagens_geradas`: Generated images tracking (prevents cron deletion)
-- `image_generations`: Image generation history/metrics
+### Schema do Banco de Dados
+- `perfis`: Perfis de usuários
+- `Livros`: Livros/projetos (note o L maiúsculo)
+- `capitulos`: Capítulos dos livros com conteúdo
+- `personagens`: Personagens
+- `notas`: Notas/pesquisas
+- `imagens_geradas`: Rastreamento de imagens geradas (evita deleção por cron)
+- `image_generations`: Histórico/métricas de geração de imagens
 
-### Critical Implementation Details
+### Detalhes Críticos de Implementação
 
-1. **Auto-save**: Chapters auto-save every 2 seconds via `AutoSavePlugin`
-2. **Image Management**: Generated images must be registered in `imagens_geradas` table or they'll be deleted by cron job
-3. **Theme**: Supports dark/light mode via `ThemeContext`
-4. **Editor State**: Lexical editor state is stored as JSON in database
+1. **Auto-save**: Capítulos salvam automaticamente a cada 2 segundos via `AutoSavePlugin`
+2. **Gerenciamento de Imagens**: Imagens geradas devem ser registradas na tabela `imagens_geradas` ou serão deletadas pelo cron job
+3. **Tema**: Suporta modo escuro/claro via `ThemeContext`
+4. **Estado do Editor**: Estado do editor Lexical é armazenado como JSON no banco
 
-### Environment Variables
+### Variáveis de Ambiente
 
-Required in `.env`:
+Necessárias no `.env`:
 ```
-REACT_APP_SUPABASE_URL=<your-supabase-url>
-REACT_APP_SUPABASE_ANON_KEY=<your-anon-key>
+REACT_APP_SUPABASE_URL=<sua-url-supabase>
+REACT_APP_SUPABASE_ANON_KEY=<sua-anon-key>
 ```
 
-### Deployment Notes
+### Notas de Deploy
 
-- Deployed to Fly.io with Docker multi-stage build
-- Static files served by Nginx
-- Domain: bookwriter.work
-- Edge Functions deployed separately via Supabase CLI
+- Implantado no Fly.io com build Docker multi-stage
+- Arquivos estáticos servidos pelo Nginx
+- Domínio: bookwriter.work
+- Edge Functions implantadas separadamente via Supabase CLI
 
-## Testing Edge Functions Locally
+## Testando Edge Functions Localmente
 
 ```bash
-# Deploy edge function
+# Deploy da edge function
 supabase functions deploy gerar-imagem
 
-# Set secrets
-supabase secrets set OPENAI_API_KEY="your-key"
+# Configurar secrets
+supabase secrets set OPENAI_API_KEY="sua-chave"
 
-# View logs
+# Ver logs
 supabase functions logs gerar-imagem
 ```
 
-## Important Patterns
+## Padrões Importantes
 
-1. **Error Handling**: All service methods return success/error objects
-2. **Image URLs**: Extract storage path from public URL for registration
-3. **Context Usage**: `AuthContext` provides user state globally
-4. **Editor Plugins**: Custom Lexical plugins in `src/components/LexicalEditor/plugins/`
+1. **Tratamento de Erros**: Todos os métodos de serviço retornam objetos de sucesso/erro
+2. **URLs de Imagem**: Extrair caminho de storage da URL pública para registro
+3. **Uso de Context**: `AuthContext` fornece estado do usuário globalmente
+4. **Plugins do Editor**: Plugins Lexical customizados em `src/components/LexicalEditor/plugins/`
