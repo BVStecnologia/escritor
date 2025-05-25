@@ -74,6 +74,31 @@ const SubscriptionRoute: React.FC<SubscriptionRouteProps> = ({
     };
 
     fetchUserData();
+
+    // Configurar listener para mudanças em tempo real
+    const subscription = supabase
+      .channel('user_subscription_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'User',
+          filter: `user=eq.${user?.id}`
+        },
+        (payload) => {
+          console.log('Subscription atualizada:', payload.new);
+          setUserData({
+            subscription_type: payload.new.subscription_type,
+            credits_balance: payload.new.credits_balance
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [user]);
 
   if (authLoading || loading) {

@@ -4,6 +4,8 @@ import styled, { ThemeProvider, createGlobalStyle, keyframes } from 'styled-comp
 import { dbService } from '../services/dbService';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { supabase } from '../services/supabaseClient';
+import { toast } from 'react-toastify';
 import defaultTheme from '../styles/theme';
 
 // Definição dos temas claro e escuro
@@ -48,27 +50,27 @@ const darkTheme = {
   ...defaultTheme,
   colors: {
     ...defaultTheme.colors,
-    primary: '#60a5fa',
-    secondary: '#a78bfa',
+    primary: '#818cf8',
+    secondary: '#c084fc',
     success: '#4ade80',
     danger: '#f87171',
     warning: '#fbbf24',
     info: '#22d3ee',
-    light: '#0f172a',
-    dark: '#e5e7eb',
-    paper: '#0f172a',
-    ink: '#e5e7eb',
-    leather: '#7c2d12',
-    parchment: '#1e293b',
-    glass: 'rgba(15, 23, 42, 0.98)',
+    light: '#1e293b',
+    dark: '#f1f5f9',
+    paper: '#0a0f1e',
+    ink: '#f1f5f9',
+    leather: '#92400e',
+    parchment: '#111827',
+    glass: 'rgba(30, 41, 59, 0.7)',
     gold: '#fbbf24',
     subtle: {
-      blue: '#1e3a8a',
-      purple: '#312e81',
-      gray: '#374151',
+      blue: '#312e81',
+      purple: '#4c1d95',
+      gray: '#1e293b',
     },
     gray: {
-      50: '#18212f',
+      50: '#0f172a',
       100: '#1e293b',
       200: '#334155',
       300: '#475569',
@@ -80,30 +82,30 @@ const darkTheme = {
       900: '#f8fafc',
     },
     text: {
-      primary: '#e5e7eb',
-      secondary: '#94a3b8',
-      tertiary: '#64748b',
+      primary: '#f1f5f9',
+      secondary: '#cbd5e1',
+      tertiary: '#94a3b8',
       light: '#f8fafc',
       inverse: '#0f172a',
     },
     background: {
       ...defaultTheme.colors.background,
-      main: '#0f172a',
-      paper: '#1e293b',
-      sidebar: '#1e293b',
-      header: '#1e293b',
+      main: '#050a15',
+      paper: '#0f1824',
+      sidebar: '#111827',
+      header: '#111827',
       light: '#1e293b',
-      dark: '#0f172a',
-      gradient: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-      glass: 'rgba(15,23,42,0.8)',
-      overlay: 'rgba(0,0,0,0.5)',
+      dark: '#0a0f1e',
+      gradient: 'linear-gradient(135deg, #0a0f1e 0%, #1a1f3a 100%)',
+      glass: 'rgba(30, 41, 59, 0.4)',
+      overlay: 'rgba(0,0,0,0.6)',
     },
   },
   shadows: {
-    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.3)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
-    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.3)',
+    sm: '0 1px 3px 0 rgba(0, 0, 0, 0.5)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
   },
 };
 
@@ -134,10 +136,28 @@ const fadeIn = keyframes`
 // Container principal
 const ProfileContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(180deg, ${({ theme }) => theme.colors.paper} 0%, ${({ theme }) => theme.colors.parchment} 100%);
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e'
+      ? 'linear-gradient(135deg, #050a15 0%, #0f1824 50%, #1a1f3a 100%)'
+      : `linear-gradient(180deg, ${theme.colors.paper} 0%, ${theme.colors.parchment} 100%)`};
   padding: 2rem;
   position: relative;
   overflow-x: hidden;
+  transition: background 0.4s ease;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e'
+        ? 'radial-gradient(circle at 20% 50%, rgba(129, 140, 248, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(192, 132, 252, 0.05) 0%, transparent 50%)'
+        : 'none'};
+    pointer-events: none;
+  }
 `;
 
 // Decoração de fundo
@@ -268,12 +288,33 @@ const MainContent = styled.div`
 // Card de perfil
 const ProfileCard = styled.div`
   background: ${({ theme }) => theme.colors.glass};
-  backdrop-filter: blur(10px);
-  border: 1px solid ${({ theme }) => theme.colors.gold}33;
-  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  border: 1px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.1)' 
+      : `${theme.colors.gold}33`};
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 8px 32px ${({ theme }) => theme.shadows.lg};
+  box-shadow: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
+      : `0 8px 32px ${theme.shadows.lg}`};
   animation: ${fadeIn} 0.8s ease-out 0.2s both;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.3), transparent)' 
+        : 'transparent'};
+  }
 `;
 
 // Seção com título
@@ -328,42 +369,86 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.colors.light};
-  border: 2px solid ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
-  border-radius: 8px;
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(30, 41, 59, 0.3)' 
+      : theme.colors.light};
+  border: 2px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.2)' 
+      : theme.colors.subtle?.gray || theme.colors.gray[200]};
+  border-radius: 10px;
   font-size: 1rem;
   color: ${({ theme }) => theme.colors.ink};
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  
+  &::placeholder {
+    color: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(148, 163, 184, 0.5)' 
+        : '#9ca3af'};
+  }
   
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.subtle?.blue || theme.colors.primaryLight};
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(30, 41, 59, 0.5)' 
+        : theme.colors.light};
+    box-shadow: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? '0 0 0 3px rgba(129, 140, 248, 0.2)' 
+        : `0 0 0 3px ${theme.colors.subtle?.blue || theme.colors.primaryLight}`};
   }
   
   &:disabled {
-    background: ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(30, 41, 59, 0.2)' 
+        : theme.colors.subtle?.gray || theme.colors.gray[200]};
     cursor: not-allowed;
+    opacity: 0.7;
   }
 `;
 
 const Textarea = styled.textarea`
   width: 100%;
   padding: 0.875rem 1rem;
-  background: ${({ theme }) => theme.colors.light};
-  border: 2px solid ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
-  border-radius: 8px;
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(30, 41, 59, 0.3)' 
+      : theme.colors.light};
+  border: 2px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.2)' 
+      : theme.colors.subtle?.gray || theme.colors.gray[200]};
+  border-radius: 10px;
   font-size: 1rem;
   color: ${({ theme }) => theme.colors.ink};
   min-height: 120px;
   resize: vertical;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   font-family: ${({ theme }) => theme.fonts.body};
+  
+  &::placeholder {
+    color: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(148, 163, 184, 0.5)' 
+        : '#9ca3af'};
+  }
   
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.subtle?.blue || theme.colors.primaryLight};
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(30, 41, 59, 0.5)' 
+        : theme.colors.light};
+    box-shadow: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? '0 0 0 3px rgba(129, 140, 248, 0.2)' 
+        : `0 0 0 3px ${theme.colors.subtle?.blue || theme.colors.primaryLight}`};
   }
 `;
 
@@ -444,15 +529,34 @@ const LogoutButton = styled.button`
 // Card de estatísticas
 const StatsCard = styled.div`
   background: ${({ theme }) => theme.colors.glass};
-  backdrop-filter: blur(10px);
-  border: 1px solid ${({ theme }) => theme.colors.gold}33;
-  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  border: 1px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.1)' 
+      : `${theme.colors.gold}33`};
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 8px 32px ${({ theme }) => theme.shadows.lg};
+  box-shadow: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
+      : `0 8px 32px ${theme.shadows.lg}`};
   animation: ${fadeIn} 0.8s ease-out 0.4s both;
   height: fit-content;
   position: sticky;
   top: 2rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.3), transparent)' 
+        : 'transparent'};
+  }
 `;
 
 // Grid de estatísticas
@@ -463,17 +567,34 @@ const StatsGrid = styled.div`
 `;
 
 const StatItem = styled.div`
-  background: ${({ theme }) => theme.colors.light};
-  border: 1px solid ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
-  border-radius: 8px;
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(30, 41, 59, 0.3)' 
+      : theme.colors.light};
+  border: 1px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.1)' 
+      : theme.colors.subtle?.gray || theme.colors.gray[200]};
+  border-radius: 12px;
   padding: 1.25rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px ${({ theme }) => theme.shadows.md};
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(30, 41, 59, 0.5)' 
+        : theme.colors.light};
+    box-shadow: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? '0 8px 24px rgba(0, 0, 0, 0.4)' 
+        : `0 4px 12px ${theme.shadows.md}`};
+    border-color: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(129, 140, 248, 0.3)' 
+        : theme.colors.primary};
   }
   
   &::before {
@@ -482,8 +603,11 @@ const StatItem = styled.div`
     top: 0;
     left: 0;
     width: 100%;
-    height: 3px;
-    background: ${({ theme }) => theme.colors.gold};
+    height: 2px;
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.8), transparent)' 
+        : theme.colors.gold};
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.3s ease;
@@ -530,21 +654,38 @@ const StatusMessage = styled.div<{ isError?: boolean }>`
 
 // Card de citação
 const QuoteCard = styled.div`
-  background: ${({ theme }) => theme.colors.light};
-  border: 1px solid ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
-  border-radius: 8px;
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(30, 41, 59, 0.3)' 
+      : theme.colors.light};
+  border: 1px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e' 
+      ? 'rgba(148, 163, 184, 0.1)' 
+      : theme.colors.subtle?.gray || theme.colors.gray[200]};
+  border-radius: 12px;
   padding: 1.5rem;
   margin-top: 1.5rem;
   position: relative;
+  transition: all 0.3s ease;
   
   &::before {
     content: '"';
     font-family: ${({ theme }) => theme.fonts.heading};
     font-size: 4rem;
-    color: ${({ theme }) => theme.colors.gold}33;
+    color: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(129, 140, 248, 0.2)' 
+        : `${theme.colors.gold}33`};
     position: absolute;
     top: -10px;
     left: 10px;
+  }
+  
+  &:hover {
+    border-color: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e' 
+        ? 'rgba(129, 140, 248, 0.3)' 
+        : theme.colors.primary};
   }
 `;
 
@@ -562,6 +703,202 @@ const QuoteAuthor = styled.span`
   margin-top: 0.5rem;
   color: ${({ theme }) => theme.colors.ink}66;
   font-size: 0.875rem;
+`;
+
+// Card de assinatura
+const SubscriptionCard = styled.div`
+  background: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e'
+      ? 'linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(192, 132, 252, 0.1) 100%)'
+      : `linear-gradient(135deg, ${theme.colors.primary}15, ${theme.colors.secondary}15)`};
+  border: 1px solid ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e'
+      ? 'rgba(129, 140, 248, 0.3)'
+      : `${theme.colors.primary}44`};
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: ${({ theme }) => 
+    theme.colors.paper === '#0a0f1e'
+      ? '0 4px 24px rgba(129, 140, 248, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+      : 'none'};
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: ${({ theme }) => 
+      theme.colors.paper === '#0a0f1e'
+        ? 'radial-gradient(circle, rgba(129, 140, 248, 0.15) 0%, transparent 70%)'
+        : `radial-gradient(circle, ${theme.colors.gold}22 0%, transparent 70%)`};
+    animation: pulse 4s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.8); opacity: 0.3; }
+    50% { transform: scale(1.2); opacity: 0.6; }
+  }
+`;
+
+const SubscriptionType = styled.h3`
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+  position: relative;
+  z-index: 1;
+`;
+
+const SubscriptionButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  
+  &:hover {
+    background: ${({ theme }) => theme.colors.secondary};
+    transform: translateY(-2px);
+  }
+`;
+
+const CancelButton = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.danger || '#dc2626'};
+  border: 1px solid ${({ theme }) => theme.colors.danger || '#dc2626'};
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.5rem;
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+// Modal styles
+const ModalOverlay = styled.div<{ isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transition: all 0.3s ease;
+`;
+
+const ModalContent = styled.div`
+  background: ${({ theme }) => theme.colors.glass};
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  
+  ${ModalOverlay}[isOpen="true"] & {
+    transform: scale(1);
+  }
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  svg {
+    color: ${({ theme }) => theme.colors.danger || '#dc2626'};
+    font-size: 2rem;
+  }
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.ink};
+  margin: 0;
+`;
+
+const ModalBody = styled.div`
+  margin-bottom: 2rem;
+  
+  p {
+    color: ${({ theme }) => theme.colors.ink};
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+`;
+
+const CancelOption = styled.label`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: ${({ theme }) => theme.colors.light};
+  border: 2px solid ${({ theme }) => theme.colors.subtle?.gray || theme.colors.gray[200]};
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+  
+  input[type="radio"]:checked + & {
+    border-color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.colors.subtle?.blue || theme.colors.primaryLight};
+  }
+`;
+
+const ModalFooter = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+`;
+
+const DangerButton = styled(Button)`
+  background: ${({ theme }) => theme.colors.danger || '#dc2626'};
+  color: white;
+  border: none;
+  
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.danger || '#dc2626'}dd;
+    transform: translateY(-2px);
+  }
 `;
 
 // Tipos
@@ -597,8 +934,25 @@ const ProfilePage: React.FC = () => {
     livros: 0,
     capitulos: 0,
     palavrasEscritas: 0,
-    diasConsecutivos: 0
+    diasConsecutivos: 0,
+    creditos: 0,
+    subscriptionType: 'free'
   });
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelImmediately, setCancelImmediately] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+
+  // Fechar modal com ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showCancelModal) {
+        setShowCancelModal(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [showCancelModal]);
 
   // Canvas com animação de tinta
   useEffect(() => {
@@ -721,11 +1075,30 @@ const ProfilePage: React.FC = () => {
           await dbService.atualizarPalavrasUsuario(totalPalavras);
         }
 
+        // Buscar créditos e tipo de assinatura
+        let userCredits = 0;
+        let userSubscriptionType = 'free';
+        
+        if (user) {
+          const { data: userData } = await supabase
+            .from('User')
+            .select('credits_balance, subscription_type')
+            .eq('user', user.id)
+            .single();
+            
+          if (userData) {
+            userCredits = userData.credits_balance || 0;
+            userSubscriptionType = userData.subscription_type || 'free';
+          }
+        }
+
         setStats({
           livros: livros.length,
           capitulos: totalCapitulos,
           palavrasEscritas: totalPalavras,
-          diasConsecutivos: Math.floor(Math.random() * 30) + 1 // Exemplo
+          diasConsecutivos: Math.floor(Math.random() * 30) + 1, // Exemplo
+          creditos: userCredits,
+          subscriptionType: userSubscriptionType
         });
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
@@ -761,6 +1134,63 @@ const ProfilePage: React.FC = () => {
         text: "Não foi possível sair. Tente novamente.",
         isError: true
       });
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      setCancelling(true);
+      
+      const { data, error } = await supabase.functions.invoke('cancelarassinaturastripe', {
+        body: { immediately: cancelImmediately }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        // Mostrar mensagem de sucesso
+        if (cancelImmediately) {
+          toast.success('Assinatura cancelada com sucesso');
+        } else {
+          const endDate = data.subscription?.current_period_end;
+          if (endDate) {
+            toast.info(`Sua assinatura será cancelada em ${new Date(endDate * 1000).toLocaleDateString('pt-BR')}`);
+          } else {
+            toast.info('Sua assinatura será cancelada no final do período atual');
+          }
+        }
+        
+        // Atualizar dados do usuário
+        if (cancelImmediately) {
+          setStats(prev => ({ ...prev, subscriptionType: 'free' }));
+        }
+        
+        // Recarregar dados do perfil
+        const perfilData = await dbService.getPerfilUsuario();
+        if (perfilData && user) {
+          const { data: userData } = await supabase
+            .from('User')
+            .select('credits_balance, subscription_type')
+            .eq('user', user.id)
+            .single();
+            
+          if (userData) {
+            setStats(prev => ({
+              ...prev,
+              creditos: userData.credits_balance || 0,
+              subscriptionType: userData.subscription_type || 'free'
+            }));
+          }
+        }
+        
+        // Fechar modal
+        setShowCancelModal(false);
+      }
+    } catch (error: any) {
+      console.error('Erro ao cancelar assinatura:', error);
+      toast.error(error.message || 'Erro ao cancelar assinatura');
+    } finally {
+      setCancelling(false);
     }
   };
   
@@ -935,6 +1365,40 @@ const ProfilePage: React.FC = () => {
           <div>
             <StatsCard>
               <Section>
+                <SectionTitle>Sua Conta</SectionTitle>
+                
+                <SubscriptionCard>
+                  <SubscriptionType>
+                    {stats.subscriptionType === 'free' ? '🎯 Plano Gratuito' : 
+                     stats.subscriptionType === 'basic' ? '⭐ Plano Básico' :
+                     stats.subscriptionType === 'pro' ? '🚀 Plano Pro' :
+                     stats.subscriptionType === 'premium' ? '👑 Plano Premium' : 
+                     stats.subscriptionType}
+                  </SubscriptionType>
+                  {stats.subscriptionType === 'free' ? (
+                    <>
+                      <p style={{ color: '#666', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
+                        Faça upgrade para desbloquear todo o potencial do Bookwriter
+                      </p>
+                      <SubscriptionButton onClick={() => navigate('/pricing')}>
+                        Ver Planos
+                      </SubscriptionButton>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ color: '#666', position: 'relative', zIndex: 1, marginBottom: '0.5rem' }}>
+                        {stats.creditos.toLocaleString('pt-BR')} créditos disponíveis
+                      </p>
+                      <CancelButton 
+                        onClick={() => setShowCancelModal(true)}
+                        disabled={cancelling}
+                      >
+                        Cancelar Assinatura
+                      </CancelButton>
+                    </>
+                  )}
+                </SubscriptionCard>
+                
                 <SectionTitle>Estatísticas de Escrita</SectionTitle>
                 <StatsGrid>
                   <StatItem>
@@ -960,6 +1424,12 @@ const ProfilePage: React.FC = () => {
                     <StatValue>{stats.diasConsecutivos}</StatValue>
                     <StatLabel>Dias Consecutivos</StatLabel>
                   </StatItem>
+                  
+                  <StatItem>
+                    <StatIcon>💎</StatIcon>
+                    <StatValue>{stats.creditos.toLocaleString('pt-BR')}</StatValue>
+                    <StatLabel>Créditos Disponíveis</StatLabel>
+                  </StatItem>
                 </StatsGrid>
               </Section>
             </StatsCard>
@@ -972,6 +1442,78 @@ const ProfilePage: React.FC = () => {
             </QuoteCard>
           </div>
         </MainContent>
+        
+        {/* Modal de Cancelamento */}
+        <ModalOverlay 
+          isOpen={showCancelModal} 
+          onClick={() => setShowCancelModal(false)}
+        >
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <span style={{ fontSize: '2rem' }}>⚠️</span>
+              <ModalTitle>Cancelar Assinatura</ModalTitle>
+            </ModalHeader>
+            
+            <ModalBody>
+              <p>
+                Tem certeza que deseja cancelar sua assinatura <strong>{
+                  stats.subscriptionType === 'basic' ? 'Básica' :
+                  stats.subscriptionType === 'pro' ? 'Pro' :
+                  stats.subscriptionType === 'premium' ? 'Premium' :
+                  stats.subscriptionType
+                }</strong>?
+              </p>
+              
+              <div style={{ marginTop: '1.5rem' }}>
+                <CancelOption>
+                  <input
+                    type="radio"
+                    name="cancelOption"
+                    checked={cancelImmediately}
+                    onChange={() => setCancelImmediately(true)}
+                  />
+                  <div>
+                    <strong>Cancelar imediatamente</strong>
+                    <p style={{ fontSize: '0.875rem', color: '#666', margin: '0.25rem 0 0' }}>
+                      Você perderá acesso aos créditos e recursos premium agora
+                    </p>
+                  </div>
+                </CancelOption>
+                
+                <CancelOption>
+                  <input
+                    type="radio"
+                    name="cancelOption"
+                    checked={!cancelImmediately}
+                    onChange={() => setCancelImmediately(false)}
+                  />
+                  <div>
+                    <strong>Cancelar no final do período</strong>
+                    <p style={{ fontSize: '0.875rem', color: '#666', margin: '0.25rem 0 0' }}>
+                      Mantenha o acesso até o final do mês já pago
+                    </p>
+                  </div>
+                </CancelOption>
+              </div>
+            </ModalBody>
+            
+            <ModalFooter>
+              <SecondaryButton
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                disabled={cancelling}
+              >
+                Manter Assinatura
+              </SecondaryButton>
+              <DangerButton
+                onClick={handleCancelSubscription}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelando...' : 'Cancelar Assinatura'}
+              </DangerButton>
+            </ModalFooter>
+          </ModalContent>
+        </ModalOverlay>
       </ProfileContainer>
     </ThemeProvider>
   );

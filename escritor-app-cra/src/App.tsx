@@ -18,6 +18,7 @@ import ProfilePage from './pages/ProfilePage';
 import DebugPage from './pages/DebugPage';
 import DiagnosticoPage from './pages/DiagnosticoPage';
 import PricingPage from './pages/PricingPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import AuthCallback from './pages/AuthCallback';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -66,6 +67,11 @@ const App: React.FC = () => {
               <Route path="/pricing" element={
                 <ProtectedRoute>
                   <PricingPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/sucesso" element={
+                <ProtectedRoute>
+                  <PaymentSuccessPage />
                 </ProtectedRoute>
               } />
               <Route path="/auth/callback" element={<AuthCallback />} />
