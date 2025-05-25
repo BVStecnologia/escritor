@@ -75,6 +75,11 @@ interface SerializedImageNode extends Spread<SerializedLexicalNode, object> {
   version: 1;
 }
 
+// Função helper para verificar se é um ImageNode
+export function $isImageNode(node: LexicalNode | null | undefined): node is ImageNode {
+  return node instanceof ImageNode;
+}
+
 // Classe do nó decorador para imagens
 export class ImageNode extends DecoratorNode<ReactElement> {
   __src: string;
@@ -139,8 +144,10 @@ export class ImageNode extends DecoratorNode<ReactElement> {
   }
   
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    console.log('ImageNode.importJSON chamado:', serializedNode);
     const { src, altText, width, height } = serializedNode;
     const node = new ImageNode(src, altText, width, height);
+    console.log('ImageNode criado:', node);
     return node;
   }
   

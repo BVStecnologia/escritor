@@ -37,10 +37,38 @@ export function InitialContentPlugin({ initialContent }: InitialContentPluginPro
         
         // Importar o estado serializado
         try {
-          editor.setEditorState(editor.parseEditorState(initialContent));
+          // Verificar se tem imagens no conteúdo
+          if (initialContent.includes('"type":"image"')) {
+            console.log('Conteúdo contém imagens!');
+          }
+          
+          const editorState = editor.parseEditorState(initialContent);
+          editor.setEditorState(editorState);
+          
           console.log('Estado do editor configurado com sucesso!');
+          
+          // Verificar se as imagens foram carregadas
+          setTimeout(() => {
+            editor.getEditorState().read(() => {
+              const root = $getRoot();
+              const textContent = root.getTextContent();
+              console.log('Conteúdo de texto carregado:', textContent.substring(0, 100) + '...');
+              
+              // Verificar a estrutura completa
+              const jsonState = editor.getEditorState().toJSON();
+              console.log('Estado completo do editor após carregar:', JSON.stringify(jsonState));
+              
+              // Verificar especificamente se tem nós de imagem
+              if (JSON.stringify(jsonState).includes('"type":"image"')) {
+                console.log('✅ Imagens foram carregadas no editor!');
+              } else {
+                console.log('❌ Imagens NÃO foram carregadas no editor!');
+              }
+            });
+          }, 1000);
         } catch (importError) {
           console.error('Erro ao importar estado do editor:', importError);
+          console.error('Conteúdo que falhou:', initialContent);
         }
       }
     } catch (error) {

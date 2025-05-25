@@ -38,8 +38,8 @@ import {
   $patchStyleText
 } from '@lexical/selection';
 import { useAutocomplete } from '../../../contexts/AutocompleteContext';
-import ImageGenerationModal from '../../ImageGenerationModal';
 import { PromptContext } from '../../../services/imageService';
+import ImageGenerationModal from '../../ImageGenerationModal';
 
 const Toolbar = styled.div`
   display: flex;
@@ -663,7 +663,6 @@ export const ToolbarPlugin = () => {
       detail: { src: imageUrl, altText: 'Imagem gerada por IA' }
     });
     window.dispatchEvent(insertImageEvent);
-    setIsGeneratingImage(false);
   };
 
   // Função para obter o contexto ao redor da seleção atual
@@ -1055,6 +1054,14 @@ export const ToolbarWithModal = ({ bookId }: { bookId?: string }) => {
         onClose={() => setIsGeneratingImage(false)}
         onImageSelect={(url) => {
           // Inserir imagem no editor
+          const insertImageEvent = new CustomEvent('lexical-insert-image', {
+            detail: { src: url, altText: 'Imagem gerada por IA' }
+          });
+          window.dispatchEvent(insertImageEvent);
+          setIsGeneratingImage(false);
+        }}
+        onImageGenerated={(url) => {
+          // Suporte para o outro callback também
           const insertImageEvent = new CustomEvent('lexical-insert-image', {
             detail: { src: url, altText: 'Imagem gerada por IA' }
           });
