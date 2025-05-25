@@ -553,6 +553,7 @@ const LandingPage: React.FC = () => {
                   <Price>49,90</Price>
                   <Period>/mês</Period>
                 </PlanPrice>
+                <PlanCredits>3.000 créditos/mês</PlanCredits>
               </PricingHeader>
               
               <PlanFeatures>
@@ -570,7 +571,7 @@ const LandingPage: React.FC = () => {
                     ACESSAR PAINEL
                   </CTAButton>
                 ) : (
-                  <CTAButton as={Link} to="/signup">
+                  <CTAButton as={Link} to="/pricing">
                     COMEÇAR AGORA
                   </CTAButton>
                 )}
@@ -586,6 +587,7 @@ const LandingPage: React.FC = () => {
                   <Price>79,90</Price>
                   <Period>/mês</Period>
                 </PlanPrice>
+                <PlanCredits>5.000 créditos/mês</PlanCredits>
               </PricingHeader>
               
               <PlanFeatures>
@@ -604,7 +606,7 @@ const LandingPage: React.FC = () => {
                     ACESSAR PAINEL
                   </CTAButton>
                 ) : (
-                  <CTAButton as={Link} to="/signup">
+                  <CTAButton as={Link} to="/pricing">
                     QUERO SER PROFISSIONAL
                   </CTAButton>
                 )}
@@ -619,6 +621,7 @@ const LandingPage: React.FC = () => {
                   <Price>119,90</Price>
                   <Period>/mês</Period>
                 </PlanPrice>
+                <PlanCredits>8.000 créditos/mês</PlanCredits>
               </PricingHeader>
               
               <PlanFeatures>
@@ -638,7 +641,7 @@ const LandingPage: React.FC = () => {
                     ACESSAR PAINEL
                   </CTAButton>
                 ) : (
-                  <CTAButton as={Link} to="/signup">
+                  <CTAButton as={Link} to="/pricing">
                     PLANO ILIMITADO
                   </CTAButton>
                 )}
@@ -1697,6 +1700,13 @@ const PricingHeader = styled.div`
   padding: 40px;
   text-align: center;
   border-bottom: 1px solid #e9ecef;
+`;
+
+const PlanCredits = styled.div`
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-top: 10px;
+  font-weight: 500;
 `;
 
 const PlanName = styled.h3`

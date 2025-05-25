@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AutocompleteProvider } from './contexts/AutocompleteContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SubscriptionRoute from './components/SubscriptionRoute';
 import './App.css';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -16,6 +17,7 @@ import EditorPage from './pages/EditorPage';
 import ProfilePage from './pages/ProfilePage';
 import DebugPage from './pages/DebugPage';
 import DiagnosticoPage from './pages/DiagnosticoPage';
+import PricingPage from './pages/PricingPage';
 import AuthCallback from './pages/AuthCallback';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -34,19 +36,19 @@ const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/dashboard" element={
-                <ProtectedRoute>
+                <SubscriptionRoute requireSubscription={true}>
                   <DashboardPage />
-                </ProtectedRoute>
+                </SubscriptionRoute>
               } />
               <Route path="/editor/:bookId/:chapterId" element={
-                <ProtectedRoute>
+                <SubscriptionRoute requireSubscription={true}>
                   <EditorPage />
-                </ProtectedRoute>
+                </SubscriptionRoute>
               } />
               <Route path="/editor/:bookId" element={
-                <ProtectedRoute>
+                <SubscriptionRoute requireSubscription={true}>
                   <EditorPage />
-                </ProtectedRoute>
+                </SubscriptionRoute>
               } />
               <Route path="/profile" element={
                 <ProtectedRoute>
@@ -60,6 +62,11 @@ const App: React.FC = () => {
               } />
               <Route path="/diagnostico" element={
                 <DiagnosticoPage />
+              } />
+              <Route path="/pricing" element={
+                <ProtectedRoute>
+                  <PricingPage />
+                </ProtectedRoute>
               } />
               <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>

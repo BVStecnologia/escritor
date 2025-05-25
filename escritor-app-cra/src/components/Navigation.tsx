@@ -203,6 +203,10 @@ const Navigation: React.FC = () => {
                   Minha Biblioteca
                 </ProfileMenuItem>
                 
+                <ProfileMenuItem as={Link} to="/pricing">
+                  Planos e Créditos
+                </ProfileMenuItem>
+                
                 <ProfileMenuItem as={Link} to="/profile">
                   Meu Perfil
                 </ProfileMenuItem>
