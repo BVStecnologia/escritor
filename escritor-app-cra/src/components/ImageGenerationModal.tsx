@@ -138,12 +138,11 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
         // Continuar mesmo se falhar o registro
       }
       
-      // Suportar ambos os callbacks
-      if (onImageGenerated) {
-        onImageGenerated(imageUrl);
-      }
+      // Usar apenas um callback para evitar duplicação
       if (onImageSelect) {
         onImageSelect(imageUrl);
+      } else if (onImageGenerated) {
+        onImageGenerated(imageUrl);
       }
       onClose();
     }
@@ -306,11 +305,11 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                     console.error('Erro ao registrar imagem:', registerResult.error);
                   }
                   
-                  if (onImageGenerated) {
-                    onImageGenerated(imageUrl);
-                  }
+                  // Usar apenas um callback para evitar duplicação
                   if (onImageSelect) {
                     onImageSelect(imageUrl);
+                  } else if (onImageGenerated) {
+                    onImageGenerated(imageUrl);
                   }
                   // Resetar estado mas manter modal aberto
                   setGeneratedImages([]);

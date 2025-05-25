@@ -1060,14 +1060,6 @@ export const ToolbarWithModal = ({ bookId }: { bookId?: string }) => {
           window.dispatchEvent(insertImageEvent);
           setIsGeneratingImage(false);
         }}
-        onImageGenerated={(url) => {
-          // Suporte para o outro callback também
-          const insertImageEvent = new CustomEvent('lexical-insert-image', {
-            detail: { src: url, altText: 'Imagem gerada por IA' }
-          });
-          window.dispatchEvent(insertImageEvent);
-          setIsGeneratingImage(false);
-        }}
         context={imageContext}
         initialPrompt=""
       />
