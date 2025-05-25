@@ -3,10 +3,12 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { 
   $getSelection, 
   $isRangeSelection,
+  $setSelection,
   SELECTION_CHANGE_COMMAND,
   COMMAND_PRIORITY_LOW,
   createCommand,
-  LexicalCommand
+  LexicalCommand,
+  RangeSelection
 } from 'lexical';
 import styled from 'styled-components';
 import { assistantService } from '../../../services/assistantService';
@@ -14,7 +16,7 @@ import { Spinner } from '../../styled';
 import { setSelectionToolsVisible, canShowSelectionTools } from './sharedPluginState';
 
 // Comando personalizado para aplicar resultado da IA
-const APPLY_AI_RESULT_COMMAND: LexicalCommand<string> = createCommand();
+const APPLY_AI_RESULT_COMMAND: LexicalCommand<{text: string, savedSelection: RangeSelection}> = createCommand();
 
 const AIToolsContainer = styled.div`
   transition: all 0.3s ease-in-out;
@@ -165,6 +167,7 @@ export const AIToolsSelectionPlugin = ({
   const [showResult, setShowResult] = useState(false);
   const [currentTool, setCurrentTool] = useState('');
   const [showOriginalResult, setShowOriginalResult] = useState(false);
+  const [savedSelection, setSavedSelection] = useState<RangeSelection | null>(null);
   
   // Obter referência ao elemento raiz do editor
   useEffect(() => {
@@ -175,11 +178,32 @@ export const AIToolsSelectionPlugin = ({
   useEffect(() => {
     return editor.registerCommand(
       APPLY_AI_RESULT_COMMAND,
-      (payload: string) => {
+      (payload: {text: string, savedSelection: RangeSelection}) => {
+        console.log('APPLY_AI_RESULT_COMMAND recebido:', payload);
+        
         editor.update(() => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            selection.insertText(payload);
+          try {
+            // Usar a seleção salva em vez da seleção atual
+            if (payload.savedSelection) {
+              console.log('Usando seleção salva');
+              // Restaurar a seleção salva
+              $setSelection(payload.savedSelection);
+              // Inserir o texto
+              payload.savedSelection.insertText(payload.text);
+              console.log('Texto inserido com sucesso');
+            } else {
+              console.log('Usando seleção atual (fallback)');
+              // Fallback para seleção atual
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                selection.insertText(payload.text);
+                console.log('Texto inserido via fallback');
+              } else {
+                console.error('Nenhuma seleção válida encontrada');
+              }
+            }
+          } catch (error) {
+            console.error('Erro ao inserir texto:', error);
           }
         });
         return true;
@@ -298,53 +322,77 @@ export const AIToolsSelectionPlugin = ({
     if (!content) return '';
     
     try {
-      // Identificar se o resultado segue um padrão estruturado com títulos e comentários
-      const hasStructuredFormat = /^(#|\🔍|Texto\s+(Expandido|Revisado|Reescrito))/.test(content) || 
-                                 content.includes("---") || 
-                                 content.includes("##") ||
-                                 content.includes("Comentários sobre");
+      console.log('Filtrando conteúdo:', content);
       
-      // Se não tiver formato estruturado, retornar o conteúdo como está
-      if (!hasStructuredFormat) {
-        return content;
-      }
+      // Primeiro, vamos dividir o conteúdo em linhas
+      const lines = content.split('\n');
+      const resultLines: string[] = [];
+      let foundSeparator = false;
       
-      // Localizar o conteúdo principal (geralmente está no início, antes de qualquer comentário)
-      const parts = content.split(/^(---|\*\*\*|#{2,}|Comentários|Sugestões)/m);
-      
-      if (parts.length > 1) {
-        // O texto principal é o que vem antes do primeiro delimitador
-        let mainContent = parts[0];
-        
-        // Remover qualquer título no início (# Texto Revisado, etc.)
-        mainContent = mainContent.replace(/^(#|\🔍).*$/m, '').trim();
-        mainContent = mainContent.replace(/^Texto\s+(Expandido|Revisado|Reescrito).*$/m, '').trim();
-        
-        return mainContent;
-      }
-      
-      // Caso não encontre delimitadores claros, tentar remover padrões comuns
-      let filteredContent = content;
-      
-      // Remover linhas de cabeçalho específicas
-      filteredContent = filteredContent.replace(/^(#|\🔍).*$/m, '').trim();
-      filteredContent = filteredContent.replace(/^# Texto (Revisado|Expandido|Reescrito)$/m, '').trim();
-      filteredContent = filteredContent.replace(/^Texto (Revisado|Expandido|Reescrito)$/m, '').trim();
-      
-      // Remover tudo após marcadores comuns de seção
-      const markers = [
-        "---", "***", "##", "Comentários sobre", "Sugestões para", 
-        "Observações:", "Análise:", "Notas:", "Comentários:"
+      // Padrões de linhas que indicam início de comentários/análise
+      const commentPatterns = [
+        /^#{1,3}\s*(Comentários|Observações|Análise|Sugestões|Notas)/i,
+        /^\*{3,}/,
+        /^-{3,}/,
+        /^(Comentários|Observações|Análise|Sugestões|Notas):/i,
+        /^\*\*(Comentários|Observações|Análise|Sugestões|Notas)/i
       ];
       
-      for (const marker of markers) {
-        const index = filteredContent.indexOf(marker);
-        if (index > 0) {
-          filteredContent = filteredContent.substring(0, index).trim();
+      // Padrões de cabeçalhos a remover (mas continuar processando)
+      const headerPatterns = [
+        /^#\s*Texto\s+(Expandido|Revisado|Reescrito):?\s*$/i,
+        /^Texto\s+(Expandido|Revisado|Reescrito):?\s*$/i,
+        /^🔍.*$/
+      ];
+      
+      for (const line of lines) {
+        // Se encontrou um separador de comentários, parar
+        if (commentPatterns.some(pattern => pattern.test(line.trim()))) {
+          foundSeparator = true;
+          break;
+        }
+        
+        // Pular cabeçalhos
+        if (headerPatterns.some(pattern => pattern.test(line.trim()))) {
+          continue;
+        }
+        
+        // Se a linha tem conteúdo válido, adicionar
+        if (line.trim() || resultLines.length > 0) {
+          resultLines.push(line);
         }
       }
       
-      return filteredContent;
+      // Juntar as linhas e limpar espaços extras
+      let mainContent = resultLines.join('\n').trim();
+      
+      // Se ainda contém estruturas de comentário no meio do texto, tentar uma abordagem diferente
+      if (!foundSeparator && mainContent.includes('**') && mainContent.includes(':')) {
+        // Procurar por parágrafos que parecem ser o texto principal (sem formatação especial)
+        const paragraphs = mainContent.split(/\n\n+/);
+        const mainParagraphs = paragraphs.filter(para => {
+          // Excluir parágrafos que parecem ser comentários ou metadados
+          return !para.match(/^[\*\-#]/) && 
+                 !para.includes('**Comentários') && 
+                 !para.includes('**Observações') &&
+                 !para.includes('**Análise') &&
+                 para.length > 30;
+        });
+        
+        if (mainParagraphs.length > 0) {
+          mainContent = mainParagraphs.join('\n\n');
+        }
+      }
+      
+      console.log('Conteúdo filtrado:', mainContent);
+      
+      // Se após a filtragem ficou vazio ou muito curto, retornar o original
+      if (!mainContent || mainContent.length < 20) {
+        console.warn('Filtragem resultou em conteúdo muito curto, retornando original');
+        return content;
+      }
+      
+      return mainContent;
     } catch (error) {
       console.error("Erro ao filtrar conteúdo da IA:", error);
       // Em caso de erro, retornar o conteúdo original
@@ -354,12 +402,35 @@ export const AIToolsSelectionPlugin = ({
 
   // Função para aplicar o resultado da IA
   const applyAiResult = () => {
-    // Filtrar o conteúdo antes de aplicar
-    const filteredContent = filterAiContent(aiResult);
-    editor.dispatchCommand(APPLY_AI_RESULT_COMMAND, filteredContent);
+    // Por padrão, sempre filtrar o conteúdo para remover comentários
+    let contentToInsert = filterAiContent(aiResult);
+    
+    // Se o usuário escolheu ver original, usar o conteúdo completo
+    if (showOriginalResult) {
+      contentToInsert = aiResult;
+    }
+    
+    console.log('Aplicando resultado da IA:');
+    console.log('- Conteúdo original:', aiResult);
+    console.log('- Conteúdo filtrado:', filterAiContent(aiResult));
+    console.log('- Conteúdo a inserir:', contentToInsert);
+    console.log('- Modo original ativo:', showOriginalResult);
+    
+    if (!contentToInsert || contentToInsert.trim() === '') {
+      console.error('Conteúdo vazio, não será inserido');
+      alert('O conteúdo filtrado está vazio. Tente usar "Ver original" antes de aplicar.');
+      return;
+    }
+    
+    editor.dispatchCommand(APPLY_AI_RESULT_COMMAND, {
+      text: contentToInsert,
+      savedSelection: savedSelection!
+    });
     setShowResult(false);
     setAiResult('');
     setCurrentTool('');
+    setSavedSelection(null);
+    setShowOriginalResult(false);
   };
 
   // Função para cancelar e limpar os resultados
@@ -368,6 +439,7 @@ export const AIToolsSelectionPlugin = ({
     setAiResult('');
     setCurrentTool('');
     setShowOriginalResult(false);
+    setSavedSelection(null);
   };
   
   // Função para alternar entre versão filtrada e original
@@ -380,6 +452,15 @@ export const AIToolsSelectionPlugin = ({
     const originalText = selectedText;
     setCurrentTool(toolId);
     setIsLoading(true);
+    setShowResult(true); // Mostrar o modal imediatamente
+    
+    // Salvar a seleção atual antes de processar
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        setSavedSelection(selection.clone());
+      }
+    });
     
     try {
       let result;
@@ -412,31 +493,55 @@ export const AIToolsSelectionPlugin = ({
       }
       
       // Extrair conteúdo da resposta
+      console.log('Resposta da IA:', result);
       let responseContent = '';
       
-      if (result && result.content && Array.isArray(result.content)) {
-        // Formato Claude API v1
-        const textContent = result.content.find((item: { type: string; text?: string }) => item.type === 'text');
-        if (textContent && textContent.text) {
-          responseContent = textContent.text;
+      // Tentar extrair conteúdo de várias formas possíveis
+      if (result) {
+        if (typeof result === 'string') {
+          responseContent = result;
+        } else if (result.content) {
+          if (typeof result.content === 'string') {
+            responseContent = result.content;
+          } else if (Array.isArray(result.content)) {
+            // Formato Claude API v1
+            const textContent = result.content.find((item: any) => item.type === 'text');
+            if (textContent && textContent.text) {
+              responseContent = textContent.text;
+            } else if (result.content[0] && typeof result.content[0] === 'string') {
+              responseContent = result.content[0];
+            }
+          }
+        } else if (result.text) {
+          responseContent = result.text;
+        } else if (result.message) {
+          responseContent = result.message;
+        } else if (result.revised_text) {
+          responseContent = result.revised_text;
+        } else if (result.response) {
+          responseContent = result.response;
+        } else if (result.output) {
+          responseContent = result.output;
+        } else if (result.data) {
+          if (typeof result.data === 'string') {
+            responseContent = result.data;
+          } else if (result.data.content) {
+            responseContent = result.data.content;
+          }
         }
-      } else if (result && typeof result === 'string') {
-        responseContent = result;
-      } else if (result && result.text) {
-        responseContent = result.text;
-      } else if (result && result.message) {
-        responseContent = result.message;
-      } else if (result && result.content) {
-        responseContent = result.content;
-      } else if (result && result.revised_text) {
-        responseContent = result.revised_text;
       }
+      
+      console.log('Conteúdo extraído:', responseContent);
       
       if (responseContent) {
         setAiResult(responseContent);
         setShowResult(true);
       } else {
-        throw new Error('Resposta inválida do assistente');
+        console.error('Não foi possível extrair conteúdo da resposta:', result);
+        // Tentar usar o resultado como string diretamente
+        const fallbackContent = JSON.stringify(result);
+        setAiResult(`Resposta recebida: ${fallbackContent}`);
+        setShowResult(true);
       }
     } catch (error) {
       console.error(`Erro ao processar ação ${toolId}:`, error);
@@ -449,12 +554,19 @@ export const AIToolsSelectionPlugin = ({
   };
   
   // Não renderizar se não estiver visível e não estiver mostrando resultados
-  if ((!isVisible && !showResult) || !canShowSelectionTools()) {
+  if (!isVisible && !showResult && !isLoading) {
+    return null;
+  }
+  
+  // Se estiver mostrando resultado ou carregando, não verificar canShowSelectionTools
+  if ((showResult || isLoading) && !canShowSelectionTools()) {
+    // Permitir mostrar o resultado mesmo se canShowSelectionTools retornar false
+  } else if (!showResult && !isLoading && !canShowSelectionTools()) {
     return null;
   }
   
   // Renderizar resultado da IA
-  if (showResult) {
+  if (showResult || isLoading) {
     return (
       <AIToolsContainer 
         ref={containerRef}
@@ -472,33 +584,58 @@ export const AIToolsSelectionPlugin = ({
             {currentTool === 'expand' && '🔍 Texto Expandido'}
             {currentTool === 'summarize' && '📝 Resumo'}
           </div>
-          <div style={{ 
-            fontSize: '13px', 
-            lineHeight: '1.4', 
-            whiteSpace: 'pre-wrap',
-            width: '100%'
-          }}>
-            {showOriginalResult ? aiResult : filterAiContent(aiResult)}
-          </div>
-          <ButtonRow style={{ width: '100%', justifyContent: 'space-between', marginTop: '10px' }}>
-            <div>
-              <ActionButton 
-                onClick={toggleOriginalResult} 
-                color={showOriginalResult ? "primary" : "warning"}
-                style={{ marginRight: '5px' }}
-              >
-                {showOriginalResult ? "Ver filtrado" : "Ver original"}
-              </ActionButton>
+          {isLoading ? (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              minHeight: '100px',
+              fontSize: '14px',
+              color: '#666'
+            }}>
+              <Spinner size="small" style={{ marginRight: '10px' }} />
+              Processando seu texto...
             </div>
-            <div style={{ display: 'flex', gap: '5px' }}>
-              <ActionButton onClick={cancelAiResult} color="error">
-                Cancelar
-              </ActionButton>
-              <ActionButton onClick={applyAiResult}>
-                Aplicar
-              </ActionButton>
+          ) : (
+            <div style={{ 
+              fontSize: '13px', 
+              lineHeight: '1.4', 
+              whiteSpace: 'pre-wrap',
+              width: '100%',
+              minHeight: '50px',
+              padding: '10px',
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              borderRadius: '4px',
+              marginBottom: '10px'
+            }}>
+              {aiResult || 'Nenhum conteúdo gerado. Por favor, tente novamente.'}
             </div>
-          </ButtonRow>
+          )}
+          {!isLoading && (
+            <ButtonRow style={{ width: '100%', justifyContent: 'space-between', marginTop: '10px' }}>
+              <div>
+                {aiResult && (
+                  <ActionButton 
+                    onClick={toggleOriginalResult} 
+                    color={showOriginalResult ? "primary" : "warning"}
+                    style={{ marginRight: '5px' }}
+                  >
+                    {showOriginalResult ? "Ver filtrado" : "Ver original"}
+                  </ActionButton>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <ActionButton onClick={cancelAiResult} color="error">
+                  Cancelar
+                </ActionButton>
+                {aiResult && (
+                  <ActionButton onClick={applyAiResult}>
+                    Aplicar
+                  </ActionButton>
+                )}
+              </div>
+            </ButtonRow>
+          )}
         </ResultContainer>
       </AIToolsContainer>
     );
