@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
               </ul>
             </ShowcaseContent>
             <ShowcaseImage>
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.49.39.png" alt="Editor limpo do Bookwriter" />
+              <img src="/Imagens/Captura de Tela 2025-05-25 às 02.09.49.png" alt="Editor limpo do Bookwriter" />
             </ShowcaseImage>
           </ShowcaseGrid>
           
@@ -317,6 +317,105 @@ const LandingPage: React.FC = () => {
           </SolutionGrid>
         </Container>
       </SolutionSection>
+
+      {/* Nova Seção - O Poder da IA Contextual + Imagens */}
+      <RevolutionarySection>
+        <Container>
+          <SectionTitle>A Revolução que Torna o BookWriter <span>ÚNICO</span></SectionTitle>
+          
+          <RevolutionaryGrid>
+            <RevolutionaryContent>
+              <RevolutionaryBadge>🧠 Tecnologia RAG Exclusiva</RevolutionaryBadge>
+              <RevolutionaryTitle>
+                A Única IA que <span>NUNCA Esquece</span> sua História
+              </RevolutionaryTitle>
+              <RevolutionaryText>
+                Enquanto ChatGPT e outras IAs esquecem seus personagens após 10 páginas, 
+                o BookWriter usa tecnologia RAG (Retrieval Augmented Generation) para:
+              </RevolutionaryText>
+              <RevolutionaryList>
+                <li>✓ Lembrar de TODOS os seus personagens, mesmo após 500 páginas</li>
+                <li>✓ Manter consistência de personalidades e diálogos</li>
+                <li>✓ Conectar tramas e subtramas automaticamente</li>
+                <li>✓ Sugerir conexões que você nem havia pensado</li>
+                <li>✓ Garantir que cada capítulo flui perfeitamente com o anterior</li>
+              </RevolutionaryList>
+              <RevolutionaryHighlight>
+                "É como ter um co-autor que leu seu livro 1000 vezes e lembra de cada detalhe"
+              </RevolutionaryHighlight>
+            </RevolutionaryContent>
+            
+            <RevolutionaryImage>
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.50.37.png" alt="Editor com memória contextual completa" />
+              <ImageCaption>A IA lembra de personagens, tramas e detalhes de 300 páginas atrás!</ImageCaption>
+            </RevolutionaryImage>
+          </RevolutionaryGrid>
+        </Container>
+      </RevolutionarySection>
+
+      {/* Seção Para Escritores Visuais */}
+      <VisualWritersSection>
+        <Container>
+          <SectionTitle>Para Escritores <span>Visuais</span></SectionTitle>
+          <SectionSubtitle>
+            Transforme palavras em imagens impressionantes com um clique
+          </SectionSubtitle>
+          
+          <VisualShowcase>
+            <VisualCard>
+              <VisualImageWrapper>
+                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.47.19.png" alt="Casa japonesa ao pôr do sol gerada por IA" />
+              </VisualImageWrapper>
+              <VisualContent>
+                <VisualTitle>Visualize Cada Cena</VisualTitle>
+                <VisualText>
+                  Bloqueado em uma descrição? Gere a imagem primeiro e deixe a inspiração fluir. 
+                  Nossa IA cria cenários épicos que capturam exatamente a atmosfera que você imaginou.
+                </VisualText>
+              </VisualContent>
+            </VisualCard>
+            
+            <VisualCard>
+              <VisualImageWrapper>
+                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.55.04.png" alt="Floresta mística com criança meditando" />
+              </VisualImageWrapper>
+              <VisualContent>
+                <VisualTitle>Capas Profissionais em Segundos</VisualTitle>
+                <VisualText>
+                  Economize milhares em designers. Gere capas únicas que vendem, 
+                  perfeitamente alinhadas com sua história. A IA entende seu livro!
+                </VisualText>
+              </VisualContent>
+            </VisualCard>
+          </VisualShowcase>
+          
+          <VisualFeatures>
+            <VisualFeature>
+              <VisualFeatureIcon>🎨</VisualFeatureIcon>
+              <h4>Inspire-se Visualmente</h4>
+              <p>Veja suas cenas ganhar vida antes mesmo de escrevê-las</p>
+            </VisualFeature>
+            
+            <VisualFeature>
+              <VisualFeatureIcon>📚</VisualFeatureIcon>
+              <h4>Capas que Vendem</h4>
+              <p>Designs profissionais que destacam seu livro na Amazon</p>
+            </VisualFeature>
+            
+            <VisualFeature>
+              <VisualFeatureIcon>🚀</VisualFeatureIcon>
+              <h4>Marketing Visual</h4>
+              <p>Crie posts, banners e material promocional único</p>
+            </VisualFeature>
+            
+            <VisualFeature>
+              <VisualFeatureIcon>💡</VisualFeatureIcon>
+              <h4>Desbloqueie Criatividade</h4>
+              <p>Supere bloqueios criativos com estímulos visuais poderosos</p>
+            </VisualFeature>
+          </VisualFeatures>
+        </Container>
+      </VisualWritersSection>
 
       {/* Seção de Resultados */}
       <ResultsSection>
@@ -1040,6 +1139,200 @@ const ShowcaseCaption = styled.p`
   color: #6c757d;
 `;
 
+// Revolutionary Section (RAG)
+const RevolutionarySection = styled.section`
+  padding: 120px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+`;
+
+const RevolutionaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const RevolutionaryContent = styled.div`
+  color: white;
+`;
+
+const RevolutionaryBadge = styled.span`
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+`;
+
+const RevolutionaryTitle = styled.h3`
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  line-height: 1.2;
+  
+  span {
+    background: linear-gradient(45deg, #f093fb, #f5576c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+`;
+
+const RevolutionaryText = styled.p`
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  opacity: 0.95;
+  line-height: 1.6;
+`;
+
+const RevolutionaryList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin-bottom: 30px;
+  
+  li {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    padding-left: 30px;
+    position: relative;
+    opacity: 0.95;
+    
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #4ade80;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+  }
+`;
+
+const RevolutionaryHighlight = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 4px solid #4ade80;
+  padding: 20px;
+  font-style: italic;
+  font-size: 1.1rem;
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+`;
+
+const RevolutionaryImage = styled.div`
+  img {
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+// Visual Writers Section
+const VisualWritersSection = styled.section`
+  padding: 100px 0;
+  background: #f8f9fa;
+`;
+
+const VisualShowcase = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 60px 0;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const VisualCard = styled.div`
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-10px);
+  }
+`;
+
+const VisualImageWrapper = styled.div`
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`;
+
+const VisualContent = styled.div`
+  padding: 30px;
+`;
+
+const VisualTitle = styled.h3`
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
+`;
+
+const VisualText = styled.p`
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+`;
+
+const VisualFeatures = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  margin-top: 60px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const VisualFeature = styled.div`
+  text-align: center;
+  
+  h4 {
+    font-size: 1.2rem;
+    margin: 15px 0 10px;
+    color: #333;
+  }
+  
+  p {
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.5;
+  }
+`;
+
+const VisualFeatureIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 10px;
+`;
+
 // Pain Section
 const PainSection = styled.section`
   padding: 80px 0;
@@ -1052,6 +1345,22 @@ const SectionTitle = styled.h2`
   text-align: center;
   margin-bottom: 40px;
   color: #1a1a1a;
+  
+  span {
+    color: #6c63ff;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6c63ff, #f093fb);
+      border-radius: 2px;
+    }
+  }
 `;
 
 const PainGrid = styled.div`
