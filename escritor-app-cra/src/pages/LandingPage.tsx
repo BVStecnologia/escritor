@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
               </ul>
             </ShowcaseContent>
             <ShowcaseImage>
-              <img src="/Imagens/Captura de Tela 2025-05-25 às 02.09.49.png" alt="Editor limpo do Bookwriter" />
+              <img src="/Imagens/Captura de Tela 2025-05-25 às 02.25.40.png" alt="Editor limpo do Bookwriter" />
             </ShowcaseImage>
           </ShowcaseGrid>
           
@@ -184,7 +184,7 @@ const LandingPage: React.FC = () => {
           <FeatureHighlight>
             <h3>Múltiplas Opções, Você Escolhe!</h3>
             <ShowcaseImage>
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.50.37.png" alt="Várias sugestões de autocomplete" />
+              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.50.37.png" alt="Múltiplas opções de autocomplete" />
             </ShowcaseImage>
             <p style={{ marginTop: '30px', fontSize: '1.2rem', color: '#6c757d' }}>
               Receba várias sugestões e escolha a que melhor se encaixa na sua narrativa
@@ -346,8 +346,35 @@ const LandingPage: React.FC = () => {
             </RevolutionaryContent>
             
             <RevolutionaryImage>
-              <img src="/Imagens/Captura de Tela 2025-05-24 às 16.50.37.png" alt="Editor com memória contextual completa" />
-              <ImageCaption>A IA lembra de personagens, tramas e detalhes de 300 páginas atrás!</ImageCaption>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #667eea15, #764ba215)', 
+                padding: '60px',
+                borderRadius: '16px',
+                textAlign: 'center',
+                border: '2px solid #667eea20'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🧠</div>
+                <h4 style={{ fontSize: '1.5rem', color: '#333', marginBottom: '20px' }}>
+                  RAG: Retrieval Augmented Generation
+                </h4>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '2rem' }}>📚</span>
+                    <p style={{ margin: '10px 0 0', fontSize: '0.9rem', color: '#666' }}>500+ páginas</p>
+                  </div>
+                  <span style={{ fontSize: '2rem', color: '#667eea' }}>→</span>
+                  <div style={{ background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '2rem' }}>🤖</span>
+                    <p style={{ margin: '10px 0 0', fontSize: '0.9rem', color: '#666' }}>IA Contextual</p>
+                  </div>
+                  <span style={{ fontSize: '2rem', color: '#667eea' }}>→</span>
+                  <div style={{ background: 'white', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontSize: '2rem' }}>✨</span>
+                    <p style={{ margin: '10px 0 0', fontSize: '0.9rem', color: '#666' }}>Memória Total</p>
+                  </div>
+                </div>
+              </div>
+              <ImageCaption>Nossa tecnologia exclusiva mantém TODO o contexto da sua história!</ImageCaption>
             </RevolutionaryImage>
           </RevolutionaryGrid>
         </Container>
@@ -358,32 +385,45 @@ const LandingPage: React.FC = () => {
         <Container>
           <SectionTitle>Para Escritores <span>Visuais</span></SectionTitle>
           <SectionSubtitle>
-            Transforme palavras em imagens impressionantes com um clique
+            RAG + Geração de Imagens = Continuidade visual perfeita entre capítulos
           </SectionSubtitle>
           
           <VisualShowcase>
             <VisualCard>
               <VisualImageWrapper>
-                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.47.19.png" alt="Casa japonesa ao pôr do sol gerada por IA" />
+                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.47.19.png" alt="Capítulo 1 - Casa japonesa ao pôr do sol" />
               </VisualImageWrapper>
               <VisualContent>
-                <VisualTitle>Visualize Cada Cena</VisualTitle>
+                <VisualTitle>Capítulo 1: O Início da Jornada</VisualTitle>
                 <VisualText>
-                  Bloqueado em uma descrição? Gere a imagem primeiro e deixe a inspiração fluir. 
-                  Nossa IA cria cenários épicos que capturam exatamente a atmosfera que você imaginou.
+                  A IA gerou esta casa japonesa ao pôr do sol baseada no contexto do primeiro capítulo. 
+                  Note o tom dourado e atmosfera serena que será mantida ao longo da história.
                 </VisualText>
               </VisualContent>
             </VisualCard>
             
             <VisualCard>
               <VisualImageWrapper>
-                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.55.04.png" alt="Floresta mística com criança meditando" />
+                <img src="/Imagens/Captura de Tela 2025-05-25 às 01.55.04.png" alt="Capítulo 2 - Floresta mística com criança" />
               </VisualImageWrapper>
               <VisualContent>
-                <VisualTitle>Capas Profissionais em Segundos</VisualTitle>
+                <VisualTitle>Capítulo 2: A Floresta Mágica</VisualTitle>
                 <VisualText>
-                  Economize milhares em designers. Gere capas únicas que vendem, 
-                  perfeitamente alinhadas com sua história. A IA entende seu livro!
+                  Usando RAG, a IA manteve a paleta dourada do capítulo 1, mas adicionou elementos místicos. 
+                  A continuidade visual é automática - sem precisar descrever tudo novamente!
+                </VisualText>
+              </VisualContent>
+            </VisualCard>
+            
+            <VisualCard>
+              <VisualImageWrapper>
+                <img src="/Imagens/Captura de Tela 2025-05-25 às 02.18.47.png" alt="Capítulo 3 - Floresta dourada atmosférica" />
+              </VisualImageWrapper>
+              <VisualContent>
+                <VisualTitle>Capítulo 3: Evolução Visual Consistente</VisualTitle>
+                <VisualText>
+                  Veja como a IA manteve o estilo visual: mesma iluminação dourada, mesma atmosfera mágica. 
+                  O RAG garante que cada imagem converse com as anteriores!
                 </VisualText>
               </VisualContent>
             </VisualCard>
@@ -1142,19 +1182,11 @@ const ShowcaseCaption = styled.p`
 // Revolutionary Section (RAG)
 const RevolutionarySection = styled.section`
   padding: 120px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8f9fa;
   position: relative;
   overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  }
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
 `;
 
 const RevolutionaryGrid = styled.div`
@@ -1171,26 +1203,28 @@ const RevolutionaryGrid = styled.div`
 `;
 
 const RevolutionaryContent = styled.div`
-  color: white;
+  color: #333;
 `;
 
 const RevolutionaryBadge = styled.span`
   display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 20px;
   border-radius: 30px;
   font-size: 0.9rem;
   margin-bottom: 20px;
-  backdrop-filter: blur(10px);
+  font-weight: 600;
 `;
 
 const RevolutionaryTitle = styled.h3`
   font-size: 2.5rem;
   margin-bottom: 20px;
   line-height: 1.2;
+  color: #1a1a1a;
   
   span {
-    background: linear-gradient(45deg, #f093fb, #f5576c);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -1199,8 +1233,8 @@ const RevolutionaryTitle = styled.h3`
 const RevolutionaryText = styled.p`
   font-size: 1.2rem;
   margin-bottom: 30px;
-  opacity: 0.95;
   line-height: 1.6;
+  color: #555;
 `;
 
 const RevolutionaryList = styled.ul`
@@ -1210,10 +1244,11 @@ const RevolutionaryList = styled.ul`
   
   li {
     font-size: 1.1rem;
-    margin-bottom: 15px;
-    padding-left: 30px;
+    margin-bottom: 20px;
+    padding-left: 35px;
     position: relative;
-    opacity: 0.95;
+    color: #444;
+    line-height: 1.5;
     
     &::before {
       content: '✓';
@@ -1221,19 +1256,21 @@ const RevolutionaryList = styled.ul`
       left: 0;
       color: #4ade80;
       font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
+      top: -2px;
     }
   }
 `;
 
 const RevolutionaryHighlight = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border-left: 4px solid #4ade80;
-  padding: 20px;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border-left: 4px solid #667eea;
+  padding: 25px;
   font-style: italic;
-  font-size: 1.1rem;
-  backdrop-filter: blur(10px);
+  font-size: 1.15rem;
   border-radius: 8px;
+  color: #333;
+  font-weight: 500;
 `;
 
 const RevolutionaryImage = styled.div`
@@ -1259,6 +1296,18 @@ const VisualShowcase = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+  
+  /* Centralizar o terceiro card */
+  & > :nth-child(3) {
+    grid-column: 1 / -1;
+    max-width: 600px;
+    margin: 0 auto;
+    
+    @media (max-width: 768px) {
+      max-width: 100%;
+      grid-column: auto;
+    }
+  }
 `;
 
 const VisualCard = styled.div`
@@ -1267,6 +1316,9 @@ const VisualCard = styled.div`
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   
   &:hover {
     transform: translateY(-10px);
@@ -1287,6 +1339,9 @@ const VisualImageWrapper = styled.div`
 
 const VisualContent = styled.div`
   padding: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
 
 const VisualTitle = styled.h3`
@@ -1299,6 +1354,7 @@ const VisualText = styled.p`
   font-size: 1.1rem;
   color: #666;
   line-height: 1.6;
+  flex: 1;
 `;
 
 const VisualFeatures = styled.div`
