@@ -32,6 +32,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
   const [error, setError] = useState('');
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [processingTime, setProcessingTime] = useState<number | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState('');
 
   useEffect(() => {
     // Atualizar custo estimado quando mudar qualidade ou quantidade
@@ -63,6 +64,7 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
       if (result.success && result.imageUrls) {
         setGeneratedImages(result.imageUrls);
         setSelectedImage(0);
+        setCurrentPrompt(prompt || ''); // Salvar o prompt usado
         if (result.processingTimeMs) {
           setProcessingTime(result.processingTimeMs);
         }
@@ -76,14 +78,28 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (generatedImages[selectedImage]) {
+      const imageUrl = generatedImages[selectedImage];
+      
+      // Registrar a imagem como usada
+      const registerResult = await imageService.registerUsedImage(
+        imageUrl,
+        currentPrompt,
+        context?.livroId
+      );
+      
+      if (!registerResult.success) {
+        console.error('Erro ao registrar imagem:', registerResult.error);
+        // Continuar mesmo se falhar o registro
+      }
+      
       // Suportar ambos os callbacks
       if (onImageGenerated) {
-        onImageGenerated(generatedImages[selectedImage]);
+        onImageGenerated(imageUrl);
       }
       if (onImageSelect) {
-        onImageSelect(generatedImages[selectedImage]);
+        onImageSelect(imageUrl);
       }
       onClose();
     }
@@ -202,14 +218,45 @@ const ImageGenerationModal: React.FC<ImageGenerationModalProps> = ({
                   onClick={() => {
                     setGeneratedImages([]);
                     setSelectedImage(0);
+                    setError('');
                   }}
                 >
-                  Gerar Novamente
+                  Gerar Outra Imagem
                 </Button>
                 <Button variant="primary" onClick={handleConfirm}>
                   Usar Esta Imagem
                 </Button>
               </ButtonGroup>
+              
+              <LinkButton onClick={async () => {
+                if (generatedImages[selectedImage]) {
+                  const imageUrl = generatedImages[selectedImage];
+                  
+                  // Registrar a imagem como usada
+                  const registerResult = await imageService.registerUsedImage(
+                    imageUrl,
+                    currentPrompt,
+                    context?.livroId
+                  );
+                  
+                  if (!registerResult.success) {
+                    console.error('Erro ao registrar imagem:', registerResult.error);
+                  }
+                  
+                  if (onImageGenerated) {
+                    onImageGenerated(imageUrl);
+                  }
+                  if (onImageSelect) {
+                    onImageSelect(imageUrl);
+                  }
+                  // Resetar estado mas manter modal aberto
+                  setGeneratedImages([]);
+                  setSelectedImage(0);
+                  setError('');
+                }
+              }}>
+                Usar e gerar outra imagem
+              </LinkButton>
             </>
           )}
         </ModalBody>
@@ -438,6 +485,24 @@ const ProcessingInfo = styled.div<{ $isDarkMode: boolean }>`
   color: ${props => props.$isDarkMode ? '#aaa' : '#666'};
   font-size: 0.875rem;
   margin-bottom: 20px;
+`;
+
+const LinkButton = styled.button`
+  background: none;
+  border: none;
+  color: #4361ee;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 5px;
+  
+  &:hover {
+    color: #2c4bce;
+  }
 `;
 
 export default ImageGenerationModal;

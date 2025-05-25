@@ -984,7 +984,7 @@ export const ToolbarPlugin = () => {
 };
 
 // Componente separado para renderizar o modal fora do componente principal
-export const ToolbarWithModal = () => {
+export const ToolbarWithModal = ({ bookId }: { bookId?: string }) => {
   const [editor] = useLexicalComposerContext();
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageContext, setImageContext] = useState<PromptContext | undefined>(undefined);
@@ -995,9 +995,14 @@ export const ToolbarWithModal = () => {
     const handleOpenImageModal = (event: Event) => {
       const customEvent = event as CustomEvent;
       if (customEvent.detail && customEvent.detail.context) {
-        setImageContext(customEvent.detail.context);
+        // Adicionar livroId ao contexto se não estiver presente
+        const context = {
+          ...customEvent.detail.context,
+          livroId: customEvent.detail.context.livroId || (bookId ? parseInt(bookId) : undefined)
+        };
+        setImageContext(context);
         setIsGeneratingImage(true);
-        console.log("Modal de imagem aberto via evento personalizado");
+        console.log("Modal de imagem aberto via evento personalizado", context);
       }
     };
     
@@ -1023,7 +1028,8 @@ export const ToolbarWithModal = () => {
             detail: { 
               context: {
                 tipo: 'capitulo' as 'capitulo' | 'capa',
-                texto: ''
+                texto: '',
+                livroId: bookId ? parseInt(bookId) : undefined
               } 
             } 
           });
@@ -1039,7 +1045,7 @@ export const ToolbarWithModal = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor]);
+  }, [editor, bookId]);
   
   return (
     <>

@@ -107,10 +107,10 @@ export const imageService = {
       console.log('Gerando imagem com prompt:', finalPrompt);
       
       // Determinar tipo e qualidade baseado no contexto
-      const type = context?.tipo === 'capa' ? 'book-cover' : 'square';
+      const type = context?.tipo === 'capa' ? 'book-cover' : 'landscape';
       const quality = context?.tipo === 'capa' ? 'high' : 'medium';
       
-      // Chamar a nova Edge Function
+      // Chamar a Edge Function gerar-imagem
       const { data, error } = await supabase.functions.invoke('gerar-imagem', {
         body: {
           prompt: finalPrompt,
@@ -129,14 +129,11 @@ export const imageService = {
       }
       
       if (data.success && data.imageUrls && data.imageUrls.length > 0) {
-        // Calcular créditos estimados localmente já que a função antiga não retorna
-        const estimatedCredits = estimateImageCost(quality, sampleCount);
-        
         return {
           success: true,
           imageUrls: data.imageUrls,
-          estimatedCredits: estimatedCredits,
-          processingTimeMs: data.processingTimeMs || null
+          estimatedCredits: data.estimatedCredits,
+          processingTimeMs: data.processingTimeMs
         };
       } else {
         return {
@@ -269,7 +266,77 @@ O prompt deve estar em português para melhor compreensão do usuário.`;
   },
   
   /**
-   * Salva a imagem gerada no banco de dados
+   * Registra a imagem usada na tabela imagens_geradas para evitar deleção pelo cron
+   */
+  async registerUsedImage(
+    imageUrl: string,
+    prompt: string,
+    livroId?: number,
+    revisedPrompt?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Extrair o path do storage da URL
+      // URL formato: https://xxx.supabase.co/storage/v1/object/public/ai-generated-images/generated-images/generated-xxx.png
+      const urlParts = imageUrl.split('/storage/v1/object/public/');
+      if (urlParts.length !== 2) {
+        throw new Error('URL de imagem inválida');
+      }
+      
+      const storagePath = urlParts[1]; // ai-generated-images/generated-images/generated-xxx.png
+      
+      const { data, error } = await supabase
+        .from('imagens_geradas')
+        .insert({
+          prompt: prompt,
+          revised_prompt: revisedPrompt || null,
+          storage_path: storagePath,
+          public_url: imageUrl,
+          livro: livroId || null,
+          status: 'ativo'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Erro ao registrar imagem usada:', error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log('Imagem registrada com sucesso:', data);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro ao registrar imagem:', error);
+      return { success: false, error: error.message };
+    }
+  },
+  
+  /**
+   * Remove o registro da imagem quando ela é deletada
+   */
+  async unregisterImage(imageUrl: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase
+        .from('imagens_geradas')
+        .update({ 
+          status: 'deletado',
+          deleted_at: new Date().toISOString()
+        })
+        .eq('public_url', imageUrl);
+      
+      if (error) {
+        console.error('Erro ao marcar imagem como deletada:', error);
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro ao desregistrar imagem:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Salva a imagem gerada no banco de dados (mantido para compatibilidade)
    */
   async saveGeneratedImage(
     imageUrls: string[],
@@ -277,37 +344,9 @@ O prompt deve estar em português para melhor compreensão do usuário.`;
     context?: PromptContext
   ): Promise<void> {
     try {
-      // Obter usuário atual
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-      
-      if (!userId) {
-        console.error('Usuário não autenticado ao salvar imagem gerada');
-        return;
-      }
-      
-      // Criar registros para cada imagem gerada
-      const records = imageUrls.map(url => ({
-        url: url,
-        prompt: prompt,
-        livro_id: context?.livroId || null,
-        capitulo_id: context?.capituloId || null,
-        tipo: context?.tipo || 'outros',
-        usuario_id: userId,
-        metadata: {
-          titulo: context?.titulo,
-          descricao: context?.descricao,
-          genero: context?.genero
-        }
-      }));
-      
-      // Inserir na tabela imagens_geradas
-      const { error } = await supabase
-        .from('imagens_geradas')
-        .insert(records);
-      
-      if (error) {
-        console.error('Erro ao salvar imagens geradas:', error);
+      // Para cada imagem, registrar na tabela imagens_geradas
+      for (const url of imageUrls) {
+        await this.registerUsedImage(url, prompt, context?.livroId);
       }
       
       // Se for uma capa de livro, atualizar o campo capa do livro

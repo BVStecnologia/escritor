@@ -214,7 +214,7 @@ export const LexicalEditor: React.FC<LexicalEditorProps> = ({
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <EditorContainer className="editor-container">
-        <ToolbarWithModal />
+        <ToolbarWithModal bookId={bookId} />
         <EditorInner>
           <ContentEditableWrapper>
             <RichTextPlugin
