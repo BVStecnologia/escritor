@@ -46,9 +46,10 @@ const plans: Plan[] = [
     savingsPercent: 17,
     features: [
       '3.000 créditos por mês',
-      'Ideal para ~50 páginas completas/mês',
-      'Ou ~500 autocompletions/mês',
-      'Acesso a todas as ferramentas de IA',
+      'IA para escrita criativa e autocomplete',
+      'Editor profissional estilo Word',
+      'Exportação direta em EPUB para Amazon',
+      'Salvamento automático na nuvem',
       'Suporte via email',
       'Cancele quando quiser'
     ]
@@ -63,12 +64,12 @@ const plans: Plan[] = [
     popular: true,
     features: [
       '5.000 créditos por mês',
-      'Ideal para ~83 páginas completas/mês',
-      'Ou ~833 autocompletions/mês',
-      'Acesso a todas as ferramentas de IA',
+      'Tudo do plano Básico',
+      'Geração de imagens para capas',
+      'Múltiplos formatos: EPUB, PDF, DOCX',
+      'Ferramentas avançadas de revisão',
       'Suporte prioritário',
-      'Exportação em múltiplos formatos',
-      'Cancele quando quiser'
+      'Backup automático diário'
     ]
   },
   {
@@ -80,13 +81,13 @@ const plans: Plan[] = [
     savingsPercent: 25,
     features: [
       '8.000 créditos por mês',
-      'Ideal para ~133 páginas completas/mês',
-      'Ou ~1.333 autocompletions/mês',
-      'Acesso a todas as ferramentas de IA',
-      'Suporte VIP 24/7',
-      'Exportação em múltiplos formatos',
-      'Acesso prioritário a novas features',
-      'Cancele quando quiser'
+      'Tudo do plano Pro',
+      'Geração ilimitada de imagens',
+      'IA com memória contextual avançada',
+      'Colaboração em tempo real',
+      'Suporte VIP WhatsApp 24/7',
+      'Acesso antecipado a novidades',
+      'Mentoria exclusiva mensal'
     ]
   }
 ];
@@ -107,11 +108,27 @@ const PageWrapper = styled.div<{ $hasTestBanner?: boolean }>`
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: ${props => props.$hasTestBanner ? '120px 0 40px' : '80px 0 40px'};
+  
+  @media (max-width: 768px) {
+    padding: ${props => props.$hasTestBanner ? '100px 0 30px' : '60px 0 30px'};
+  }
+  
+  @media (max-width: 480px) {
+    padding: ${props => props.$hasTestBanner ? '80px 0 20px' : '40px 0 20px'};
+  }
 `;
 
 const Header = styled.div`
   text-align: center;
   margin-bottom: 60px;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 30px;
+  }
 `;
 
 const Title = styled.h1`
@@ -120,6 +137,15 @@ const Title = styled.h1`
   color: #1a202c;
   margin-bottom: 16px;
   font-family: 'Playfair Display', serif;
+  
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -127,6 +153,15 @@ const Subtitle = styled.p`
   color: #718096;
   max-width: 600px;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: 0 16px;
+  }
 `;
 
 const CurrentBalance = styled.div`
@@ -140,9 +175,19 @@ const CurrentBalance = styled.div`
   align-items: center;
   gap: 15px;
   
+  @media (max-width: 480px) {
+    padding: 16px 20px;
+    margin-bottom: 30px;
+    gap: 12px;
+  }
+  
   svg {
     color: #7c3aed;
     font-size: 24px;
+    
+    @media (max-width: 480px) {
+      font-size: 20px;
+    }
   }
 `;
 
@@ -155,6 +200,15 @@ const BalanceText = styled.div`
     font-size: 1.5rem;
     margin-left: 8px;
   }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    
+    strong {
+      font-size: 1.25rem;
+      margin-left: 4px;
+    }
+  }
 `;
 
 const PlansGrid = styled.div`
@@ -163,6 +217,17 @@ const PlansGrid = styled.div`
   gap: 30px;
   max-width: 1200px;
   margin: 0 auto;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 500px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 16px;
+    padding: 0 16px;
+  }
 `;
 
 const PlanCard = styled.div<{ $popular?: boolean }>`
@@ -176,11 +241,26 @@ const PlanCard = styled.div<{ $popular?: boolean }>`
     : '0 10px 25px rgba(0, 0, 0, 0.08)'};
   border: ${props => props.$popular ? '2px solid #7c3aed' : '2px solid transparent'};
   
+  @media (max-width: 768px) {
+    padding: 32px 24px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+  
   &:hover {
     transform: translateY(-10px);
     box-shadow: ${props => props.$popular 
       ? '0 25px 50px rgba(124, 58, 237, 0.2)' 
       : '0 15px 35px rgba(0, 0, 0, 0.12)'};
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
 `;
 
@@ -188,12 +268,19 @@ const PopularBadge = styled.div`
   position: absolute;
   top: -15px;
   right: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   padding: 8px 24px;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  
+  @media (max-width: 480px) {
+    right: 20px;
+    padding: 6px 20px;
+    font-size: 0.8rem;
+  }
 `;
 
 const PlanName = styled.h3`
@@ -214,6 +301,14 @@ const PlanPrice = styled.div`
     font-weight: 400;
     color: #718096;
   }
+  
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 2.25rem;
+  }
 `;
 
 const PlanPeriod = styled.div`
@@ -227,16 +322,23 @@ const Credits = styled.div`
   color: #7c3aed;
   font-weight: 600;
   margin-bottom: 20px;
+  
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
 `;
 
 const Savings = styled.div`
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  padding: 8px 16px;
+  border-radius: 6px;
   font-weight: 600;
   margin-bottom: 30px;
   text-align: center;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 0.95rem;
 `;
 
 const FeaturesList = styled.ul`
@@ -251,6 +353,12 @@ const Feature = styled.li`
   gap: 12px;
   margin-bottom: 15px;
   color: #4a5568;
+  
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
   
   svg {
     color: #48bb78;
@@ -268,6 +376,11 @@ const CTAButton = styled.button<{ $primary?: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease;
   
+  @media (max-width: 480px) {
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+  
   ${props => props.$primary ? `
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -277,15 +390,24 @@ const CTAButton = styled.button<{ $primary?: boolean }>`
       box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
     }
   ` : `
-    background: #f7fafc;
-    color: #4a5568;
-    border: 2px solid #e2e8f0;
+    background: white;
+    color: #7c3aed;
+    border: 2px solid #7c3aed;
+    font-weight: 700;
     
     &:hover {
-      background: #edf2f7;
-      border-color: #cbd5e0;
+      background: #7c3aed;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
     }
   `}
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
+  }
 `;
 
 const CalculatorSection = styled.section`
@@ -295,6 +417,18 @@ const CalculatorSection = styled.section`
   border-radius: 20px;
   padding: 40px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  
+  @media (max-width: 768px) {
+    margin: 60px auto 0;
+    padding: 32px;
+    border-radius: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 40px 16px 0;
+    padding: 24px 20px;
+    border-radius: 12px;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -303,6 +437,16 @@ const SectionTitle = styled.h2`
   color: #2d3748;
   margin-bottom: 30px;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 1.75rem;
+    margin-bottom: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
 `;
 
 const OperationsGrid = styled.div`
@@ -310,6 +454,17 @@ const OperationsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 40px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
 `;
 
 const OperationCard = styled.div`
@@ -318,10 +473,22 @@ const OperationCard = styled.div`
   padding: 20px;
   border: 2px solid #e2e8f0;
   transition: all 0.2s ease;
+  cursor: pointer;
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
   
   &:hover {
     border-color: #7c3aed;
     transform: translateY(-2px);
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
 `;
 
@@ -347,6 +514,16 @@ const EstimatesGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-top: 30px;
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
 `;
 
 const EstimateCard = styled.div`
@@ -355,6 +532,11 @@ const EstimateCard = styled.div`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   color: white;
+  
+  @media (max-width: 480px) {
+    padding: 16px;
+    border-radius: 8px;
+  }
 `;
 
 const EstimatePlan = styled.h5`
@@ -375,23 +557,58 @@ const EstimateLabel = styled.div`
 `;
 
 const BlockedAlert = styled.div`
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #f9f5ff 0%, #ede9fe 100%);
+  border: 2px solid #ddd6fe;
+  color: #5b21b6;
+  padding: 24px 32px;
+  border-radius: 16px;
   margin-bottom: 40px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+  position: relative;
+  overflow: hidden;
+  
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 20px 24px;
+    margin-bottom: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px 20px;
+    margin: 0 16px 24px;
+    border-radius: 12px;
+  }
   
   h3 {
     font-size: 1.5rem;
     margin-bottom: 10px;
     font-weight: 700;
+    color: #5b21b6;
+    
+    @media (max-width: 480px) {
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+    }
   }
   
   p {
     font-size: 1.1rem;
-    opacity: 0.95;
+    color: #6b7280;
+    line-height: 1.6;
+    
+    @media (max-width: 480px) {
+      font-size: 1rem;
+    }
   }
 `;
 
@@ -413,6 +630,14 @@ const TestModeBanner = styled.div`
 const FAQSection = styled.section`
   max-width: 800px;
   margin: 80px auto 0;
+  
+  @media (max-width: 768px) {
+    margin: 60px auto 0;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 40px 16px 0;
+  }
 `;
 
 const FAQItem = styled.div`
@@ -424,8 +649,24 @@ const FAQItem = styled.div`
   cursor: pointer;
   transition: all 0.2s ease;
   
+  @media (max-width: 768px) {
+    padding: 20px 24px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+  
   &:hover {
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
   }
 `;
 
@@ -440,6 +681,12 @@ const FAQQuestion = styled.h4`
   
   svg {
     color: #7c3aed;
+    flex-shrink: 0;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    gap: 10px;
   }
 `;
 
@@ -544,8 +791,8 @@ const PricingPage: React.FC = () => {
           
           {isBlocked && (
             <BlockedAlert>
-              <h3>Acesso Bloqueado</h3>
-              <p>Você precisa de uma assinatura ativa para acessar o editor. Escolha um plano abaixo para continuar.</p>
+              <h3>Comece Sua Jornada de Escritor! ✨</h3>
+              <p>Escolha uma assinatura abaixo e acesse seu painel para começar a escrever sua história com a ajuda da nossa IA.</p>
             </BlockedAlert>
           )}
           
@@ -678,7 +925,7 @@ const PricingPage: React.FC = () => {
             </FAQQuestion>
             <FAQAnswer>
               Utilizamos o Stripe para processar pagamentos com segurança. Aceitamos 
-              cartões de crédito, débito e PIX. Sua assinatura é renovada automaticamente 
+              cartões de crédito e débito. Sua assinatura é renovada automaticamente 
               todo mês e seus créditos são recarregados instantaneamente.
             </FAQAnswer>
           </FAQItem>

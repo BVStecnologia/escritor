@@ -20,6 +20,9 @@ import DiagnosticoPage from './pages/DiagnosticoPage';
 import PricingPage from './pages/PricingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import AuthCallback from './pages/AuthCallback';
+import PrivacyPage from './pages/PrivacyPage';
+import AboutPage from './pages/AboutPage';
+import TermsPage from './pages/TermsPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -75,6 +78,9 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/privacidade" element={<PrivacyPage />} />
+              <Route path="/sobre" element={<AboutPage />} />
+              <Route path="/termos" element={<TermsPage />} />
             </Routes>
             </AutocompleteProvider>
           </ThemeProvider>

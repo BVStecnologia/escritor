@@ -13,6 +13,10 @@ const PageWrapper = styled.div`
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
+  
+  @media (max-width: 480px) {
+    padding: 20px 16px;
+  }
 `;
 
 const SuccessCard = styled.div`
@@ -23,6 +27,17 @@ const SuccessCard = styled.div`
   width: 100%;
   text-align: center;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
+    padding: 40px;
+    border-radius: 16px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 30px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
 `;
 
 const SuccessIcon = styled.div`
@@ -35,10 +50,21 @@ const SuccessIcon = styled.div`
   justify-content: center;
   margin: 0 auto 30px;
   
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 24px;
+  }
+  
   svg {
     width: 40px;
     height: 40px;
     color: white;
+    
+    @media (max-width: 480px) {
+      width: 30px;
+      height: 30px;
+    }
   }
 `;
 
@@ -47,6 +73,15 @@ const Title = styled.h1`
   color: #1a202c;
   margin-bottom: 16px;
   font-family: 'Playfair Display', serif;
+  
+  @media (max-width: 768px) {
+    font-size: 1.75rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
 `;
 
 const Message = styled.p`
@@ -54,6 +89,17 @@ const Message = styled.p`
   color: #718096;
   margin-bottom: 40px;
   line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 1.05rem;
+    margin-bottom: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -64,6 +110,12 @@ const LoadingSpinner = styled.div`
   border-top-color: #7c3aed;
   animation: spin 1s ease-in-out infinite;
   margin: 0 auto 20px;
+  
+  @media (max-width: 480px) {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
   
   @keyframes spin {
     to {
@@ -84,6 +136,35 @@ const CheckIcon = () => (
     <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
+
+const ErrorButton = styled.button`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 20px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
+  }
+`;
 
 const PaymentSuccessPage: React.FC = () => {
   const { user } = useAuth();
@@ -192,9 +273,9 @@ const PaymentSuccessPage: React.FC = () => {
             Não conseguimos confirmar seu pagamento. Se você foi cobrado, 
             entre em contato com nosso suporte. Caso contrário, tente novamente.
           </Message>
-          <button onClick={() => navigate('/pricing')}>
+          <ErrorButton onClick={() => navigate('/pricing')}>
             Voltar para Planos
-          </button>
+          </ErrorButton>
         </ErrorCard>
       </PageWrapper>
     );

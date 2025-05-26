@@ -1022,6 +1022,22 @@ const ProfilePage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Função para detectar o modo de pagamento
+  const getPaymentMode = () => {
+    const hostname = window.location.hostname;
+    const host = window.location.host; // inclui hostname:porta
+    
+    // Se está em localhost (com qualquer porta), usar modo test
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' ||
+        host.startsWith('localhost:') ||
+        host.startsWith('127.0.0.1:')) {
+      return 'test';
+    }
+    // Em produção, usar modo live
+    return 'live';
+  };
+
   // Carregar dados do perfil
   useEffect(() => {
     const carregarPerfil = async () => {
@@ -1142,7 +1158,10 @@ const ProfilePage: React.FC = () => {
       setCancelling(true);
       
       const { data, error } = await supabase.functions.invoke('cancelarassinaturastripe', {
-        body: { immediately: cancelImmediately }
+        body: { 
+          immediately: cancelImmediately,
+          mode: getPaymentMode()  // Adicionar o modo aqui
+        }
       });
       
       if (error) throw error;
@@ -1188,7 +1207,14 @@ const ProfilePage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Erro ao cancelar assinatura:', error);
-      toast.error(error.message || 'Erro ao cancelar assinatura');
+      
+      // Tratamento específico para erro de assinatura não encontrada
+      if (error.message?.includes('Nenhuma assinatura ativa encontrada') || 
+          error.message?.includes('No active subscription found')) {
+        toast.error('Não foi possível cancelar. Tente novamente ou entre em contato com suporte.');
+      } else {
+        toast.error(error.message || 'Erro ao cancelar assinatura. Por favor, tente novamente.');
+      }
     } finally {
       setCancelling(false);
     }

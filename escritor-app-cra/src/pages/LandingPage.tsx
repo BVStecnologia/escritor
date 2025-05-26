@@ -4,9 +4,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import SEO from '../components/SEO';
 
+// Ícone de check customizado
+const CheckIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+  </svg>
+);
+
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   // Verificar estado de autenticação ao carregar a página
   useEffect(() => {
@@ -22,6 +30,19 @@ const LandingPage: React.FC = () => {
 
     checkAuthStatus();
   }, []);
+  
+  // Prevenir scroll quando menu mobile estiver aberto
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
 
   // Função para lidar com o clique no botão de login
   const handleLoginClick = async (e: React.MouseEvent) => {
@@ -47,7 +68,20 @@ const LandingPage: React.FC = () => {
         <Container>
           <NavContent>
             <Logo>Book Writer</Logo>
+            <MobileMenuButton 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              $isOpen={mobileMenuOpen}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </MobileMenuButton>
+            {/* Desktop Navigation */}
             <NavButtons>
+              <PricesLink href="#planos" onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
+              }}>Preços</PricesLink>
               {isAuthenticated ? (
                 <DashboardButton to="/dashboard">Meu Painel</DashboardButton>
               ) : (
@@ -57,9 +91,34 @@ const LandingPage: React.FC = () => {
                 </>
               )}
             </NavButtons>
+            
+            {/* Mobile Navigation Menu */}
+            <MobileNavMenu $isOpen={mobileMenuOpen}>
+              {isAuthenticated ? (
+                <>
+                  <DashboardButton to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Meu Painel</DashboardButton>
+                  <PricesLinkMobile href="#planos" onClick={(e) => {
+                    e.preventDefault();
+                    setMobileMenuOpen(false);
+                    document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
+                  }}>Preços</PricesLinkMobile>
+                </>
+              ) : (
+                <>
+                  <LoginButton to="/login" onClick={(e) => { handleLoginClick(e); setMobileMenuOpen(false); }}>Entrar</LoginButton>
+                  <SignupButton to="/signup" onClick={() => setMobileMenuOpen(false)}>Criar Conta</SignupButton>
+                  <PricesLinkMobile href="#planos" onClick={(e) => {
+                    e.preventDefault();
+                    setMobileMenuOpen(false);
+                    document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
+                  }}>Preços</PricesLinkMobile>
+                </>
+              )}
+            </MobileNavMenu>
           </NavContent>
         </Container>
       </NavBar>
+      {mobileMenuOpen && <MenuOverlay onClick={() => setMobileMenuOpen(false)} />}
 
       {/* Hero Section */}
       <HeroSection>
@@ -125,7 +184,10 @@ const LandingPage: React.FC = () => {
                   ACESSAR MEU PAINEL
                 </CTAButton>
               ) : (
-                <CTAButton href="#planos">
+                <CTAButton onClick={() => {
+                  const element = document.getElementById('planos');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                   QUERO COMEÇAR A GANHAR AGORA
                 </CTAButton>
               )}
@@ -546,106 +608,160 @@ const LandingPage: React.FC = () => {
 
           <PricingGrid>
             <PricingCard>
-              <PricingHeader>
-                <PlanName>Iniciante</PlanName>
-                <PlanPrice>
-                  <Currency>R$</Currency>
-                  <Price>49,90</Price>
-                  <Period>/mês</Period>
-                </PlanPrice>
-                <PlanCredits>3.000 créditos/mês</PlanCredits>
-              </PricingHeader>
+              <PlanName>Básico</PlanName>
+              <PlanPrice>
+                R$ 49,90
+              </PlanPrice>
+              <PlanPeriod>por mês</PlanPeriod>
+              <Credits>3.000 créditos/mês</Credits>
               
-              <PlanFeatures>
-                <Feature>✓ Book Writer para escrita</Feature>
-                <Feature>✓ 50.000 palavras/mês</Feature>
-                <Feature>✓ Editor profissional</Feature>
-                <Feature>✓ Corretor ortográfico</Feature>
-                <Feature>✓ 1 livro por vez</Feature>
-                <Feature>✓ Suporte por email</Feature>
-              </PlanFeatures>
+              <Savings>
+                Economia de R$ 10,10 (17%)
+              </Savings>
               
-              <PlanCTA>
-                {isAuthenticated ? (
-                  <CTAButton as={Link} to="/dashboard">
-                    ACESSAR PAINEL
-                  </CTAButton>
-                ) : (
-                  <CTAButton as={Link} to="/pricing">
-                    COMEÇAR AGORA
-                  </CTAButton>
-                )}
-              </PlanCTA>
+              <FeaturesList>
+                <Feature>
+                  <CheckIcon />
+                  3.000 créditos por mês
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  IA para escrita criativa e autocomplete
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Editor profissional estilo Word
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Exportação direta em EPUB para Amazon
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Salvamento automático na nuvem
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Suporte via email
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Cancele quando quiser
+                </Feature>
+              </FeaturesList>
+              
+              <CTAButton 
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/pricing')}
+              >
+                {isAuthenticated ? 'ACESSAR PAINEL' : 'COMEÇAR AGORA'}
+              </CTAButton>
             </PricingCard>
 
             <PricingCard $featured>
-              <PopularBadge>MAIS POPULAR</PopularBadge>
-              <PricingHeader>
-                <PlanName>Profissional</PlanName>
-                <PlanPrice>
-                  <Currency>R$</Currency>
-                  <Price>79,90</Price>
-                  <Period>/mês</Period>
-                </PlanPrice>
-                <PlanCredits>5.000 créditos/mês</PlanCredits>
-              </PricingHeader>
+              <PopularBadge>Mais Popular</PopularBadge>
               
-              <PlanFeatures>
-                <Feature>✓ Tudo do plano Iniciante</Feature>
-                <Feature>✓ 100.000 palavras/mês</Feature>
-                <Feature>✓ Múltiplos livros simultâneos</Feature>
-                <Feature>✓ Melhorias de estilo avançadas</Feature>
-                <Feature>✓ Ideias criativas ilimitadas</Feature>
-                <Feature>✓ Geração de capas para livros</Feature>
-                <Feature>✓ Suporte prioritário</Feature>
-              </PlanFeatures>
+              <PlanName>Pro</PlanName>
+              <PlanPrice>
+                R$ 79,90
+              </PlanPrice>
+              <PlanPeriod>por mês</PlanPeriod>
+              <Credits>5.000 créditos/mês</Credits>
               
-              <PlanCTA>
-                {isAuthenticated ? (
-                  <CTAButton as={Link} to="/dashboard">
-                    ACESSAR PAINEL
-                  </CTAButton>
-                ) : (
-                  <CTAButton as={Link} to="/pricing">
-                    QUERO SER PROFISSIONAL
-                  </CTAButton>
-                )}
-              </PlanCTA>
+              <Savings>
+                Economia de R$ 20,10 (20%)
+              </Savings>
+              
+              <FeaturesList>
+                <Feature>
+                  <CheckIcon />
+                  5.000 créditos por mês
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Tudo do plano Básico
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Geração de imagens para capas
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Múltiplos formatos: EPUB, PDF, DOCX
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Ferramentas avançadas de revisão
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Suporte prioritário
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Backup automático diário
+                </Feature>
+              </FeaturesList>
+              
+              <CTAButton 
+                $primary
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/pricing')}
+              >
+                {isAuthenticated ? 'ACESSAR PAINEL' : 'Assinar Agora'}
+              </CTAButton>
             </PricingCard>
 
             <PricingCard>
-              <PricingHeader>
-                <PlanName>Ilimitado</PlanName>
-                <PlanPrice>
-                  <Currency>R$</Currency>
-                  <Price>119,90</Price>
-                  <Period>/mês</Period>
-                </PlanPrice>
-                <PlanCredits>8.000 créditos/mês</PlanCredits>
-              </PricingHeader>
+              <PlanName>Premium</PlanName>
+              <PlanPrice>
+                R$ 119,90
+              </PlanPrice>
+              <PlanPeriod>por mês</PlanPeriod>
+              <Credits>8.000 créditos/mês</Credits>
               
-              <PlanFeatures>
-                <Feature>✓ Tudo do Profissional</Feature>
-                <Feature>✓ 200.000 palavras/mês</Feature>
-                <Feature>✓ Livros ilimitados</Feature>
-                <Feature>✓ Velocidade máxima de geração</Feature>
-                <Feature>✓ Geração ilimitada de imagens</Feature>
-                <Feature>✓ Memória contextual avançada</Feature>
-                <Feature>✓ Acesso prioritário a novidades</Feature>
-                <Feature>✓ Suporte VIP WhatsApp</Feature>
-              </PlanFeatures>
+              <Savings>
+                Economia de R$ 40,10 (25%)
+              </Savings>
               
-              <PlanCTA>
-                {isAuthenticated ? (
-                  <CTAButton as={Link} to="/dashboard">
-                    ACESSAR PAINEL
-                  </CTAButton>
-                ) : (
-                  <CTAButton as={Link} to="/pricing">
-                    PLANO ILIMITADO
-                  </CTAButton>
-                )}
-              </PlanCTA>
+              <FeaturesList>
+                <Feature>
+                  <CheckIcon />
+                  8.000 créditos por mês
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Tudo do plano Pro
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Geração ilimitada de imagens
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  IA com memória contextual avançada
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Colaboração em tempo real
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Suporte VIP WhatsApp 24/7
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Acesso antecipado a novidades
+                </Feature>
+                <Feature>
+                  <CheckIcon />
+                  Mentoria exclusiva mensal
+                </Feature>
+              </FeaturesList>
+              
+              <CTAButton 
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/pricing')}
+              >
+                {isAuthenticated ? 'ACESSAR PAINEL' : 'Escolher Este Plano'}
+              </CTAButton>
             </PricingCard>
           </PricingGrid>
 
@@ -741,22 +857,25 @@ const LandingPage: React.FC = () => {
                 ACESSAR MEUS PROJETOS
               </CTAButtonSpecial>
             ) : (
-              <CTAButtonSpecial href="#planos">
+              <CTAButtonSpecial onClick={() => {
+                const element = document.getElementById('planos');
+                element?.scrollIntoView({ behavior: 'smooth' });
+              }}>
                 COMEÇAR AGORA COM DESCONTO ESPECIAL
               </CTAButtonSpecial>
             )}
 
             <FinalGuarantee>
               <FinalGuaranteeItem>
-                <CheckIcon>✓</CheckIcon>
+                <CheckIconWrapper>✓</CheckIconWrapper>
                 Acesso imediato à plataforma
               </FinalGuaranteeItem>
               <FinalGuaranteeItem>
-                <CheckIcon>✓</CheckIcon>
+                <CheckIconWrapper>✓</CheckIconWrapper>
                 Garantia de 30 dias
               </FinalGuaranteeItem>
               <FinalGuaranteeItem>
-                <CheckIcon>✓</CheckIcon>
+                <CheckIconWrapper>✓</CheckIconWrapper>
                 Suporte completo em português
               </FinalGuaranteeItem>
             </FinalGuarantee>
@@ -777,16 +896,14 @@ const LandingPage: React.FC = () => {
             
             <FooterColumn>
               <FooterTitle>Links Úteis</FooterTitle>
-              <FooterLink href="#">Termos de Uso</FooterLink>
-              <FooterLink href="#">Política de Privacidade</FooterLink>
-              <FooterLink href="#">Suporte</FooterLink>
-              <FooterLink href="#">Contato</FooterLink>
+              <FooterLink href="/termos">Termos de Uso</FooterLink>
+              <FooterLink href="/privacidade">Política de Privacidade</FooterLink>
+              <FooterLink href="/sobre">A Plataforma</FooterLink>
             </FooterColumn>
             
             <FooterColumn>
               <FooterTitle>Contato</FooterTitle>
               <FooterLink href="mailto:suporte@bookwriter.com">suporte@bookwriter.com</FooterLink>
-              <FooterLink href="#">WhatsApp: (11) 99999-9999</FooterLink>
             </FooterColumn>
           </FooterContent>
           
@@ -812,6 +929,14 @@ const PageWrapper = styled.div`
 const AppShowcaseSection = styled.section`
   padding: 80px 0;
   background: white;
+  
+  @media (max-width: 768px) {
+    padding: 60px 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 40px 0;
+  }
 `;
 
 const ShowcaseGrid = styled.div`
@@ -824,6 +949,12 @@ const ShowcaseGrid = styled.div`
   @media (max-width: 968px) {
     grid-template-columns: 1fr;
     gap: 40px;
+    margin: 40px 0;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 30px;
+    margin: 30px 0;
   }
 `;
 
@@ -837,6 +968,15 @@ const ShowcaseContent = styled.div`
     span {
       color: #4361ee;
     }
+    
+    @media (max-width: 768px) {
+      font-size: 1.8rem;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+    }
   }
   
   p {
@@ -844,6 +984,16 @@ const ShowcaseContent = styled.div`
     line-height: 1.8;
     color: #6c757d;
     margin-bottom: 30px;
+    
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 480px) {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
   }
   
   ul {
@@ -857,6 +1007,16 @@ const ShowcaseContent = styled.div`
       font-size: 1.1rem;
       color: #495057;
       
+      @media (max-width: 768px) {
+        font-size: 1rem;
+        padding: 10px 0;
+      }
+      
+      @media (max-width: 480px) {
+        font-size: 0.95rem;
+        padding: 8px 0;
+      }
+      
       &:before {
         content: "✓";
         background: #28a745;
@@ -869,6 +1029,14 @@ const ShowcaseContent = styled.div`
         justify-content: center;
         margin-right: 15px;
         font-weight: bold;
+        flex-shrink: 0;
+        
+        @media (max-width: 480px) {
+          width: 20px;
+          height: 20px;
+          margin-right: 12px;
+          font-size: 0.8rem;
+        }
       }
     }
   }
@@ -883,10 +1051,24 @@ const ShowcaseImage = styled.div`
     border-radius: 16px;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(67, 97, 238, 0.1);
+    
+    @media (max-width: 768px) {
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+    }
+    
+    @media (max-width: 480px) {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
   }
   
   &.float-animation {
     animation: float 6s ease-in-out infinite;
+    
+    @media (max-width: 768px) {
+      animation: none;
+    }
   }
   
   @keyframes float {
@@ -918,12 +1100,25 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  width: 100%;
+  
+  @media (max-width: 480px) {
+    padding: 0 16px;
+  }
 `;
 
 // Hero Section
 const HeroSection = styled.section`
   padding: 150px 0 80px;
   background: linear-gradient(135deg, #f8fafc 0%, #e7f0ff 100%);
+  
+  @media (max-width: 768px) {
+    padding: 120px 0 60px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 100px 0 40px;
+  }
 `;
 
 const HeroContent = styled.div`
@@ -941,6 +1136,17 @@ const AttentionGrabber = styled.div`
   margin-bottom: 30px;
   font-weight: 600;
   display: inline-block;
+  
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
 `;
 
 const HeroHeadline = styled.h1`
@@ -958,8 +1164,21 @@ const HeroHeadline = styled.h1`
     display: block;
   }
   
+  @media (max-width: 1024px) {
+    font-size: 3rem;
+  }
+  
   @media (max-width: 768px) {
     font-size: 2.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  @media (max-width: 320px) {
+    font-size: 1.75rem;
   }
 `;
 
@@ -971,6 +1190,16 @@ const HeroSubheadline = styled.p`
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
 `;
 
 const HeroStats = styled.div`
@@ -981,6 +1210,12 @@ const HeroStats = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    margin-bottom: 30px;
   }
 `;
 
@@ -990,6 +1225,18 @@ const StatItem = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const StatNumber = styled.div`
@@ -997,41 +1244,75 @@ const StatNumber = styled.div`
   font-weight: 800;
   color: #4361ee;
   margin-bottom: 5px;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const StatLabel = styled.div`
   font-size: 0.9rem;
   color: #6c757d;
+  
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const HeroCTA = styled.div`
   margin-bottom: 20px;
 `;
 
-const CTAButton = styled.a<{ $secondary?: boolean }>`
-  display: inline-block;
-  background: ${props => props.$secondary ? 'white' : 'linear-gradient(90deg, #4361ee, #3f37c9)'};
-  color: ${props => props.$secondary ? '#4361ee' : 'white'};
-  padding: 16px 32px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 50px;
-  text-decoration: none;
-  box-shadow: 0 4px 14px rgba(67, 97, 238, 0.3);
-  transition: all 0.3s ease;
-  border: ${props => props.$secondary ? '2px solid #4361ee' : 'none'};
+const CTAButton = styled.button<{ $primary?: boolean }>`
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
   
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
-    background: linear-gradient(90deg, #4361ee, #3f37c9);
-    color: white;
-    border: ${props => props.$secondary ? '2px solid #4361ee' : 'none'};
+  @media (max-width: 480px) {
+    padding: 14px 20px;
+    font-size: 1rem;
   }
-
-  &:visited, &:active, &:focus {
+  
+  ${props => props.$primary ? `
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    text-decoration: none;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+    }
+  ` : `
+    background: white;
+    color: #7c3aed;
+    border: 2px solid #7c3aed;
+    font-weight: 700;
+    
+    &:hover {
+      background: #7c3aed;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+    }
+  `}
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
 `;
 
@@ -1044,6 +1325,11 @@ const Guarantee = styled.div`
   font-size: 1rem;
   color: #28a745;
   
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    gap: 8px;
+  }
+  
   span {
     background: #28a745;
     color: white;
@@ -1054,18 +1340,23 @@ const Guarantee = styled.div`
     align-items: center;
     justify-content: center;
     font-size: 14px;
+    flex-shrink: 0;
   }
 `;
 
 // Video Components
 const VideoWrapper = styled.div`
   margin: 40px auto;
-  max-width: 600px; /* Reduzido de 800px para 600px */
+  max-width: 600px;
   width: 100%;
   
   @media (max-width: 768px) {
     max-width: 100%;
     margin: 30px auto;
+  }
+  
+  @media (max-width: 480px) {
+    margin: 20px auto;
   }
 `;
 
@@ -1080,10 +1371,27 @@ const VideoContainer = styled.div`
   border: 2px solid rgba(67, 97, 238, 0.2);
   transition: all 0.3s ease;
   
+  @media (max-width: 768px) {
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  }
+  
+  @media (max-width: 480px) {
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-width: 1px;
+  }
+  
   &:hover {
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
     border-color: rgba(67, 97, 238, 0.4);
     transform: translateY(-2px);
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
   
   video {
@@ -1092,7 +1400,7 @@ const VideoContainer = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Mudado de cover para contain para não cortar */
+    object-fit: contain;
     background: #000;
   }
   
@@ -1109,6 +1417,13 @@ const VideoContainer = styled.div`
     font-size: 0.75rem;
     font-weight: 700;
     backdrop-filter: blur(4px);
+    
+    @media (max-width: 480px) {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      top: 8px;
+      right: 8px;
+    }
   }
 `;
 
@@ -1190,6 +1505,14 @@ const RevolutionarySection = styled.section`
   overflow: hidden;
   border-top: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
+  
+  @media (max-width: 768px) {
+    padding: 80px 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 60px 0;
+  }
 `;
 
 const RevolutionaryGrid = styled.div`
@@ -1202,6 +1525,11 @@ const RevolutionaryGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 30px;
   }
 `;
 
@@ -1298,6 +1626,13 @@ const VisualShowcase = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 30px;
+    margin: 40px 0;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 20px;
+    margin: 30px 0;
   }
   
   /* Centralizar o terceiro card */
@@ -1368,6 +1703,14 @@ const VisualFeatures = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 30px;
   }
 `;
 
@@ -1405,6 +1748,16 @@ const SectionTitle = styled.h2`
   margin-bottom: 40px;
   color: #1a1a1a;
   
+  @media (max-width: 768px) {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.75rem;
+    margin-bottom: 24px;
+  }
+  
   span {
     color: #6c63ff;
     position: relative;
@@ -1434,6 +1787,13 @@ const PainGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 16px;
+    margin-bottom: 30px;
   }
 `;
 
@@ -1444,9 +1804,24 @@ const PainCard = styled.div`
   border-radius: 12px;
   transition: all 0.3s ease;
   
+  @media (max-width: 768px) {
+    padding: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 20px;
+    border-radius: 8px;
+  }
+  
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
 `;
 
@@ -1554,6 +1929,13 @@ const ResultsGrid = styled.div`
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
+    max-width: 600px;
+    margin: 0 auto 60px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 20px;
+    margin-bottom: 40px;
   }
 `;
 
@@ -1662,112 +2044,204 @@ const PricingSection = styled.section`
 
 const PricingGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 40px;
-  margin-bottom: 60px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto 60px;
   
-  @media (max-width: 1024px) {
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 500px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 16px;
+    padding: 0 16px;
+    margin-bottom: 40px;
   }
 `;
 
 const PricingCard = styled.div<{ $featured?: boolean }>`
   background: white;
-  border-radius: 12px;
-  overflow: hidden;
+  border-radius: 20px;
+  padding: 40px 30px;
   position: relative;
-  box-shadow: ${props => props.$featured ? '0 8px 30px rgba(67, 97, 238, 0.3)' : '0 4px 12px rgba(0,0,0,0.05)'};
-  transform: ${props => props.$featured ? 'scale(1.05)' : 'scale(1)'};
+  transition: all 0.3s ease;
+  box-shadow: ${props => props.$featured 
+    ? '0 20px 40px rgba(124, 58, 237, 0.15)' 
+    : '0 10px 25px rgba(0, 0, 0, 0.08)'};
+  border: ${props => props.$featured ? '2px solid #7c3aed' : '2px solid transparent'};
   
-  ${props => props.$featured && `
-    border: 2px solid #4361ee;
-  `}
+  @media (max-width: 768px) {
+    padding: 32px 24px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+  
+  &:hover {
+    transform: translateY(-10px);
+    box-shadow: ${props => props.$featured 
+      ? '0 25px 50px rgba(124, 58, 237, 0.2)' 
+      : '0 15px 35px rgba(0, 0, 0, 0.12)'};
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
+  }
 `;
 
 const PopularBadge = styled.div`
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #ff0a54;
+  top: -15px;
+  right: 30px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  padding: 6px 16px;
+  padding: 8px 24px;
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  
+  @media (max-width: 480px) {
+    right: 20px;
+    padding: 6px 20px;
+    font-size: 0.8rem;
+  }
 `;
 
 const PricingHeader = styled.div`
-  padding: 40px;
   text-align: center;
-  border-bottom: 1px solid #e9ecef;
-`;
-
-const PlanCredits = styled.div`
-  font-size: 1.1rem;
-  color: #6c757d;
-  margin-top: 10px;
-  font-weight: 500;
+  margin-bottom: 20px;
 `;
 
 const PlanName = styled.h3`
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 20px;
-  color: #1a1a1a;
+  color: #2d3748;
+  margin-bottom: 8px;
 `;
 
 const PlanPrice = styled.div`
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  margin-bottom: 10px;
+  font-size: 3rem;
+  font-weight: 800;
+  color: #1a202c;
+  margin-bottom: 4px;
+  
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 2.25rem;
+  }
 `;
 
 const Currency = styled.span`
   font-size: 1.5rem;
   font-weight: 700;
-  color: #4361ee;
+  color: #1a202c;
   margin-right: 5px;
 `;
 
 const Price = styled.span`
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 800;
-  color: #4361ee;
+  color: #1a202c;
+  
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 2.25rem;
+  }
 `;
 
 const Period = styled.span`
   font-size: 1rem;
-  color: #6c757d;
+  color: #718096;
   margin-left: 5px;
+`;
+
+const PlanCredits = styled.div`
+  font-size: 1.25rem;
+  color: #7c3aed;
+  font-weight: 600;
+  margin-bottom: 20px;
+  
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+`;
+
+const Savings = styled.div`
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  text-align: center;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 0.95rem;
 `;
 
 const PlanFeatures = styled.ul`
   padding: 40px;
   list-style: none;
+  
+  @media (max-width: 768px) {
+    padding: 32px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 24px;
+  }
 `;
 
 const Feature = styled.li`
-  padding: 10px 0;
-  color: #495057;
   display: flex;
   align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+  color: #4a5568;
   
-  &:before {
-    content: "✓";
-    color: #28a745;
-    font-weight: 700;
-    margin-right: 10px;
+  @media (max-width: 480px) {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    gap: 10px;
   }
 `;
 
-const PlanCTA = styled.div`
-  padding: 0 40px 40px;
-  text-align: center;
+const FeaturesList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px 0;
+`;
+
+const Credits = styled.div`
+  font-size: 1.25rem;
+  color: #7c3aed;
+  font-weight: 600;
+  margin-bottom: 20px;
   
-  a {
-    width: 100%;
+  @media (max-width: 480px) {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
   }
+`;
+
+const PlanPeriod = styled.div`
+  font-size: 1rem;
+  color: #718096;
+  margin-bottom: 8px;
 `;
 
 const MoneyBackGuarantee = styled.div`
@@ -1813,6 +2287,11 @@ const FAQGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 16px;
   }
 `;
 
@@ -1840,6 +2319,14 @@ const FinalCTASection = styled.section`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    padding: 60px 0;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 40px 0;
+  }
 `;
 
 const FinalCTAContent = styled.div`
@@ -1855,6 +2342,11 @@ const FinalCTATitle = styled.h2`
   
   @media (max-width: 768px) {
     font-size: 2.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.75rem;
+    margin-bottom: 16px;
   }
 `;
 
@@ -1877,12 +2369,31 @@ const CTAButtonSpecial = styled.a`
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   
+  @media (max-width: 768px) {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 14px 28px;
+    font-size: 1rem;
+    display: block;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+  
   &:hover, &:visited, &:active, &:focus {
     background: #4361ee;
     color: white;
     text-decoration: none;
     transform: translateY(-3px);
     box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+  }
+  
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
   }
 `;
 
@@ -1906,7 +2417,7 @@ const FinalGuaranteeItem = styled.div`
   opacity: 0.95;
 `;
 
-const CheckIcon = styled.span`
+const CheckIconWrapper = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1932,6 +2443,12 @@ const FooterContent = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 30px;
+    text-align: center;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 24px;
   }
 `;
 
@@ -2001,23 +2518,150 @@ const NavBar = styled.nav`
   right: 0;
   z-index: 1000;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 12px 0;
+  }
 `;
 
 const NavContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  gap: 20px;
 `;
 
 const Logo = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
   color: #4361ee;
+  
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
 `;
 
-const NavButtons = styled.div`
+const PricesLink = styled.a`
+  padding: 8px 20px;
+  color: #6c757d;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    color: #4361ee;
+    background: rgba(67, 97, 238, 0.05);
+  }
+`;
+
+const PricesLinkMobile = styled(PricesLink)`
+  border: 2px solid #e2e8f0;
+  background: white;
+  display: inline-block;
+  text-align: center;
+  
+  &:hover {
+    background: #f8f9fa;
+    border-color: #6c757d;
+  }
+`;
+
+const NavButtons = styled.div<{ $isOpen?: boolean }>`
   display: flex;
   gap: 20px;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+`;
+
+const MobileNavMenu = styled.div<{ $isOpen?: boolean }>`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: ${props => props.$isOpen ? 'flex' : 'none'};
+    position: fixed;
+    top: 60px;
+    left: 20px;
+    right: 20px;
+    background: white;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    z-index: 999;
+    gap: 10px;
+    align-items: center;
+    
+    a {
+      width: auto;
+      text-align: center;
+      padding: 12px 24px;
+      box-sizing: border-box;
+      display: inline-block;
+    }
+  }
+`;
+
+const MobileMenuButton = styled.button<{ $isOpen?: boolean }>`
+  display: none;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1001;
+    margin-left: auto;
+    
+    span {
+      display: block;
+      width: 25px;
+      height: 3px;
+      background: #4361ee;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      
+      &:nth-child(1) {
+        transform: ${props => props.$isOpen ? 'rotate(45deg) translateY(7px)' : 'none'};
+      }
+      
+      &:nth-child(2) {
+        opacity: ${props => props.$isOpen ? '0' : '1'};
+      }
+      
+      &:nth-child(3) {
+        transform: ${props => props.$isOpen ? 'rotate(-45deg) translateY(-7px)' : 'none'};
+      }
+    }
+  }
+`;
+
+const MenuOverlay = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    backdrop-filter: blur(4px);
+  }
 `;
 
 const LoginButton = styled(Link)`
@@ -2027,6 +2671,11 @@ const LoginButton = styled(Link)`
   text-decoration: none;
   border-radius: 50px;
   transition: all 0.3s ease;
+  border: 2px solid transparent;
+  
+  @media (max-width: 768px) {
+    border: 2px solid #4361ee;
+  }
 
   &:hover {
     background: rgba(67, 97, 238, 0.1);
@@ -2046,6 +2695,11 @@ const SignupButton = styled(Link)`
     background: #3a56d4;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+  }
+  
+  &:visited, &:active, &:focus {
+    color: white;
+    text-decoration: none;
   }
 `;
 
