@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
+import styled, { ThemeProvider, createGlobalStyle, keyframes } from 'styled-components';
 import { Container } from '../components/styled';
 import { dbService } from '../services/dbService';
 import { useAuth } from '../contexts/AuthContext';
@@ -63,11 +63,19 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 // ============= COMPONENTE BOOK3DLIBRARY =============
+/* Animação sutil de flutuação */
+const floatAnimation = keyframes`
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+`;
+
 const ShelfContainer = styled.div`
   position: relative;
   width: 100%;
   perspective: 1000px;
   margin: 2rem 0;
+  transform: rotateX(-2deg);
+  transform-style: preserve-3d;
 `;
 
 const Shelf = styled.div`
@@ -81,6 +89,19 @@ const Shelf = styled.div`
     inset 0 2px 0 rgba(255, 255, 255, 0.1),
     inset 0 -2px 4px rgba(0, 0, 0, 0.2);
   margin-top: 2rem;
+  
+  /* Reflexo sutil dos livros */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+    filter: blur(10px);
+    pointer-events: none;
+  }
   
   &::before {
     content: '';
@@ -105,6 +126,17 @@ const BooksContainer = styled.div`
   flex-wrap: wrap;
   min-height: 280px;
   align-items: flex-end;
+  
+  /* Sutil partícula de poeira */
+  &::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    opacity: 0.6;
+  }
 `;
 
 const Tooltip = styled.div`
@@ -159,25 +191,29 @@ const Book3D = styled.div<{ color: string; width: number; index: number }>`
   width: ${({ width }) => width}px;
   height: 220px;
   transform-style: preserve-3d;
-  transform: translateZ(0) rotateY(-15deg);
+  transform: translateZ(0) rotateY(-15deg) rotateX(${({ index }) => index % 2 === 0 ? '2deg' : '-2deg'});
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  animation: slideIn 0.6s ease-out ${({ index }) => index * 0.1}s both;
+  animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${({ index }) => index * 0.1}s both;
+  filter: drop-shadow(0 20px 20px rgba(0, 0, 0, 0.15));
   
   @keyframes slideIn {
     from {
-      transform: translateY(-50px) rotateY(-15deg);
+      transform: translateY(-50px) rotateY(-15deg) scale(0.8);
       opacity: 0;
+      filter: blur(5px);
     }
     to {
-      transform: translateY(0) rotateY(-15deg);
+      transform: translateY(0) rotateY(-15deg) scale(1);
       opacity: 1;
+      filter: blur(0px);
     }
   }
   
   &:hover {
-    transform: translateZ(30px) rotateY(0deg) scale(1.08) translateY(-10px);
+    transform: translateZ(40px) rotateY(0deg) scale(1.1) translateY(-15px) rotateX(0deg);
     z-index: 20;
+    filter: drop-shadow(0 30px 30px rgba(0, 0, 0, 0.25)) brightness(1.05);
   }
 `;
 
@@ -338,6 +374,13 @@ const BookTitle = styled.div`
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  
+  ${Book3D}:hover & {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
 `;
 
 const BookAuthor = styled.div`
@@ -434,12 +477,28 @@ const AddBookButton = styled.button`
   color: ${({ theme }) => theme.addBookColor};
   font-size: 2rem;
   margin: 0 10px 40px 10px;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle, ${({ theme }) => theme.addBookHoverBorder}20 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
   
   &:hover {
     border-color: ${({ theme }) => theme.addBookHoverBorder};
     background: ${({ theme }) => theme.addBookHoverBackground};
     color: ${({ theme }) => theme.addBookHoverColor};
-    transform: scale(1.05);
+    transform: scale(1.05) translateY(-5px);
+    
+    &::before {
+      opacity: 1;
+      animation: ${floatAnimation} 2s ease-in-out infinite;
+    }
   }
 `;
 
@@ -574,6 +633,20 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
                 </BookSpine>
                 <BookPages width={width} />
                 <BookCover color={color} width={width}>
+                  {/* Marcador de página em alguns livros */}
+                  {index % 3 === 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '20%',
+                      width: '15px',
+                      height: '50px',
+                      background: index % 2 === 0 ? '#ff6b6b' : '#4ecdc4',
+                      clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
+                      boxShadow: '0 2px 5px rgba(0, 0, 0, 0.3)',
+                      zIndex: 5
+                    }} />
+                  )}
                   <BookTitle>{livro.titulo}</BookTitle>
                   <BookAuthor>{livro.autor}</BookAuthor>
                 </BookCover>
