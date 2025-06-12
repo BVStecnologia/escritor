@@ -26,8 +26,8 @@ COPY --from=build /app/build /usr/share/nginx/html
 # Configurar nginx para rotas do React Router
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expor a porta 80
-EXPOSE 80
+# Expor a porta 8080
+EXPOSE 8080
 
 # Iniciar o Nginx
 CMD ["nginx", "-g", "daemon off;"]

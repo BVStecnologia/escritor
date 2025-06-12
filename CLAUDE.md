@@ -87,4 +87,4 @@ supabase functions logs gerar-imagem
 1. **Tratamento de Erros**: Todos os métodos de serviço retornam objetos de sucesso/erro
 2. **URLs de Imagem**: Extrair caminho de storage da URL pública para registro
 3. **Uso de Context**: `AuthContext` fornece estado do usuário globalmente
-4. **Plugins do Editor**: Plugins Lexical customizados em `src/components/LexicalEditor/plugins/`
+4. **Plugins do Editor**: Plugins Lexical customizados em `src/components/LexicalEditor/plugins/` 

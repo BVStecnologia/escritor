@@ -15,6 +15,12 @@ primary_region = "gru"
 [experimental]
   auto_rollback = true
 
+# Configuração para escalar para zero quando não há tráfego
+[[services]]
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
 [[http_service.domains]]
   name = "bookwriter.work"
   zone_id = ""
@@ -23,9 +29,8 @@ primary_region = "gru"
   name = "www.bookwriter.work"
   zone_id = ""
 
-[[services]]
   http_checks = []
-  internal_port = 80
+  internal_port = 8080
   processes = ["app"]
   protocol = "tcp"
   script_checks = []
