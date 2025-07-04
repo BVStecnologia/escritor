@@ -102,6 +102,14 @@
         "mainEntity": [
             {
                 "@type": "Question",
+                "name": "Quanto custa o BookWriter?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Apenas R$ 49,90/mês com garantia de 30 dias. Se não gostar, devolvemos 100% do seu dinheiro."
+                }
+            },
+            {
+                "@type": "Question",
                 "name": "Preciso saber escrever bem para usar o BookWriter?",
                 "acceptedAnswer": {
                     "@type": "Answer",
@@ -123,6 +131,170 @@
                     "@type": "Answer",
                     "text": "Sim! Nossa tecnologia cria conteúdo único baseado nas suas instruções. Nunca haverá plágio."
                 }
+            },
+            {
+                "@type": "Question",
+                "name": "Posso publicar na Amazon KDP?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sim! O BookWriter exporta seus livros no formato aceito pela Amazon KDP, pronto para publicação."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Quanto posso ganhar vendendo livros na Amazon?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Nossos usuários ganham entre R$ 3.000 a R$ 50.000/mês. Tudo depende da quantidade e qualidade dos livros publicados."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "O BookWriter funciona para todos os gêneros?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sim! Romance, ficção, não-ficção, autoajuda, infantil, técnico - nossa IA domina todos os estilos."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Existe limite de livros que posso criar?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Não! Com sua assinatura você pode criar quantos livros quiser, sem limites."
+                }
+            }
+        ]
+    }
+    </script>
+    
+    <!-- BreadcrumbList Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [{
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://bookwriter.work"
+        }]
+    }
+    </script>
+    
+    <!-- Product Schema com Reviews -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "BookWriter - Software para Escrever Livros",
+        "image": "https://bookwriter.work/og-image.jpg",
+        "description": "Software brasileiro com IA avançada para escrever livros profissionais. Publique na Amazon KDP e gere renda passiva.",
+        "brand": {
+            "@type": "Organization",
+            "name": "BookWriter"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "327",
+            "bestRating": "5",
+            "worstRating": "1"
+        },
+        "offers": {
+            "@type": "Offer",
+            "priceCurrency": "BRL",
+            "price": "49.90",
+            "priceValidUntil": "2025-12-31",
+            "availability": "https://schema.org/InStock",
+            "url": "https://bookwriter.work/pricing",
+            "seller": {
+                "@type": "Organization",
+                "name": "BookWriter"
+            }
+        },
+        "review": [
+            {
+                "@type": "Review",
+                "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "5",
+                    "bestRating": "5"
+                },
+                "author": {
+                    "@type": "Person",
+                    "name": "Maria Silva"
+                },
+                "datePublished": "2025-05-15",
+                "reviewBody": "Incrível! Publiquei 3 livros em 2 meses e já estou faturando R$ 8.000/mês na Amazon."
+            },
+            {
+                "@type": "Review",
+                "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "5",
+                    "bestRating": "5"
+                },
+                "author": {
+                    "@type": "Person",
+                    "name": "João Santos"
+                },
+                "datePublished": "2025-05-20",
+                "reviewBody": "A IA é impressionante. Escreve melhor que muitos humanos. Vale cada centavo!"
+            }
+        ]
+    }
+    </script>
+    
+    <!-- HowTo Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "Como Escrever e Publicar um Livro com BookWriter",
+        "description": "Guia passo a passo para escrever seu primeiro livro com IA e publicar na Amazon KDP",
+        "image": "https://bookwriter.work/og-image.jpg",
+        "totalTime": "PT168H",
+        "estimatedCost": {
+            "@type": "MonetaryAmount",
+            "currency": "BRL",
+            "value": "49.90"
+        },
+        "supply": [
+            {
+                "@type": "HowToSupply",
+                "name": "Conta no BookWriter"
+            },
+            {
+                "@type": "HowToSupply",
+                "name": "Ideias para seu livro"
+            }
+        ],
+        "step": [
+            {
+                "@type": "HowToStep",
+                "name": "Criar conta no BookWriter",
+                "text": "Cadastre-se gratuitamente e ative sua assinatura"
+            },
+            {
+                "@type": "HowToStep",
+                "name": "Definir tema e estrutura",
+                "text": "Use nossa IA para criar o outline do seu livro"
+            },
+            {
+                "@type": "HowToStep",
+                "name": "Escrever capítulos",
+                "text": "A IA escreve cada capítulo baseado nas suas instruções"
+            },
+            {
+                "@type": "HowToStep",
+                "name": "Revisar e exportar",
+                "text": "Revise o conteúdo e exporte no formato Amazon KDP"
+            },
+            {
+                "@type": "HowToStep",
+                "name": "Publicar na Amazon",
+                "text": "Faça upload do livro na Amazon e comece a vender"
             }
         ]
     }
