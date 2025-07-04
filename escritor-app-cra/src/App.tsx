@@ -9,7 +9,6 @@ import { AutocompleteProvider } from './contexts/AutocompleteContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import SubscriptionRoute from './components/SubscriptionRoute';
 import './App.css';
-import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
@@ -36,7 +35,11 @@ const App: React.FC = () => {
           <ThemeProvider>
             <AutocompleteProvider>
               <Routes>
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/dashboard" element={

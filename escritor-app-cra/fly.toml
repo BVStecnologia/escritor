@@ -35,12 +35,6 @@ kill_timeout = 5
     restart_limit = 0
     timeout = "2s"
 
-[[http_service.domains]]
-  name = "bookwriter.work"
-
-[[http_service.domains]]
-  name = "www.bookwriter.work"
-
 [[vm]]
   size = 'shared-cpu-1x'
   memory = '256mb'
