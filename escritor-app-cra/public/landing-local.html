@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookWriter - Links de Navegação</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4361ee;
+            margin-bottom: 30px;
+        }
+        .links-section {
+            margin: 30px 0;
+        }
+        .links-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .link-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .link-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        .link-item:hover {
+            background: #e7f0ff;
+            transform: translateX(5px);
+        }
+        .link-item strong {
+            color: #4361ee;
+            margin-right: 10px;
+        }
+        .link-url {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-left: auto;
+        }
+        .instruction {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .instruction h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .instruction p {
+            color: #856404;
+            margin: 5px 0;
+        }
+        .open-static {
+            display: inline-block;
+            background: #4361ee;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .open-static:hover {
+            background: #3a56d4;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 BookWriter - Navegação Local</h1>
+        
+        <div class="instruction">
+            <h3>⚠️ Como usar esta página:</h3>
+            <p>1. Certifique-se que o servidor React está rodando: <code>npm start</code></p>
+            <p>2. Os links abaixo abrirão as páginas do BookWriter em http://localhost:3000</p>
+            <p>3. Para melhor experiência, use o servidor Python: <code>python3 serve-static.py</code></p>
+        </div>
+
+        <div class="links-section">
+            <h2>📱 Páginas do Aplicativo</h2>
+            <div class="link-grid">
+                <a href="http://localhost:3000/login" class="link-item" target="_blank">
+                    <strong>Login</strong>
+                    <span class="link-url">localhost:3000/login</span>
+                </a>
+                <a href="http://localhost:3000/signup" class="link-item" target="_blank">
+                    <strong>Criar Conta</strong>
+                    <span class="link-url">localhost:3000/signup</span>
+                </a>
+                <a href="http://localhost:3000/dashboard" class="link-item" target="_blank">
+                    <strong>Painel Principal</strong>
+                    <span class="link-url">localhost:3000/dashboard</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="links-section">
+            <h2>📄 Páginas Institucionais</h2>
+            <div class="link-grid">
+                <a href="http://localhost:3000/terms" class="link-item" target="_blank">
+                    <strong>Termos de Uso</strong>
+                    <span class="link-url">localhost:3000/terms</span>
+                </a>
+                <a href="http://localhost:3000/privacy" class="link-item" target="_blank">
+                    <strong>Política de Privacidade</strong>
+                    <span class="link-url">localhost:3000/privacy</span>
+                </a>
+                <a href="http://localhost:3000/about" class="link-item" target="_blank">
+                    <strong>Sobre Nós</strong>
+                    <span class="link-url">localhost:3000/about</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="links-section">
+            <h2>🎨 Landing Page Estática</h2>
+            <a href="index-static.html" class="open-static">
+                Abrir Landing Page Estática
+            </a>
+            <p style="margin-top: 10px; color: #6c757d;">
+                Esta página funcionará melhor se servida via HTTP ao invés de file://
+            </p>
+        </div>
+    </div>
+</body>
+</html>
