@@ -217,11 +217,11 @@ const Book3D = styled.div<{ color: string; width: number; index: number }>`
   }
 `;
 
-const BookCover = styled.div<{ color: string; width: number }>`
+const BookCover = styled.div<{ color: string; width: number; $hasImage?: boolean }>`
   position: absolute;
   width: ${({ width }) => width}px;
   height: 220px;
-  background: ${({ color }) => color};
+  background: ${({ $hasImage, color }) => $hasImage ? 'transparent' : color};
   border-radius: 0 4px 4px 0;
   transform: translateZ(${({ width }) => width / 2}px);
   box-shadow: 
@@ -358,8 +358,8 @@ const BookTitle = styled.div`
   left: 10px;
   right: 10px;
   padding: 10px;
-  background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
   border-radius: 8px;
   color: white;
   font-weight: 800;
@@ -375,6 +375,7 @@ const BookTitle = styled.div`
   -webkit-box-orient: vertical;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  z-index: 1;
   
   ${Book3D}:hover & {
     background: rgba(0, 0, 0, 0.2);
@@ -393,10 +394,38 @@ const BookAuthor = styled.div`
   font-weight: 600;
   text-align: center;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.4);
   padding: 5px 10px;
   border-radius: 6px;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(5px);
+  z-index: 1;
+`;
+
+const BookCoverImage = styled.img`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 0 4px 4px 0;
+  z-index: 1;
+  background-color: #f0f0f0;
+`;
+
+const BookCoverPlaceholder = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  opacity: 0.3;
+  z-index: 0;
 `;
 
 const BookLabel = styled.div<{ color: string }>`
@@ -517,6 +546,21 @@ const bookColors = [
   'linear-gradient(135deg, #48CAE4 0%, #0077B6 100%)', // Azul oceano
 ];
 
+const ImageErrorOverlay = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.1);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  text-align: center;
+  z-index: 2;
+  max-width: 80%;
+`;
+
 interface Book3DLibraryProps {
   maxBooks?: number;
   onBookClick?: (livro: Livro) => void;
@@ -526,12 +570,19 @@ interface Book3DLibraryProps {
 const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick, onAddBook }) => {
   const [livros, setLivros] = useState<Livro[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const navigate = useNavigate();
 
   useEffect(() => {
     const carregarLivros = async () => {
       try {
         const livrosCarregados = await dbService.getLivros();
+        // Debug: verificar URLs das capas
+        livrosCarregados.forEach(livro => {
+          if (livro.capa) {
+            console.log(`Livro: ${livro.titulo}, Capa URL: ${livro.capa}`);
+          }
+        });
         setLivros(livrosCarregados.slice(0, maxBooks).reverse());
       } catch (error) {
         console.error("Erro ao carregar livros:", error);
@@ -632,7 +683,32 @@ const Book3DLibrary: React.FC<Book3DLibraryProps> = ({ maxBooks = 8, onBookClick
                   <SpineTitle>{livro.titulo}</SpineTitle>
                 </BookSpine>
                 <BookPages width={width} />
-                <BookCover color={color} width={width}>
+                <BookCover color={color} width={width} $hasImage={!!livro.capa}>
+                  {livro.capa && !imageErrors[livro.id] ? (
+                    <BookCoverImage 
+                      src={livro.capa} 
+                      alt={livro.titulo || livro["Nome do livro"] || "Capa do livro"}
+                      onLoad={() => {
+                        console.log('Imagem carregada com sucesso:', livro.capa);
+                      }}
+                      onError={(e) => {
+                        console.error('Erro ao carregar imagem:', {
+                          url: livro.capa,
+                          livroId: livro.id,
+                          titulo: livro.titulo,
+                          erro: e
+                        });
+                        setImageErrors(prev => ({ 
+                          ...prev, 
+                          [livro.id]: true 
+                        }));
+                      }}
+                    />
+                  ) : (
+                    <BookCoverPlaceholder>
+                      📚
+                    </BookCoverPlaceholder>
+                  )}
                   {/* Marcador de página em alguns livros */}
                   {index % 3 === 0 && (
                     <div style={{
